@@ -1,0 +1,467 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="glad">
+      <UniqueIdentifier>{c1f0738d-da5f-4519-8ed3-e458e6a2f542}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{b8be4bfa-529c-48e1-8a38-eada394c5c43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Deferred">
+      <UniqueIdentifier>{919c0b50-fa0e-4308-b1b5-7e08a92fd184}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\RawPathTracing">
+      <UniqueIdentifier>{f0cb27a1-9f73-4f06-b8ed-f6b3545dad9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\TemporalUpscaler">
+      <UniqueIdentifier>{9e0b9d41-2fef-4f14-9d15-2bef7d290655}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\RTMotionVectors">
+      <UniqueIdentifier>{abe910ad-7994-4c9e-ab76-36b4afbcd0d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Composite">
+      <UniqueIdentifier>{1a117c33-b61d-4400-9b52-012e5366ffcf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\SpatialFilter">
+      <UniqueIdentifier>{12e965f5-34c4-436d-bbf8-9517756fe15f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\SpatialUpscaler">
+      <UniqueIdentifier>{ea719d14-34bf-4ccc-b9e3-48639b727dad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\TemporalFilter">
+      <UniqueIdentifier>{c7be143a-7b45-4210-a077-0ffe7a77b60b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\SpatialPacker">
+      <UniqueIdentifier>{b9326e98-5143-4c38-94d3-c9dee9c113bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\SkyCubeShader">
+      <UniqueIdentifier>{5aa84b8e-6311-4715-90d8-66d630fcc5d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\SkyIncidentShader">
+      <UniqueIdentifier>{aaa88470-5b09-45b6-8786-b0936663bece}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\ShadowDeferred">
+      <UniqueIdentifier>{a6ccd549-1e2d-419b-b3e2-94b3271b0d26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\LightCombiner">
+      <UniqueIdentifier>{4d5250fd-4db8-4ad0-9057-f68323957603}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\BlurHorizontal">
+      <UniqueIdentifier>{894c429f-a377-4a89-ba21-56ad51d39530}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\BlurVertical">
+      <UniqueIdentifier>{60f23370-aa25-47e0-886e-4bfc4f9ea245}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\PrepShader">
+      <UniqueIdentifier>{e3ed4cc2-01ab-4bcd-9ee8-613178015946}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\DofVertical">
+      <UniqueIdentifier>{a469e607-3cbf-4264-85a8-15a0b2f92579}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\DoFHorizontal">
+      <UniqueIdentifier>{ad85e8e5-33a8-4332-b9e3-0e5482fccab4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\TextShader">
+      <UniqueIdentifier>{c091cc43-21ce-4efa-82d0-10ee59442a8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\CubeItemDrawer">
+      <UniqueIdentifier>{279f8186-4a68-4e50-907f-6aaca9b2c47f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\TemporalFrameCounter">
+      <UniqueIdentifier>{1b18b9b3-5df0-4256-ad6f-9c22948a3049}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\DeferredUnwrapper">
+      <UniqueIdentifier>{5e9474dc-7f06-47b5-8b2e-c9d2a915b636}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\HemiSphericalShadowMapCopy">
+      <UniqueIdentifier>{08a85549-4da3-4b68-b0e7-6f79adcddc0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\BlurCombiner">
+      <UniqueIdentifier>{a5e24855-3de9-42ec-b2f9-e263ebea173f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Volumetrics">
+      <UniqueIdentifier>{dc9d985e-f09c-4697-91a4-8df56f9c67a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\ParallaxBakeShader">
+      <UniqueIdentifier>{a3f834e6-46c6-4842-96df-9d0abf165737}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Direct">
+      <UniqueIdentifier>{0f37cde2-59aa-4003-abbf-c970ce49b04a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Rendering">
+      <UniqueIdentifier>{fb7115fe-bdcd-45a5-b255-2feb4afa50b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Commands">
+      <UniqueIdentifier>{c206076d-1206-4a5f-9d9e-777c3647972b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\UI">
+      <UniqueIdentifier>{2d2e0805-1c2c-4158-8687-85f116b5461e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Engine Core">
+      <UniqueIdentifier>{31342cd4-41ec-46ba-813b-5bea33b585f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Dependencies">
+      <UniqueIdentifier>{49ccb177-f4a2-495a-8185-ca099fd9dee1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Baker">
+      <UniqueIdentifier>{9007e6f9-a906-4b75-aa58-615c4070378e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\World">
+      <UniqueIdentifier>{424caf69-27ae-4372-a32d-bf6be8befba5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Commands">
+      <UniqueIdentifier>{d25e1dbc-c526-4194-bd98-f14037781833}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine Core">
+      <UniqueIdentifier>{a47181bf-e133-4f15-b711-ad2f00be5ed9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Baker">
+      <UniqueIdentifier>{33daa4c9-b20b-4a5b-81ce-bdde9dd8a4f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\World">
+      <UniqueIdentifier>{6c735d1e-f988-45a1-88ec-eb4b6ff4c008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\UI">
+      <UniqueIdentifier>{66f41bcb-2443-4bdc-8da3-9923334fbea7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Rendering">
+      <UniqueIdentifier>{20d13490-ea3f-495b-8e35-4a225f8ef355}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Pipeline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandManager.h">
+      <Filter>Header Files\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandPusher.h">
+      <Filter>Header Files\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="CinematicCamera.h">
+      <Filter>Header Files\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Profiler.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="BooleanCommands.h">
+      <Filter>Header Files\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files\Engine Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core.h">
+      <Filter>Header Files\Engine Core</Filter>
+    </ClInclude>
+    <ClInclude Include="DependenciesMath.h">
+      <Filter>Header Files\Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="DependenciesRendering.h">
+      <Filter>Header Files\Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Header Files\Engine Core</Filter>
+    </ClInclude>
+    <ClInclude Include="text.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Header Files\Engine Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>Header Files\Engine Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Glow.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Indirect.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemRenderer.h">
+      <Filter>Header Files\Baker</Filter>
+    </ClInclude>
+    <ClInclude Include="ParallaxBaker.h">
+      <Filter>Header Files\Baker</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyRenderer.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameBuffer.h">
+      <Filter>Header Files\Engine Core</Filter>
+    </ClInclude>
+    <ClInclude Include="WorldManager.h">
+      <Filter>Header Files\World</Filter>
+    </ClInclude>
+    <ClInclude Include="Compositor.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Chunk.h">
+      <Filter>Header Files\World</Filter>
+    </ClInclude>
+    <ClInclude Include="DeferredDrawer.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="LightCombiner.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Inventory.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Pipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="include\GL\glad.c">
+      <Filter>glad</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BooleanCommands.cpp">
+      <Filter>Source Files\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="CinematicCamera.cpp">
+      <Filter>Source Files\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandManager.cpp">
+      <Filter>Source Files\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandPusher.cpp">
+      <Filter>Source Files\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source Files\Engine Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core.cpp">
+      <Filter>Source Files\Engine Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Source Files\Engine Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Source Files\Engine Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>Source Files\Engine Core</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameBuffer.cpp">
+      <Filter>Source Files\Engine Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ParallaxBaker.cpp">
+      <Filter>Source Files\Baker</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemRenderer.cpp">
+      <Filter>Source Files\Baker</Filter>
+    </ClCompile>
+    <ClCompile Include="Chunk.cpp">
+      <Filter>Source Files\World</Filter>
+    </ClCompile>
+    <ClCompile Include="WorldManager.cpp">
+      <Filter>Source Files\World</Filter>
+    </ClCompile>
+    <ClCompile Include="text.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Profiler.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Compositor.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="DeferredDrawer.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Glow.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Indirect.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="LightCombiner.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyRenderer.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Deferred\shader.vert">
+      <Filter>Shaders\Deferred</Filter>
+    </None>
+    <None Include="Shaders\Deferred\shader.frag">
+      <Filter>Shaders\Deferred</Filter>
+    </None>
+    <None Include="Shaders\RawPathTracing\shader.frag">
+      <Filter>Shaders\RawPathTracing</Filter>
+    </None>
+    <None Include="Shaders\RawPathTracing\shader.vert">
+      <Filter>Shaders\RawPathTracing</Filter>
+    </None>
+    <None Include="Shaders\RTMotionVectors\shader.frag">
+      <Filter>Shaders\RTMotionVectors</Filter>
+    </None>
+    <None Include="Shaders\RTMotionVectors\shader.vert">
+      <Filter>Shaders\RTMotionVectors</Filter>
+    </None>
+    <None Include="Shaders\Composite\shader.frag">
+      <Filter>Shaders\Composite</Filter>
+    </None>
+    <None Include="Shaders\Composite\shader.vert">
+      <Filter>Shaders\Composite</Filter>
+    </None>
+    <None Include="Shaders\SpatialFilter\shader.vert">
+      <Filter>Shaders\SpatialFilter</Filter>
+    </None>
+    <None Include="Shaders\SpatialFilter\shader.frag">
+      <Filter>Shaders\SpatialFilter</Filter>
+    </None>
+    <None Include="Shaders\SpatialUpscaler\shader.vert">
+      <Filter>Shaders\SpatialUpscaler</Filter>
+    </None>
+    <None Include="Shaders\SpatialUpscaler\shader.frag">
+      <Filter>Shaders\SpatialUpscaler</Filter>
+    </None>
+    <None Include="Shaders\TemporalFilter\shader.vert">
+      <Filter>Shaders\TemporalFilter</Filter>
+    </None>
+    <None Include="Shaders\TemporalFilter\shader.frag">
+      <Filter>Shaders\TemporalFilter</Filter>
+    </None>
+    <None Include="Shaders\TemporalUpscaler\shader.frag">
+      <Filter>Shaders\TemporalUpscaler</Filter>
+    </None>
+    <None Include="Shaders\TemporalUpscaler\shader.vert">
+      <Filter>Shaders\TemporalUpscaler</Filter>
+    </None>
+    <None Include="Shaders\SpatialPacker\shader.vert">
+      <Filter>Shaders\SpatialPacker</Filter>
+    </None>
+    <None Include="Shaders\SpatialPacker\shader.frag">
+      <Filter>Shaders\SpatialPacker</Filter>
+    </None>
+    <None Include="Shaders\SkyIncidentShader\shader.vert">
+      <Filter>Shaders\SkyIncidentShader</Filter>
+    </None>
+    <None Include="Shaders\SkyIncidentShader\shader.frag">
+      <Filter>Shaders\SkyIncidentShader</Filter>
+    </None>
+    <None Include="Shaders\SkyCubeShader\shader.frag">
+      <Filter>Shaders\SkyCubeShader</Filter>
+    </None>
+    <None Include="Shaders\SkyCubeShader\shader.vert">
+      <Filter>Shaders\SkyCubeShader</Filter>
+    </None>
+    <None Include="Shaders\ShadowDeferred\shader.vert">
+      <Filter>Shaders\ShadowDeferred</Filter>
+    </None>
+    <None Include="Shaders\ShadowDeferred\shader.frag">
+      <Filter>Shaders\ShadowDeferred</Filter>
+    </None>
+    <None Include="Shaders\LightCombiner\shader.vert">
+      <Filter>Shaders\LightCombiner</Filter>
+    </None>
+    <None Include="Shaders\LightCombiner\shader.frag">
+      <Filter>Shaders\LightCombiner</Filter>
+    </None>
+    <None Include="Shaders\BlurHorizontal\shader.frag">
+      <Filter>Shaders\BlurHorizontal</Filter>
+    </None>
+    <None Include="Shaders\BlurHorizontal\shader.vert">
+      <Filter>Shaders\BlurHorizontal</Filter>
+    </None>
+    <None Include="Shaders\BlurVertical\shader.frag">
+      <Filter>Shaders\BlurVertical</Filter>
+    </None>
+    <None Include="Shaders\BlurVertical\shader.vert">
+      <Filter>Shaders\BlurVertical</Filter>
+    </None>
+    <None Include="Shaders\PrepShader\shader.frag">
+      <Filter>Shaders\PrepShader</Filter>
+    </None>
+    <None Include="Shaders\PrepShader\shader.vert">
+      <Filter>Shaders\PrepShader</Filter>
+    </None>
+    <None Include="Shaders\DoFVertical\shader.frag">
+      <Filter>Shaders\DofVertical</Filter>
+    </None>
+    <None Include="Shaders\DoFVertical\shader.vert">
+      <Filter>Shaders\DofVertical</Filter>
+    </None>
+    <None Include="Shaders\DofHorizontal\shader.vert">
+      <Filter>Shaders\DoFHorizontal</Filter>
+    </None>
+    <None Include="Shaders\DofHorizontal\shader.frag">
+      <Filter>Shaders\DoFHorizontal</Filter>
+    </None>
+    <None Include="Shaders\TextShader\shader.frag">
+      <Filter>Shaders\TextShader</Filter>
+    </None>
+    <None Include="Shaders\TextShader\shader.vert">
+      <Filter>Shaders\TextShader</Filter>
+    </None>
+    <None Include="Shaders\CubeItemDrawer\shader.frag">
+      <Filter>Shaders\CubeItemDrawer</Filter>
+    </None>
+    <None Include="Shaders\CubeItemDrawer\shader.vert">
+      <Filter>Shaders\CubeItemDrawer</Filter>
+    </None>
+    <None Include="Shaders\TemporalFrameCounter\shader.frag">
+      <Filter>Shaders\TemporalFrameCounter</Filter>
+    </None>
+    <None Include="Shaders\TemporalFrameCounter\shader.vert">
+      <Filter>Shaders\TemporalFrameCounter</Filter>
+    </None>
+    <None Include="Shaders\Direct\shader.frag">
+      <Filter>Shaders\Direct</Filter>
+    </None>
+    <None Include="Shaders\Direct\shader.vert">
+      <Filter>Shaders\Direct</Filter>
+    </None>
+    <None Include="Shaders\DeferredUnwrapper\shader.vert">
+      <Filter>Shaders\DeferredUnwrapper</Filter>
+    </None>
+    <None Include="Shaders\DeferredUnwrapper\shader.frag">
+      <Filter>Shaders\DeferredUnwrapper</Filter>
+    </None>
+    <None Include="Shaders\HemiSphericalShadowMapCopy\shader.frag">
+      <Filter>Shaders\HemiSphericalShadowMapCopy</Filter>
+    </None>
+    <None Include="Shaders\HemiSphericalShadowMapCopy\shader.vert">
+      <Filter>Shaders\HemiSphericalShadowMapCopy</Filter>
+    </None>
+    <None Include="Shaders\BlurCombiner\shader.vert">
+      <Filter>Shaders\BlurCombiner</Filter>
+    </None>
+    <None Include="Shaders\BlurCombiner\shader.frag">
+      <Filter>Shaders\BlurCombiner</Filter>
+    </None>
+    <None Include="Shaders\Volumetrics\shader.vert">
+      <Filter>Shaders\Volumetrics</Filter>
+    </None>
+    <None Include="Shaders\Volumetrics\shader.frag">
+      <Filter>Shaders\Volumetrics</Filter>
+    </None>
+    <None Include="Shaders\ParallaxBakeShader\shader.vert">
+      <Filter>Shaders\ParallaxBakeShader</Filter>
+    </None>
+    <None Include="Shaders\ParallaxBakeShader\shader.frag">
+      <Filter>Shaders\ParallaxBakeShader</Filter>
+    </None>
+  </ItemGroup>
+</Project>
