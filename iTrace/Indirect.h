@@ -13,10 +13,10 @@ namespace iTrace {
 
 			Shader IndirectLightShader, RTMotionVectorCalculator,
 				TemporalUpscaler,SpatialPacker, SpatialFilter, 
-				SpatialUpscaler, TemporalFilter, FrameCount, Volumetrics; 
+				SpatialUpscaler, TemporalFilter, FrameCount, Volumetrics, DirectBlocker; 
 
 			MultiPassFrameBufferObject RawPathTrace[4], TemporalyUpscaled, SpatialyFiltered[8], SpatialyUpscaled;
-			FrameBufferObject PackedSpatialData, MotionVectors[4], PackedData;
+			FrameBufferObject PackedSpatialData, MotionVectors[4], PackedData, DirectBlockerBuffer;
 			MultiPassFrameBufferObjectPreviousData TemporallyFiltered; 
 			FrameBufferObjectPreviousData TemporalFrameCount;
 			FrameBufferObject VolumetricFBO[4];
@@ -29,6 +29,7 @@ namespace iTrace {
 			void PrepareIndirectLightingHandler(Window & Window); 
 			void RenderIndirectLighting(Window& Window, Camera& Camera, DeferredRenderer & Deferred, WorldManager & World, SkyRendering& Sky);
 			
+			void FindDirectBlocker(Window& Window, Camera& Camera, DeferredRenderer& Deferred, SkyRendering& Sky);
 			void DoRawPathTrace(Window& Window, Camera& Camera, DeferredRenderer& Deferred, WorldManager& World, SkyRendering & Sky);
 			void TemporalyUpscale(Window& Window, Camera& Camera, DeferredRenderer& Deferred);
 			void SpatialyFilter(Window& Window, Camera& Camera, DeferredRenderer& Deferred);

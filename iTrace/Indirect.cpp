@@ -17,18 +17,20 @@ namespace iTrace {
 
 			
 			for (int x = 0; x < 4; x++) {
-				RawPathTrace[x] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 3, { GL_RGBA16F, GL_RGBA16F, GL_RGB32F }, false); 
+				RawPathTrace[x] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 5, { GL_RGBA16F, GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_R16F }, false);
 				MotionVectors[x] = FrameBufferObject(Window.GetResolution() / 2, GL_RG16F, false); 
-				SpatialyFiltered[x * 2] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 2, { GL_RGBA16F,GL_RGBA16F }, false);
-				SpatialyFiltered[x * 2 + 1] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 2, { GL_RGBA16F,GL_RGBA16F }, false);
+				SpatialyFiltered[x * 2] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
+				SpatialyFiltered[x * 2 + 1] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 				VolumetricFBO[x] = FrameBufferObject(Window.GetResolution() / 4, GL_RGBA16F, false); 
+				
 			}
 
+			DirectBlockerBuffer = FrameBufferObject(Window.GetResolution() / 8, GL_RG16F, false);
 			TemporalFrameCount = FrameBufferObjectPreviousData(Window.GetResolution() / 2, GL_R16F, false);
-			TemporalyUpscaled = MultiPassFrameBufferObject(Window.GetResolution() / 2, 2, { GL_RGBA16F,GL_RGBA16F }, false);
+			TemporalyUpscaled = MultiPassFrameBufferObject(Window.GetResolution() / 2, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 			PackedSpatialData = FrameBufferObject(Window.GetResolution() / 2, GL_RGBA16F, false); 
-			TemporallyFiltered = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 2, 2, { GL_RGBA16F,GL_RGBA16F }, false);
-			SpatialyUpscaled = MultiPassFrameBufferObject(Window.GetResolution(), 1, { GL_RGBA16F }, false);
+			TemporallyFiltered = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 2, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
+			SpatialyUpscaled = MultiPassFrameBufferObject(Window.GetResolution(), 2, { GL_RGBA16F,GL_RGBA16F }, false);
 
 			IndirectLightShader = Shader("Shaders/RawPathTracing");
 			TemporalUpscaler = Shader("Shaders/TemporalUpscaler");
@@ -39,6 +41,7 @@ namespace iTrace {
 			SpatialPacker = Shader("Shaders/SpatialPacker"); 
 			FrameCount = Shader("Shaders/TemporalFrameCounter");
 			Volumetrics = Shader("Shaders/Volumetrics"); 
+			DirectBlocker = Shader("Shaders/DirectBlocker"); 
 
 			SetShaderUniforms(Window); 
 			
@@ -79,10 +82,16 @@ namespace iTrace {
 		void IndirectLightingHandler::RenderIndirectLighting(Window& Window, Camera& Camera, DeferredRenderer& Deferred, WorldManager& World, SkyRendering& Sky)
 		{
 
+
+			
 			
 			Profiler::FlushTime(); 
 			DoRawPathTrace(Window, Camera, Deferred, World, Sky); 
 			Profiler::SetPerformance("Raw path tracing"); 
+
+			Profiler::FlushTime();
+			FindDirectBlocker(Window, Camera, Deferred, Sky);
+			Profiler::SetPerformance("Direct blocker finder");
 	
 			GenerateMotionVectors(Window, Camera, Deferred);
 			Profiler::SetPerformance("Motion vectors");
@@ -101,6 +110,34 @@ namespace iTrace {
 
 			SpatialyUpscale(Window, Camera, Deferred); 
 			Profiler::SetPerformance("Spatial upscaling");
+
+		}
+
+		void IndirectLightingHandler::FindDirectBlocker(Window& Window, Camera& Camera, DeferredRenderer& Deferred, SkyRendering& Sky)
+		{
+
+			DirectBlocker.Bind(); 
+
+			DirectBlockerBuffer.Bind(); 
+
+			for (int i = 0; i < 4; i++) {
+
+				DirectBlocker.SetUniform("ShadowMatrix[" + std::to_string(i) + "]", Sky.ProjectionMatricesRaw[i] * Sky.ViewMatrices[i]);
+				Sky.ShadowMaps[i].BindDepthImage(i+19);
+
+			}
+
+			DirectBlocker.SetUniform("znear", Camera.znear);
+			DirectBlocker.SetUniform("zfar", Camera.zfar);
+
+			Deferred.Deferred.BindImage(1, 4);
+			Deferred.RawDeferred.BindDepthImage(5);
+
+			DrawPostProcessQuad(); 
+
+			DirectBlockerBuffer.UnBind();
+
+			DirectBlocker.UnBind(); 
 
 		}
 
@@ -140,7 +177,7 @@ namespace iTrace {
 			glBindTexture(GL_TEXTURE_3D, World.Chunk->ChunkLightTexID);
 			
 			glActiveTexture(GL_TEXTURE15);
-			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(2));
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(4));
 
 			glActiveTexture(GL_TEXTURE16);
 			glBindTexture(GL_TEXTURE_1D, Chunk::GetTextureExtensionData());
@@ -151,7 +188,8 @@ namespace iTrace {
 			glActiveTexture(GL_TEXTURE10);
 			glBindTexture(GL_TEXTURE_2D_ARRAY, Sky.HemiSphericalShadowMap);
 
-
+			glActiveTexture(GL_TEXTURE23);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, Sky.SkyCube.Texture[1]);
 
 			for (int i = 0; i < 48; i++)
 			{
@@ -164,6 +202,14 @@ namespace iTrace {
 
 			}
 
+			for (int i = 0; i < 4; i++) {
+
+				IndirectLightShader.SetUniform("DirectionMatrices[" + std::to_string(i) + "]", Sky.ProjectionMatricesRaw[i] * Sky.ViewMatrices[i]); 
+				Sky.ShadowMaps[i].BindDepthImage(i + 19); 
+
+			}
+
+			DirectBlockerBuffer.BindImage(24); 
 
 			IndirectLightShader.SetUniform("CameraPosition", Camera.Position);
 			IndirectLightShader.SetUniform("FrameCount", Window.GetFrameCount() % 1024);
@@ -173,6 +219,8 @@ namespace iTrace {
 			IndirectLightShader.SetUniform("DoRayTracing", GetBoolean("raytracing"));
 			IndirectLightShader.SetUniform("znear", Camera.znear);
 			IndirectLightShader.SetUniform("zfar", Camera.zfar);
+			IndirectLightShader.SetUniform("LightDirection", Sky.Orientation);
+			IndirectLightShader.SetUniform("SunColor", Sky.SunColor);
 
 			DrawPostProcessQuad();
 
@@ -219,6 +267,9 @@ namespace iTrace {
 			RawPathTrace[Window.GetFrameCount() % 4].BindImage(0, 1); 
 			TemporalFrameCount.BindImage(3);
 			VolumetricFBO[Window.GetFrameCount() % 4].BindImage(4); 
+			RawPathTrace[Window.GetFrameCount() % 4].BindImage(3, 5);
+			MotionVectors[Window.GetFrameCount() % 4].BindImage(6);
+
 
 			for (int x = 0; x < 3; x++) {
 
@@ -232,6 +283,7 @@ namespace iTrace {
 
 				SpatialyFiltered[Addon + x % 2].BindImage(0, 1);
 				SpatialyFiltered[Addon + x % 2].BindImage(1, 4);
+				SpatialyFiltered[Addon + x % 2].BindImage(2, 5);
 
 
 			}
@@ -256,6 +308,8 @@ namespace iTrace {
 				
 				SpatialyFiltered[x * 2].BindImage(0, x + 8); 
 				SpatialyFiltered[x * 2].BindImage(1, x + 12);
+				SpatialyFiltered[x * 2].BindImage(2, x + 22);
+				RawPathTrace[x].BindImage(4, x + 26);
 
 				MotionVectors[x].BindImage(x + 16); 
 
@@ -295,6 +349,10 @@ namespace iTrace {
 			MotionVectors[Window.GetFrameCount() % 4].BindImage(4);
 			TemporalFrameCount.BindImage(5);
 			Deferred.Deferred.BindImage(3, 6); 
+
+			TemporalyUpscaled.BindImage(2, 7);
+			TemporallyFiltered.BindImagePrevious(2, 8);
+
 			
 			TemporalFilter.SetUniform("DoTemporal", GetBoolean("temporal")); 
 			TemporalFilter.SetUniform("NewFiltering", GetBoolean("newfiltering"));
@@ -335,7 +393,7 @@ namespace iTrace {
 			glBindTexture(GL_TEXTURE_2D_ARRAY, Sky.HemiSphericalShadowMap);
 
 			glActiveTexture(GL_TEXTURE5);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, Sky.SkyCube.Texture[0]);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, Sky.SkyCube.Texture[1]);
 
 			WindNoise.Bind(6); 
 
@@ -349,6 +407,16 @@ namespace iTrace {
 				Volumetrics.SetUniform("HemisphericalDirections[" + std::to_string(i) + "]", Sky.HemiDirections[i]);
 
 			}
+
+			for (int i = 0; i < 4; i++) {
+
+				Volumetrics.SetUniform("DirectionMatrices[" + std::to_string(i) + "]", Sky.ProjectionMatrices[i] * Sky.ViewMatrices[i]);
+				Sky.ShadowMaps[i].BindDepthImage(i + 8);
+
+			}
+
+			Volumetrics.SetUniform("LightDirection", Sky.Orientation);
+			Volumetrics.SetUniform("SunColor", Sky.SunColor);
 
 			DrawPostProcessQuad(); 
 
@@ -372,7 +440,7 @@ namespace iTrace {
 			Deferred.Deferred.BindImagePrevious(1, 3);
 
 			RTMotionVectorCalculator.SetUniform("CameraPosition", Camera.Position);
-			RTMotionVectorCalculator.SetUniform("MotionMatrix", Camera.Project * Camera.PrevView);
+			RTMotionVectorCalculator.SetUniform("MotionMatrix", Camera.PrevProject * Camera.PrevView);
 			RTMotionVectorCalculator.SetUniform("IncidentMatrix", glm::inverse(Camera.Project * Matrix4f(Matrix3f(Camera.View))));
 			RTMotionVectorCalculator.SetUniform("NewFiltering", GetBoolean("newfiltering"));
 
@@ -410,6 +478,7 @@ namespace iTrace {
 			SpatialPacker.Reload("Shaders/SpatialPacker");
 			FrameCount.Reload("Shaders/TemporalFrameCounter");
 			Volumetrics.Reload("Shaders/Volumetrics"); 
+			DirectBlocker.Reload("Shaders/DirectBlocker"); 
 
 			SetShaderUniforms(Window); 
 
@@ -434,9 +503,12 @@ namespace iTrace {
 			IndirectLightShader.SetUniform("BlockData", 17);
 			IndirectLightShader.SetUniform("HemisphericalShadowMap", 10);
 			IndirectLightShader.SetUniform("Depth", 18);
-
-			
-
+			IndirectLightShader.SetUniform("DirectionalCascades[0]", 19);
+			IndirectLightShader.SetUniform("DirectionalCascades[1]", 20);
+			IndirectLightShader.SetUniform("DirectionalCascades[2]", 21);
+			IndirectLightShader.SetUniform("DirectionalCascades[3]", 22);
+			IndirectLightShader.SetUniform("SkyNoMie", 23);
+			IndirectLightShader.SetUniform("BlockerData", 24);
 
 			IndirectLightShader.UnBind();
 
@@ -470,6 +542,16 @@ namespace iTrace {
 			TemporalUpscaler.SetUniform("WorldPos", 20);
 			TemporalUpscaler.SetUniform("Normal", 21);
 
+			TemporalUpscaler.SetUniform("FramesIndirectSpecular[0]", 22);
+			TemporalUpscaler.SetUniform("FramesIndirectSpecular[1]", 23);
+			TemporalUpscaler.SetUniform("FramesIndirectSpecular[2]", 24);
+			TemporalUpscaler.SetUniform("FramesIndirectSpecular[3]", 25);
+
+			TemporalUpscaler.SetUniform("FramesDirect[0]", 26);
+			TemporalUpscaler.SetUniform("FramesDirect[1]", 27);
+			TemporalUpscaler.SetUniform("FramesDirect[2]", 28);
+			TemporalUpscaler.SetUniform("FramesDirect[3]", 29);
+
 			TemporalUpscaler.SetUniform("Resolution", Window.GetResolution() / 4);
 
 			TemporalUpscaler.UnBind();
@@ -498,6 +580,8 @@ namespace iTrace {
 			SpatialFilter.SetUniform("InputSH", 2);
 			SpatialFilter.SetUniform("FrameCount", 3);
 			SpatialFilter.SetUniform("InputVolumetric", 4);
+			SpatialFilter.SetUniform("InputSpecular", 5);
+			SpatialFilter.SetUniform("MotionVectors", 6);
 
 
 			SpatialFilter.UnBind();
@@ -508,7 +592,8 @@ namespace iTrace {
 			SpatialUpscaler.SetUniform("Normal", 1);
 			SpatialUpscaler.SetUniform("Lighting", 2);
 			SpatialUpscaler.SetUniform("PackedGeometryData", 3);
-			SpatialUpscaler.SetUniform("Specular", 4);
+			SpatialUpscaler.SetUniform("Specular", 5);
+			SpatialUpscaler.SetUniform("Direct", 6);
 
 			SpatialUpscaler.UnBind();
 
@@ -521,6 +606,9 @@ namespace iTrace {
 			TemporalFilter.SetUniform("MotionVectors", 4);
 			TemporalFilter.SetUniform("FrameCount", 5);
 			TemporalFilter.SetUniform("NormalRoughness", 6);
+
+			TemporalFilter.SetUniform("UpscaledSpecular", 7);
+			TemporalFilter.SetUniform("PreviousSpecular", 8);
 
 			TemporalFilter.UnBind();
 
@@ -545,8 +633,24 @@ namespace iTrace {
 			Volumetrics.SetUniform("Sky", 5);
 			Volumetrics.SetUniform("Wind", 6);
 			Volumetrics.SetUniform("Normal", 7);
+			Volumetrics.SetUniform("DirectionalCascades[0]", 8);
+			Volumetrics.SetUniform("DirectionalCascades[1]", 9);
+			Volumetrics.SetUniform("DirectionalCascades[2]", 10);
+			Volumetrics.SetUniform("DirectionalCascades[3]", 11);
 
 			Volumetrics.UnBind(); 
+
+			DirectBlocker.Bind(); 
+
+			DirectBlocker.SetUniform("DirectionalCascades[0]", 19); 
+			DirectBlocker.SetUniform("DirectionalCascades[1]", 20);
+			DirectBlocker.SetUniform("DirectionalCascades[2]", 21);
+			DirectBlocker.SetUniform("DirectionalCascades[3]", 22);
+			DirectBlocker.SetUniform("WorldPosition", 4);
+			DirectBlocker.SetUniform("Depth", 5);
+
+			DirectBlocker.UnBind(); 
+
 
 		}
 
@@ -560,14 +664,17 @@ namespace iTrace {
 			SpatialUpscaler.SetUniform("znear", Camera.znear); 
 			SpatialUpscaler.SetUniform("zfar", Camera.zfar);
 			SpatialUpscaler.SetUniform("IncidentMatrix", glm::inverse(Camera.Project * Matrix4f(Matrix3f(Camera.View))));
-			SpatialUpscaler.SetUniform("UsePreviousUpscaling", sf::Keyboard::isKeyPressed(sf::Keyboard::O));
+			SpatialUpscaler.SetUniform("SpatialUpscaling", GetBoolean("spatialupscale"));
 
 			Deferred.Deferred.BindDepthImage(0); 
 			Deferred.Deferred.BindImage(3, 1);
 			TemporallyFiltered.BindImage(0, 2); 
 			PackedSpatialData.BindImage(3);
 			TemporallyFiltered.BindImage(1, 4);
-			
+			TemporallyFiltered.BindImage(2, 5);
+			TemporalyUpscaled.BindImage(2, 6);
+
+
 			DrawPostProcessQuad(); 
 
 			SpatialUpscaler.UnBind();
@@ -576,12 +683,5 @@ namespace iTrace {
 
 		}
 
-		
-
-	
-
-		
-
 	}
-
 }

@@ -3,7 +3,7 @@
 #include "Shader.h"
 #include "FrameBuffer.h"
 	
-const int BAKE_RESOLUTION = 128; 
+const int BAKE_RESOLUTION = 256; 
 const int BAKE_DIRECTIONS = 32; 
 
 

@@ -214,8 +214,8 @@
     <None Include="Shaders\DeferredUnwrapper\shader.vert" />
     <None Include="Shaders\Deferred\shader.frag" />
     <None Include="Shaders\Deferred\shader.vert" />
-    <None Include="Shaders\Direct\shader.frag" />
-    <None Include="Shaders\Direct\shader.vert" />
+    <None Include="Shaders\DirectBlocker\shader.frag" />
+    <None Include="Shaders\DirectBlocker\shader.vert" />
     <None Include="Shaders\DofHorizontal\shader.frag" />
     <None Include="Shaders\DofHorizontal\shader.vert" />
     <None Include="Shaders\DoFVertical\shader.frag" />
@@ -226,6 +226,8 @@
     <None Include="Shaders\LightCombiner\shader.vert" />
     <None Include="Shaders\ParallaxBakeShader\shader.frag" />
     <None Include="Shaders\ParallaxBakeShader\shader.vert" />
+    <None Include="Shaders\PlayerModelShader\shader.frag" />
+    <None Include="Shaders\PlayerModelShader\shader.vert" />
     <None Include="Shaders\PrepShader\shader.frag" />
     <None Include="Shaders\PrepShader\shader.vert" />
     <None Include="Shaders\RawPathTracing\shader.frag" />

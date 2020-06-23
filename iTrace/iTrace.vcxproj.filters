@@ -97,9 +97,6 @@
     <Filter Include="Shaders\ParallaxBakeShader">
       <UniqueIdentifier>{a3f834e6-46c6-4842-96df-9d0abf165737}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\Direct">
-      <UniqueIdentifier>{0f37cde2-59aa-4003-abbf-c970ce49b04a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Rendering">
       <UniqueIdentifier>{fb7115fe-bdcd-45a5-b255-2feb4afa50b3}</UniqueIdentifier>
     </Filter>
@@ -138,6 +135,12 @@
     </Filter>
     <Filter Include="Source Files\Rendering">
       <UniqueIdentifier>{20d13490-ea3f-495b-8e35-4a225f8ef355}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\DirectBlocker">
+      <UniqueIdentifier>{3ca5b7b8-6bb8-45fc-8f9f-a605cc32a96f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\PlayerModelShader">
+      <UniqueIdentifier>{3f6cf519-1fdb-48c1-8ece-890361881ca7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -427,12 +430,6 @@
     <None Include="Shaders\TemporalFrameCounter\shader.vert">
       <Filter>Shaders\TemporalFrameCounter</Filter>
     </None>
-    <None Include="Shaders\Direct\shader.frag">
-      <Filter>Shaders\Direct</Filter>
-    </None>
-    <None Include="Shaders\Direct\shader.vert">
-      <Filter>Shaders\Direct</Filter>
-    </None>
     <None Include="Shaders\DeferredUnwrapper\shader.vert">
       <Filter>Shaders\DeferredUnwrapper</Filter>
     </None>
@@ -462,6 +459,18 @@
     </None>
     <None Include="Shaders\ParallaxBakeShader\shader.frag">
       <Filter>Shaders\ParallaxBakeShader</Filter>
+    </None>
+    <None Include="Shaders\DirectBlocker\shader.vert">
+      <Filter>Shaders\DirectBlocker</Filter>
+    </None>
+    <None Include="Shaders\DirectBlocker\shader.frag">
+      <Filter>Shaders\DirectBlocker</Filter>
+    </None>
+    <None Include="Shaders\PlayerModelShader\shader.vert">
+      <Filter>Shaders\PlayerModelShader</Filter>
+    </None>
+    <None Include="Shaders\PlayerModelShader\shader.frag">
+      <Filter>Shaders\PlayerModelShader</Filter>
     </None>
   </ItemGroup>
 </Project>

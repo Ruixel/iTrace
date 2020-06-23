@@ -11,7 +11,7 @@ namespace iTrace {
 			Vector3f Position, Rotation, PreviousPosition, Acceleration, Velocity;
 			float Height, MaxJumpSpeed, GravityAcceleration, MaxGravitySpeed;
 			bool ShadowCamera;
-			float znear, zfar; 
+			float znear, zfar, fov; 
 			inline Camera(float fov, float znear, float zfar, Vector3f pos, Vector3f rot, Window& screen) :
 				Project(glm::perspective(glm::radians(fov), float(screen.GetResolution().x) / float(screen.GetResolution().y), znear, zfar)),
 				ProjectHighFOV(glm::perspective(glm::radians(fov+20.f), float(screen.GetResolution().x) / float(screen.GetResolution().y), znear, zfar)),
@@ -20,7 +20,8 @@ namespace iTrace {
 				View(iTrace::Core::ViewMatrix(pos, rot)),
 				ShadowCamera(false),
 				znear(znear),
-				zfar(zfar)
+				zfar(zfar),
+				fov(fov)
 			{
 				RawProject = Project;
 			}

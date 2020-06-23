@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/MasterRendering/source/repos/Scape/Scape/glm-master/glm
+# Install script for directory: C:/Users/te17hw8/source/repos/iTrace/iTrace/glm-master/glm
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Users/MasterRendering/Source/Repos/Scape/Scape/glm-master/glm/out/install/x64-Debug")
+  set(CMAKE_INSTALL_PREFIX "c:/users/te17hw8/source/repos/itrace/itrace/glm-master/glm/out/install/x64-Debug")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/Users/MasterRendering/source/repos/Scape/Scape/glm-master/glm/out/build/x64-Debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/te17hw8/source/repos/iTrace/iTrace/glm-master/glm/out/build/x64-Debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

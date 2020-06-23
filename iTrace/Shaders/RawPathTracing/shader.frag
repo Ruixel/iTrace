@@ -11,6 +11,9 @@ in vec2 TexCoord;
 layout(location = 0) out vec4 IndirectDiffuse;
 layout(location = 1) out vec4 Normal;
 layout(location = 2) out vec3 WorldPos;
+layout(location = 3) out vec4 IndirectSpecular;
+layout(location = 4) out float Direct;
+
 
 uniform sampler2D Normals;
 uniform sampler2D WorldPosition;
@@ -24,10 +27,11 @@ uniform sampler2D Depth;
 
 uniform sampler1D TextureData;
 uniform samplerCube Sky;
+uniform samplerCube SkyNoMie; 
 uniform sampler3D LightingData; 
 uniform sampler1D TextureExData; 
 uniform sampler1D BlockData; 
-
+uniform sampler2D BlockerData; 
 
 uniform sampler2DArrayShadow HemisphericalShadowMap; 
 uniform mat4 HemisphericalMatrices[48]; 
@@ -38,8 +42,162 @@ uniform bool UseWhiteNoise;
 uniform vec3 CameraPosition;
 uniform int FrameCount;
 
+uniform sampler2DShadow DirectionalCascades[4]; 
+uniform mat4 DirectionMatrices[4]; 
+uniform vec3 SunColor; 
+uniform vec3 LightDirection; 
 
 
+int FetchFromTexture(sampler2D Texture, int Index) {
+
+	int Width = 256;
+	int Height = textureSize(Texture, 0).y;
+
+	ivec2 Pixel = ivec2(Index % Width, Index / Width);
+
+	return clamp(int(texelFetch(Texture, ivec2(Pixel), 0).x * 255.0 + .1), 0, 255);
+
+}
+
+float seed;
+
+vec2 hash2White() {
+	return fract(sin(vec2(seed += 0.1, seed += 0.1)) * vec2(43758.5453123, 22578.1459123));
+}
+
+
+float samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_32spp(int pixel_i, int pixel_j, int sampleIndex, int sampleDimension)
+{
+	// wrap arguments
+	pixel_i = pixel_i & 127;
+	pixel_j = pixel_j & 127;
+	sampleIndex = sampleIndex & 255;
+	sampleDimension = sampleDimension & 255;
+
+	// xor index based on optimized ranking
+
+
+	int rankedSampleIndex = sampleIndex ^ FetchFromTexture(Ranking, sampleDimension + (pixel_i + pixel_j * 128) * 8);
+
+	// fetch value in sequence
+	int value = FetchFromTexture(Sobol, sampleDimension + rankedSampleIndex * 256);
+
+	// If the dimension is optimized, xor sequence value based on optimized scrambling
+	value = value ^ FetchFromTexture(Scrambling, (sampleDimension % 8) + (pixel_i + pixel_j * 128) * 8);
+
+	// convert to float and return
+	float v = (0.5f + value) / 256.0f;
+	return v;
+}
+
+float hash(ivec2 Pixel, int Index, int Dimension) {
+
+	return samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_32spp(Pixel.x, Pixel.y, Index, Dimension);
+
+}
+
+vec2 hash2(ivec2 Pixel, int Index, int Dimension) {
+
+	vec2 Returnhash;
+	Returnhash.x = hash(Pixel, Index, 1);
+	Returnhash.y = hash(Pixel, Index, 2);
+
+	return Returnhash;
+
+}
+
+//Idea of using vogel disk originally from https://www.gamedev.net/tutorials/programming/graphics/contact-hardening-soft-shadows-made-fast-r4906/ 
+//(and gradient noise) 
+
+vec2 VogelDisk(int SampleIdx, int SampleCount, float SampleCountRoot, float Phi) {
+	
+	float r = sqrt(SampleIdx + 0.5) / SampleCountRoot; 
+	float Theta = SampleIdx * 2.4 + Phi; 
+
+	return vec2(cos(Theta) * r, sin(Theta) * r); 
+
+}
+
+float GradientNoise(vec2 ScreenPos) {
+
+	return fract(52.9829189 * fract(dot(ScreenPos, vec2(0.06711056f, 0.00583715)))); 
+
+}
+
+float DirectHQ(vec3 Position, float Penumbra, vec2 ScreenPos) {
+		
+	//first, find the correct shadow cascade! 
+
+	vec3 NDC = vec3(-1.0); 
+
+	int Cascade = -1; 
+
+	for(int i = 0; i < 4; i++) {
+		
+		vec4 Clip = DirectionMatrices[i] * vec4(Position, 1.0); 
+	
+		NDC = Clip.xyz / Clip.w; 
+
+		if((abs(NDC.x) < 0.9 && abs(NDC.y) < 0.9) || (abs(NDC.x) < 1.0 && abs(NDC.y) < 1.0 && i == 3)) {
+			Cascade = i; 
+			break; 
+		}
+
+	}
+
+	if(Cascade == -1) 
+		return 0.0; 
+
+	float Shadow = 0.0; 
+
+	float Noise = hash(ivec2(ScreenPos),FrameCount / 4,0) * 2.4; 
+
+
+	for(int Sample = 0; Sample < 8; Sample++) {
+
+		vec2 VogelFetch = VogelDisk(Sample, 8, 2.82842712475, Noise); 
+
+		vec2 ShadowCoord = (NDC.xy) * 0.5 + 0.5 + VogelFetch * clamp(Penumbra * 1.45,0.0,0.05); 
+
+		ShadowCoord = clamp(ShadowCoord, vec2(0.0), vec2(1.0)); 
+
+		Shadow += texture(DirectionalCascades[Cascade], vec3(ShadowCoord.xy,(NDC.z*0.5+0.5) -0.000018)); 
+
+	}
+
+	return Shadow / 8.0; 	
+
+}
+
+//useful for indirect bounce purposes (as quality isn't going to be super relevant) 
+
+float DirectBasic(vec3 Position) {
+
+	vec3 NDC = vec3(-1.0); 
+
+	int Cascade = -1; 
+
+	for(int i = 0; i < 4; i++) {
+		
+		vec4 Clip = DirectionMatrices[i] * vec4(Position, 1.0); 
+	
+		NDC = Clip.xyz / Clip.w; 
+
+		if((abs(NDC.x) < 0.9 && abs(NDC.y) < 0.9) || (abs(NDC.x) < 1.0 && abs(NDC.y) < 1.0 && i == 3)) {
+			Cascade = i; 
+			break; 
+		}
+
+	}
+	if(Cascade == -1) 
+		return 0.0; 
+
+
+
+
+	return texture(DirectionalCascades[Cascade], vec3(NDC.xy * 0.5 + 0.5, (NDC.z * 0.5 + 0.5)-0.00009)); 
+
+}
 
 
 
@@ -269,6 +427,8 @@ float RayBoxIntersection(vec3 Origin, vec3 InverseDir, vec3 Min, vec3 Max) {
 
 }
 
+	
+
 
 bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, inout vec3 Normal, inout vec2 TexCoord, inout vec3 Position, int Steps) {
 
@@ -379,63 +539,8 @@ vec2 hash2() {
 }
 
 
-int FetchFromTexture(sampler2D Texture, int Index) {
-
-	int Width = 256;
-	int Height = textureSize(Texture, 0).y;
-
-	ivec2 Pixel = ivec2(Index % Width, Index / Width);
-
-	return clamp(int(texelFetch(Texture, ivec2(Pixel), 0).x * 255.0 + .1), 0, 255);
-
-}
-
-float seed;
-
-vec2 hash2White() {
-	return fract(sin(vec2(seed += 0.1, seed += 0.1)) * vec2(43758.5453123, 22578.1459123));
-}
 
 
-float samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_32spp(int pixel_i, int pixel_j, int sampleIndex, int sampleDimension)
-{
-	// wrap arguments
-	pixel_i = pixel_i & 127;
-	pixel_j = pixel_j & 127;
-	sampleIndex = sampleIndex & 255;
-	sampleDimension = sampleDimension & 255;
-
-	// xor index based on optimized ranking
-
-
-	int rankedSampleIndex = sampleIndex ^ FetchFromTexture(Ranking, sampleDimension + (pixel_i + pixel_j * 128) * 8);
-
-	// fetch value in sequence
-	int value = FetchFromTexture(Sobol, sampleDimension + rankedSampleIndex * 256);
-
-	// If the dimension is optimized, xor sequence value based on optimized scrambling
-	value = value ^ FetchFromTexture(Scrambling, (sampleDimension % 8) + (pixel_i + pixel_j * 128) * 8);
-
-	// convert to float and return
-	float v = (0.5f + value) / 256.0f;
-	return v;
-}
-
-float hash(ivec2 Pixel, int Index, int Dimension) {
-
-	return samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_32spp(Pixel.x, Pixel.y, Index, Dimension);
-
-}
-
-vec2 hash2(ivec2 Pixel, int Index, int Dimension) {
-
-	vec2 Returnhash;
-	Returnhash.x = hash(Pixel, Index, 1);
-	Returnhash.y = hash(Pixel, Index, 2);
-
-	return Returnhash;
-
-}
 vec3 cosWeightedRandomHemisphereDirection(const vec3 n, vec2 rv2) {
 
 	vec3  uu = normalize(cross(n, vec3(0.0, 1.0, 1.0)));
@@ -449,15 +554,6 @@ vec3 cosWeightedRandomHemisphereDirection(const vec3 n, vec2 rv2) {
 
 	return normalize(rr);
 }
-
-
-
-
-
-
-
-
-
 
 
 vec3 GetHemisphericalShadowMaphit(vec3 WorldPos, vec3 Normal, int i, int maxi) {
@@ -479,14 +575,59 @@ vec3 GetHemisphericalShadowMaphit(vec3 WorldPos, vec3 Normal, int i, int maxi) {
 
 
 
-	return texture(Sky, Direction).xyz * texture(HemisphericalShadowMap, vec4(ClipSpace.xy,Sample,ClipSpace.z-0.00009)) * Weight; 
+	return texture(SkyNoMie, Direction).xyz * texture(HemisphericalShadowMap, vec4(ClipSpace.xy,Sample,ClipSpace.z-0.00009)) * Weight; 
 
 }
 
 uniform bool DoRayTracing; 
 
 
-vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal) {
+
+bool RayBoxIntersect(vec3 Origin, vec3 Direction, vec3 InverseDirection, vec3 Min, vec3 Max, inout vec3 Normal, inout vec3 Position) {
+	
+	//first, check for intersection! 
+
+	float t = RayBoxIntersection(Origin, InverseDirection, Min, Max); 
+
+	if(t > 0.0) {
+	
+		
+		Position = Origin + Direct * t; 
+
+		//compute normal! 
+
+		
+		vec3 Center = (Min + Max) / 2.0; 
+		vec3 Size = (Max - Min); 
+
+		vec3 Vector = (Position - Center) / Size; 
+		vec3 AVector = abs(Vector); 
+
+		if(AVector.x > max(AVector.y, AVector.z)) {
+		
+			Normal = AVector.x > 0.0 ? vec3(1.0,0.0,0.0) : vec3(-1.0,0.0,0.0); 
+
+		}
+		else if(AVector.y > AVector.z) {
+			Normal = AVector.y > 0.0 ? vec3(0.0,1.0,0.0) : vec3(0.0,-1.0,0.0); 
+		}
+		else {
+			Normal = AVector.z > 0.0 ? vec3(0.0,0.0,1.0) : vec3(0.0,0.0,-1.0); 
+		}
+		
+		return true; 
+
+	}
+
+
+
+	return false; 
+
+}
+
+
+
+vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular) {
 
 
 	if(!DoRayTracing) {
@@ -508,16 +649,29 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal) {
 
 	// return vec4(LightingDataInc.xyz,1.0); 
 	//return vec4(GetHemisphericalShadowMaphit(Origin, Normal), 1.0); 
+	 
+	//bool Hit = RayBoxIntersect(Origin, Direction, 1.0/Direction, CameraPosition.xyz - vec3(0.3,1.49,0.3), CameraPosition.xyz + vec3(0.3,0.0,0.3), OutNormal, Position); 
+	bool Hit = false; 
+	bool PlayerHit = Hit; 
 
-	bool Hit = RawTraceOld(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 4);
+	if(!Hit)
+		Hit = RawTraceOld(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 4);
 
 	if(!Hit) {
 		Hit = RawTrace(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 256);
 	}
 
+
+
 	vec4 Diffuse = vec4(0.0); 
 
 	if (Hit) {
+		vec3 BlockColor = vec3(0.745098039,0.549019608,0.521568627); 
+		float Emissive = 0.0; 
+		if(!PlayerHit) {
+
+		
+
 		if (Face == 0 || Face == 1) {
 			TexCoord = TexCoord.yx;
 		}
@@ -532,17 +686,21 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal) {
 
 		int TextureIdx = GetTextureIdx(Block, SidesTranslated[Face]); 
 		ivec2 TextureExData = ivec2(texelFetch(TextureExData, TextureIdx,0).xy * 255); 
-		vec3 BlockColor = pow(texture(DiffuseTextures, vec3(TexCoord.xy, TextureIdx)).xyz, vec3(2.2)); 
+		BlockColor = pow(texture(DiffuseTextures, vec3(TexCoord.xy, TextureIdx)).xyz, vec3(2.2)); 
 
-		float Emissive = 0.0; 
+		
 
 		if(TextureExData.y != 0) {
 			
-			Emissive = texture(EmissiveTextures, vec3(TexCoord.xy, TextureExData.y-1)).x * GetEmissiveStrenght(Block); 
+			Emissive = textureLod(EmissiveTextures, vec3(TexCoord.xy, TextureExData.y-1),0.0).x * GetEmissiveStrenght(Block); 
+
+		}
 
 		}
 
 		Diffuse.xyz = BlockColor * Emissive;  
+
+
 
 		//Sky lighting: 
 
@@ -598,6 +756,8 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal) {
 
 		Diffuse.xyz += BlockColor * HemiSpherical; 
 
+		Diffuse.xyz += DirectBasic(Position) * max(dot(OutNormal, LightDirection), 0.0) * SunColor * BlockColor; 
+
 		//Diffuse.xyz = OutNormal; 
 
 		//For nearest: 
@@ -617,7 +777,12 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal) {
 	}
 	else {
 		//GI: 
-		Diffuse.xyz = textureLod(Sky, Direction,8.0).xyz; 
+		if(Specular) {
+			Diffuse.xyz = textureLod(Sky, Direction,0.0).xyz; 
+		}
+		else {
+			Diffuse.xyz = textureLod(SkyNoMie, Direction,8.0).xyz; 
+		}
 		//Diffuse.xyz = vec3(0.0); 
 		//AO: 
 		Diffuse.w = 1.0; 
@@ -694,6 +859,36 @@ void main() {
 	Normal.xyz = RawNormal.rgb;
 	Normal.w = LinearDepth(texelFetch(Depth, Pixel, 0).x); 
 
+	float Penum = 0.0; 
+	float PenumWeight = 0.0; 
+
+	for(int x = -1; x <= 1; x++) {
+		for(int y = -1; y <= 1; y++) {
+		
+			ivec2 Pixel = ivec2(gl_FragCoord.xy) / 2 + ivec2(x,y); 
+
+			vec2 BlockerInfo = texelFetch(BlockerData, Pixel, 0).xy; 
+
+			float Weight = 1.0 / (1.0 + 100.0 * abs(BlockerInfo.y - Normal.w) * abs(BlockerInfo.y - Normal.w)); 
+
+			Penum += BlockerInfo.x * Weight; 
+			PenumWeight += Weight; 
+			
+
+
+		}
+	}
+
+	Penum /= PenumWeight; 
+
+
+
+	Direct = DirectHQ(WorldPos,max(Penum,0.0002),vec2(Pixel) / 2); 
+	//Direct = pow(texelFetch(Depth, Pixel, 0).x,3000.0); 
+	//	Direct = texture(BlockerData, TexCoord).x; 
+
+
+
 	vec2 hash = hash2();
 
 	if (!UseWhiteNoise) {
@@ -702,16 +897,21 @@ void main() {
 
 	vec3 Incident = normalize(WorldPos - CameraPosition);
 	vec3 Direction = cosWeightedRandomHemisphereDirection(Normal.xyz, hash);
-	vec3 SpecularDirection = GetSpecularRayDirection(reflect(Incident, Normal.xyz), Normal.xyz, Incident, 0.25, Pixel);
-	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.0025, Direction,Normal.xyz); 
+	vec3 SpecularDirection = GetSpecularRayDirection(reflect(Incident, Normal.xyz), Normal.xyz, Incident, RawNormal.w, Pixel);
+	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.0025, Direction,Normal.xyz, false); 
+	vec4 Specular = GetRayShading(WorldPos + Normal.xyz * 0.0025, SpecularDirection, Normal.xyz, true); 
+
 	float L = length(Normal.xyz); 
 
 	if(L < 0.5 || L > 1.5) {
 		Diffuse.xyz = vec3(0.0);
+		Specular.xyz = vec3(0.0); 
 		Direction = vec3(0.0,1.0,0.0); 
+
 	}
 	
 	IndirectDiffuse = Diffuse; 
+	IndirectSpecular = Specular; 
 
 	Pixel = ivec2(gl_FragCoord.xy); 
 
@@ -720,5 +920,4 @@ void main() {
 		//IndirectDiffuse.xyz = vec3(50.0); 
 
 	}
-
 }

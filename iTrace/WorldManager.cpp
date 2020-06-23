@@ -21,98 +21,56 @@ namespace iTrace {
 
 		}
 
-	
 		void WorldManager::PrepareWorldManger()
 		{
-			Chunk::AddBlock(Chunk::BlockType()); 
-			Chunk::AddBlock(Chunk::BlockType("Stone", { 0,0,0,0,0,0 }, true, false, false)); //Stay -> For now, the texture is decent enough 
-			Chunk::AddBlock(Chunk::BlockType("Dirt", { 1,1,1,1,1,1 }, true, false, false));  //Stay -> Completely CC0, good texture
-			Chunk::AddBlock(Chunk::BlockType("Grass", { 3,3,3,3,2,1 }, true, false, false)); //Stay -> Completely CC0, good texture
-			Chunk::AddBlock(Chunk::BlockType("Planks", { 4,4,4,4,4,4 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Gravel", { 5,5,5,5,5,5 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Green wool", { 6,6,6,6,6,6 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Red wool", { 7,7,7,7,7,7 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Orange wool", { 8,8,8,8,8,8 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Glowstone", { 9,9,9,9,9,9 }, true, false, false, 72.0 * 0.5)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Log", { 10,10,10,10,11,11 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Crafting table", { 12,12,12,12,13,13 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Furnace", { 14,16,14,14,15,15 }, true, false, false, 15.0)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Sand", { 17,17,17,17,17,17 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Sandstone", { 18,18,18,18,18,18 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Mossy cobblestone", { 19,19,19,19,19,19 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Stone brick", { 20,20,20,20,20,20 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Mossy stone brick", { 21,21,21,21,21,21 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Smooth stone", { 22,22,22,22,22,22 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Pumpkin", { 23,25,23,23,24,24 }, true, false, false,15.0)); //Stay -> Completely CC0, good texture 
 
-			Chunk::AddBlock(Chunk::BlockType("Green glowstone", { 26,26,26,26,26,26 }, true, false, false, 72.0 * 0.5)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Blue glowstone", { 27,27,27,27,27,27 }, true, false, false, 72.0 * 0.5)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Red glowstone", { 28,28,28,28,28,28 }, true, false, false, 72.0 * 0.5)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("White glowstone", { 29,29,29,29,29,29 }, true, false, false, 72.0 * 0.5)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Discolamp", { 30,30,30,30,30,30 }, true, false, false, 15.0)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Checkers", { 31,31,31,31,31,31 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Bricks", { 32,32,32,32,32,32 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Stone floor", { 33,33,33,33,33,33 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("White stone", { 34,34,34,34,34,34 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Asphalt", { 35,35,35,35,35,35 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Monkey", { 36,36,36,36,36,36 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Crystal", { 37,37,37,37,37,37 }, true, false, false,20.0)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("red stone", { 38,38,38,38,38,38 }, true, false, false)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Yellow glowstone", { 39,39,39,39,39,39 }, true, false, false, 36.0)); //Stay -> Completely CC0, good texture 
-			Chunk::AddBlock(Chunk::BlockType("Lava", { 40,40,40,40,40,40 }, true, false, false, 36.0)); //Stay -> Completely CC0, good texture 
+
+			Chunk::AddBlock(Chunk::BlockType()); 
+			Chunk::AddBlock(Chunk::BlockType("Stone", { 0,0,0,0,0,0 }, true, false, false)); //CC0, meh
+			Chunk::AddBlock(Chunk::BlockType("Dirt", { 1,1,1,1,1,1 }, true, false, false));  //CC0, but terrible
+			Chunk::AddBlock(Chunk::BlockType("Grass", { 3,3,3,3,2,1 }, true, false, false)); //CC0, meh
+			Chunk::AddBlock(Chunk::BlockType("Glowstone", { 4 }, true, false, false, 30.0)); //CC0, okay
+			Chunk::AddBlock(Chunk::BlockType("Tiles", { 5 }, true, false, false)); //CC0, good.
+			Chunk::AddBlock(Chunk::BlockType("Planks", { 6 }, true, false, false));  //CC0, okay
+			Chunk::AddBlock(Chunk::BlockType("Leather", { 7 }, true, false, false)); //non-CC0, hard to replace
+			Chunk::AddBlock(Chunk::BlockType("Fabric", { 8 }, true, false, false));  //non-CC0, very hard to replace (will require own work)
+			Chunk::AddBlock(Chunk::BlockType("Obsidian", { 9 }, true, false, false)); //CC0, good texture
+			Chunk::AddBlock(Chunk::BlockType("Concrete", { 10 }, true, false, false)); //CC0, okay texture
+			Chunk::AddBlock(Chunk::BlockType("Green glowstone", { 11 }, true, false, false, 30.0)); //non-CC0, semi easy to replace
+			Chunk::AddBlock(Chunk::BlockType("Iron bars", { 12 }, true, false, false, 30.0)); //CC0, meh
+			Chunk::AddBlock(Chunk::BlockType("Lamp", { 13 }, true, false, false, 30.0)); //CC0 (and a bit self made) good texture
+			Chunk::AddBlock(Chunk::BlockType("Lantern", { 14 }, true, false, false, 180.0)); //CC0, good
+			Chunk::AddBlock(Chunk::BlockType("red tiles", { 15 }, true, false, false)); //CC0, and a bit self-made
+			Chunk::AddBlock(Chunk::BlockType("green tiles", { 16 }, true, false, false)); //CC0, and a bit self-made
+			Chunk::AddBlock(Chunk::BlockType("orange tiles", { 17 }, true, false, false)); //CC0, good texture
+			Chunk::AddBlock(Chunk::BlockType("iron block", { 18 }, true, false, false)); //CC0, okay texture
+			Chunk::AddBlock(Chunk::BlockType("solar panel", { 19 }, true, false, false)); //CC0, okay texture
+			Chunk::AddBlock(Chunk::BlockType("sand", { 20 }, true, false, false)); //CC0, okay texture
+			Chunk::AddBlock(Chunk::BlockType("marble", { 21 }, true, false, false)); //CC0 (and a bit self made), semi good
 
 	
-			Chunk::AddTexture("stone",0.5); 
+			Chunk::AddTexture("stone",0.75); 
 			Chunk::AddTexture("Dirt");
 			Chunk::AddTexture("Grass",0.2f);
 			Chunk::AddTexture("Grass_Side");
-			Chunk::AddTexture("Planks",0.1f);
-			Chunk::AddTexture("gravel",0.125f);
-			Chunk::AddTexture("green wool", 0.33f);
-			Chunk::AddTexture("red wool");
-			Chunk::AddTexture("orange wool");
-			Chunk::AddTexture("glowstone", 0.5f);
-
-			Chunk::AddTexture("log");
-			Chunk::AddTexture("log top");
-
-			Chunk::AddTexture("crafting table side");
-			Chunk::AddTexture("crafting table top");
-
-			Chunk::AddTexture("furnace side");
-			Chunk::AddTexture("furnace top");
-			Chunk::AddTexture("furnace front");
-
-			Chunk::AddTexture("sand",0.4f);
-			Chunk::AddTexture("sandstone",0.33f);
-			Chunk::AddTexture("mossy cobblestone",0.3f);
-			Chunk::AddTexture("stone brick",0.25);
-			Chunk::AddTexture("mossy stone brick");
-			Chunk::AddTexture("smooth stone");
-
-			Chunk::AddTexture("pumpkin sides");
-			Chunk::AddTexture("pumpkin top");
-			Chunk::AddTexture("pumpkin front");
-
-			Chunk::AddTexture("green glowstone", 0.5f);
-			Chunk::AddTexture("blue glowstone", 0.5f);
-			Chunk::AddTexture("red glowstone", 0.5f);
-			Chunk::AddTexture("white glowstone");
-
-			Chunk::AddTexture("discolamp");
-			Chunk::AddTexture("checkers",0.075f);
-			Chunk::AddTexture("bricks",0.2f);
-
-			Chunk::AddTexture("stone floor",0.2f);
-			Chunk::AddTexture("White stone",0.125f);
-
-			Chunk::AddTexture("asphalt", 0.75);
-			Chunk::AddTexture("monkey", 1.0);
-			Chunk::AddTexture("crystal", 0.6);
-			Chunk::AddTexture("red stone", 0.75);
-			Chunk::AddTexture("yellow glowstone");
-			Chunk::AddTexture("lava",0.75);
-
+			Chunk::AddTexture("glowstone", 0.4f);
+			Chunk::AddTexture("Tiles", 0.2f);
+			Chunk::AddTexture("Planks", 0.75f);
+			Chunk::AddTexture("Leather",0.025f);
+			Chunk::AddTexture("Fabric",0.3f);
+			Chunk::AddTexture("Obsidian", 0.5f);
+			Chunk::AddTexture("Concrete",0.6f);
+			Chunk::AddTexture("Green glowstone",0.25f);
+			Chunk::AddTexture("Iron bars", 0.2f);
+			Chunk::AddTexture("Lamp", 0.2f);
+			Chunk::AddTexture("Lantern", 0.05f);
+			Chunk::AddTexture("red", 0.4);
+			Chunk::AddTexture("green", 0.4);
+			Chunk::AddTexture("orange tiles", 0.4);
+			Chunk::AddTexture("iron block", 0.125);
+			Chunk::AddTexture("solar panel", 0.01);
+			Chunk::AddTexture("sand", 0.4);
+			Chunk::AddTexture("marble", 0.1);
 
 			Chunk::GetTextureArrayList(0); 
 

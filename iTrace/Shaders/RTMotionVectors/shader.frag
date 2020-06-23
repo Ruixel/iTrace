@@ -18,7 +18,7 @@ uniform vec2 Resolution;
 
 vec2 FindBestPixel(vec2 Coord, vec3 CurrentWorldPos, vec3 PreviousWorldPos, vec3 CurrentNormal, vec3 PreviousNormal) {
 	vec3 Vector = CurrentWorldPos - PreviousWorldPos; 
-	if(NewFiltering) {
+	if(true) {
 
 	
 	float DistanceSquared = -int(dot(Vector, Vector) * 100.0) + min(dot(CurrentNormal, PreviousNormal)*10.0,0.0); 

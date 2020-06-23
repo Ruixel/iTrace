@@ -1,6 +1,8 @@
 #include "CinematicCamera.h"
 #include <unordered_map>
 #include "CommandPusher.h"
+#include <iostream>
+
 
 namespace iTrace {
 
@@ -69,7 +71,8 @@ namespace iTrace {
 
 					ToAddKeyFrame.Position = std::any_cast<Vector3f>(GetGlobalCommandPusher().GivenConstantData["camera_pos"]); 
 					ToAddKeyFrame.Rotation = glm::mod(std::any_cast<Vector3f>(GetGlobalCommandPusher().GivenConstantData["camera_rot"]),360.f);
-					
+					ToAddKeyFrame.Fov = std::any_cast<float>(GetGlobalCommandPusher().GivenConstantData["camera_fov"]);
+
 					KeyFrames[Name] = ToAddKeyFrame; 
 
 					return { "Added keyframe: " + Name }; 
@@ -236,6 +239,9 @@ namespace iTrace {
 
 					Camera.Position = PlayingAnimation->KeyFrames[0].Position; 
 					Camera.Rotation = PlayingAnimation->KeyFrames[0].Rotation;
+					Camera.fov = PlayingAnimation->KeyFrames[0].Fov; 
+					Camera.Project = glm::perspective(glm::radians(Camera.fov), float(Window.GetResolution().x) / float(Window.GetResolution().y), Camera.znear, Camera.zfar);
+
 
 				}
 				else {
@@ -252,6 +258,8 @@ namespace iTrace {
 					Interpolation = 1.0 - (sin(Interpolation * 3.14159265 + 1.570796) * 0.5 + 0.5);
 
 					Camera.Position = glm::mix(CurrentKeyFrame.Position, NextKeyFrame.Position, Interpolation); 
+					Camera.fov = glm::mix(CurrentKeyFrame.Fov, NextKeyFrame.Fov, Interpolation);
+
 
 					auto MixRotation = [](float a, float b, float interp) {
 					
@@ -306,6 +314,8 @@ namespace iTrace {
 						MixRotation(CurrentKeyFrame.Rotation.y, NextKeyFrame.Rotation.y, Interpolation),
 						MixRotation(CurrentKeyFrame.Rotation.z, NextKeyFrame.Rotation.z, Interpolation)
 					);
+					
+					Camera.Project = glm::perspective(glm::radians(Camera.fov), float(Window.GetResolution().x) / float(Window.GetResolution().y), Camera.znear, Camera.zfar);
 
 
 				}

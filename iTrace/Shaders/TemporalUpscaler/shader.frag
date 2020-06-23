@@ -4,11 +4,14 @@
 in vec2 TexCoord; 
 layout(location = 0) out vec4 IndirectDiffuse;
 layout(location = 1) out vec4 Volumetrics;
+layout(location = 2) out vec4 IndirectSpecular;
 
 uniform sampler2D FramesNormal[4]; 
 uniform sampler2D FramesWorldPos[4]; 
 uniform sampler2D FramesIndirectDiffuse[4]; 
 uniform sampler2D FramesVolumetric[4]; 
+uniform sampler2D FramesIndirectSpecular[4]; 
+uniform sampler2D FramesDirect[4]; 
 
 uniform sampler2D MotionVectors[4]; 
 uniform sampler2D WorldPos; 
@@ -23,7 +26,7 @@ uniform ivec2 Resolution;
 
 bool IsBadMotionVectors(vec2 MotionVectors) {
 //return true;
-	return MotionVectors.x < -.8 && MotionVectors.y < -.8; 
+	return MotionVectors.x < -.3 && MotionVectors.y < -.3; 
 }
 
 
@@ -46,11 +49,11 @@ bool IsInSky(vec3 Normal) {
 }
 
 bool ConfirmGood(vec4 GTNormal, vec4 CurrentNormal) {
-	
+
 	if(!NewFiltering)
 		return false; 
 
-	return dot(GTNormal.xyz, CurrentNormal.xyz) < 0.9 || abs(GTNormal.w - CurrentNormal.w) / min(GTNormal.w, CurrentNormal.w) > 0.5; 
+	return dot(normalize(GTNormal.xyz), normalize(CurrentNormal.xyz)) < 0.9 || abs(GTNormal.w - CurrentNormal.w) / min(GTNormal.w, CurrentNormal.w) > 0.5; 
 }
 
 
@@ -64,6 +67,8 @@ void main() {
 
 	 
 	vec4 RawNormalFetch = texelFetch(Normal, BasePixel, 0); 
+
+
 
 	vec3 Normal = RawNormalFetch.xyz; 
 	vec3 WorldPos = texelFetch(WorldPos, HighResPixel, 0).xyz; 
@@ -159,7 +164,8 @@ void main() {
 
 			IndirectDiffuse = texelFetch(FramesIndirectDiffuse[2], Pixel, 0); 
 			Volumetrics = texelFetch(FramesVolumetric[2], Pixel, 0); 
-
+			IndirectSpecular = texelFetch(FramesIndirectSpecular[2], Pixel, 0); 
+			IndirectSpecular.w = texelFetch(FramesDirect[2], Pixel, 0).x;
 
 
 		}
@@ -227,8 +233,8 @@ void main() {
 
 			IndirectDiffuse = texelFetch(FramesIndirectDiffuse[3], Pixel, 0); 
 			Volumetrics = texelFetch(FramesVolumetric[3], Pixel, 0); 
-
-
+			IndirectSpecular = texelFetch(FramesIndirectSpecular[3], Pixel, 0); 
+			IndirectSpecular.w = texelFetch(FramesDirect[3], Pixel, 0).x;
 		}
 	}
 	else if(State == 2) {
@@ -294,6 +300,8 @@ void main() {
 
 			IndirectDiffuse = texelFetch(FramesIndirectDiffuse[0], Pixel, 0); 
 			Volumetrics = texelFetch(FramesVolumetric[0], Pixel, 0); 
+			IndirectSpecular = texelFetch(FramesIndirectSpecular[0], Pixel, 0); 
+			IndirectSpecular.w = texelFetch(FramesDirect[0], Pixel, 0).x;
 
 
 		}
@@ -358,10 +366,14 @@ void main() {
 
 			IndirectDiffuse = texelFetch(FramesIndirectDiffuse[1], Pixel, 0); 
 			Volumetrics = texelFetch(FramesVolumetric[1], Pixel, 0); 
+			IndirectSpecular = texelFetch(FramesIndirectSpecular[1], Pixel, 0); 
+			IndirectSpecular.w = texelFetch(FramesDirect[1], Pixel, 0).x;
 
 
 		}
 	}
+
+	
 
 	if(DoSpatialUpscaling || Upscale) {
 
@@ -398,7 +410,10 @@ void main() {
 		}
 		IndirectDiffuse = texelFetch(FramesIndirectDiffuse[CurrentFrame], BestPixel, 0); 
 		Volumetrics = texelFetch(FramesVolumetric[CurrentFrame], BestPixel , 0); 
+		IndirectSpecular = texelFetch(FramesIndirectSpecular[CurrentFrame], BestPixel, 0); 
+		IndirectSpecular.w = texelFetch(FramesDirect[CurrentFrame], BestPixel, 0).x;
 
 	}
+
 
 }

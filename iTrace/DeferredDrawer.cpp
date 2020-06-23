@@ -55,10 +55,10 @@ namespace iTrace {
 			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(0)); 
 
 			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(1));
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(3));
 
 			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(2));
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(4));
 
 			glActiveTexture(GL_TEXTURE3);
 			glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockDataTexture());
@@ -74,6 +74,15 @@ namespace iTrace {
 
 			glActiveTexture(GL_TEXTURE11);
 			glBindTexture(GL_TEXTURE_2D, ParallaxMap.ID);
+
+			glActiveTexture(GL_TEXTURE12);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(1));
+
+			glActiveTexture(GL_TEXTURE13);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(2));
+
+			glActiveTexture(GL_TEXTURE14);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(5));
 
 			RawDeferred.BindImage(9); 
 			RawDeferred.BindDepthImage(10); 
@@ -113,6 +122,9 @@ namespace iTrace {
 			DeferredUnwrapper.SetUniform("InTexCoord", 9);
 			DeferredUnwrapper.SetUniform("InDepth", 10);
 			DeferredUnwrapper.SetUniform("ParallaxMap", 11);
+			DeferredUnwrapper.SetUniform("NormalTextures", 12);
+			DeferredUnwrapper.SetUniform("RoughnessTextures", 13);
+			DeferredUnwrapper.SetUniform("MetalnessTextures", 14);
 
 			DeferredUnwrapper.UnBind();
 		}

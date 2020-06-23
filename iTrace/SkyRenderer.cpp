@@ -22,19 +22,14 @@ namespace iTrace {
 			SkyIncidentShader = Shader("Shaders/SkyIncidentShader");
 			SkyCubeShader = Shader("Shaders/SkyCubeShader");
 			ShadowDeferred = Shader("Shaders/ShadowDeferred"); 
-			HemisphericalShadowMapCopy = Shader("Shaders/HemisphericalShadowMapCopy"); 
+			ShadowDeferredPlayer = Shader("Shaders/PlayerModelShader");
 
-			HemisphericalShadowMapCopy.Bind(); 
-
-			HemisphericalShadowMapCopy.SetUniform("InputImage", 0);
-			HemisphericalShadowMapCopy.SetUniform("OutPutImage", 1);
-
-			HemisphericalShadowMapCopy.UnBind(); 
-
-
-			for (int i = 0; i < 5; i++) {
-				ShadowMaps[i] = FrameBufferObject(Vector2i(SHADOWMAP_RES),GL_R32F);
+			//HemisphericalShadowMapCopy = Shader("Shaders/HemisphericalShadowMapCopy"); 
+			
+			for (int i = 0; i < 4; i++) {
+				ShadowMaps[i] = FrameBufferObject(Vector2i(SHADOWMAP_RES) * 2,GL_R32F);
 				ProjectionMatrices[i] = Core::ShadowOrthoMatrix(Ranges[i], 100.f, 2500.f);
+				ProjectionMatricesRaw[i] = ProjectionMatrices[i]; 
 			}
 
 			TemporaryHemiSphericalShadowMap = FrameBufferObject(Vector2i(SHADOWMAP_RES), GL_R8); 
@@ -101,8 +96,8 @@ namespace iTrace {
 
 			glEnable(GL_DEPTH_TEST); 
 
-			//UpdateShadowMap(Window, Camera, World);
 			UpdateHemisphericalShadowMap(Window, Camera, World); 
+			UpdateShadowMap(Window, Camera, World);
 
 			glDisable(GL_DEPTH_TEST); 
 
@@ -158,7 +153,7 @@ namespace iTrace {
 		void SkyRendering::SetTimeOfDay(float TimeOfDay)
 		{
 
-/*			float TimeNormalized = glm::fract(TimeOfDay / 86400.); 
+/*		float TimeNormalized = glm::fract(TimeOfDay / 86400.); 
 
 			//TimeNormalized = int(TimeNormalized * 32) / 32.f; 
 
@@ -208,24 +203,33 @@ namespace iTrace {
 
 			iTrace::Camera ShadowCamera; 
 
-			int ToUpdate = UpdateQueue[Window.GetFrameCount() % 26];
+			int ToUpdate = Window.GetFrameCount() % 4;
 
 			ViewMatrices[ToUpdate] = Core::ViewMatrix(Camera.Position + Orientation * 500.0f, Vector3f(Direction.x, Direction.y, 0.));
+			ProjectionMatrices[ToUpdate] = Core::UpscalingMatrix(1.0f / Vector2f(SHADOWMAP_RES * 2), Window.GetFrameCount() / 4) * ProjectionMatricesRaw[ToUpdate];
 
 			ShadowCamera.Project = ProjectionMatrices[ToUpdate]; 
 			ShadowCamera.View = ViewMatrices[ToUpdate]; 
 			
 
+			ShadowMaps[ToUpdate].Bind();
 
 			ShadowDeferred.Bind(); 
 
-			ShadowMaps[ToUpdate].Bind(); 
-
 			World.RenderWorld(ShadowCamera, ShadowDeferred);
 
-			ShadowMaps[ToUpdate].UnBind(); 
+			ShadowDeferred.UnBind();
 
-			ShadowDeferred.UnBind(); 
+			ShadowDeferredPlayer.Bind(); 
+
+			ShadowDeferredPlayer.SetUniform("CameraPosition", Camera.Position); 
+			ShadowDeferredPlayer.SetUniform("IdentityMatrix", ShadowCamera.Project * ShadowCamera.View); 
+
+			//DrawPostProcessCube(); 
+
+			ShadowDeferredPlayer.UnBind();
+
+			ShadowMaps[ToUpdate].UnBind();
 
 		}
 		void SkyRendering::UpdateHemisphericalShadowMap(Window& Window, Camera& Camera, WorldManager& World)
@@ -271,43 +275,6 @@ namespace iTrace {
 
 			glClearDepth(1.0);
 
-			/*
-			ShadowDeferred.Bind();
-
-			TemporaryHemiSphericalShadowMap.Bind();
-
-			World.RenderWorld(ShadowCamera, ShadowDeferred);
-
-			TemporaryHemiSphericalShadowMap.UnBind();
-
-			ShadowDeferred.UnBind();
-
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-			glFinish();
-
-			glViewport(0, 0, SHADOWMAP_RES, SHADOWMAP_RES);
-
-			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-			glDisable(GL_CULL_FACE);
-			glDisable(GL_DEPTH_TEST);
-			glDisable(GL_BLEND);
-
-			HemisphericalShadowMapCopy.Bind();
-
-			HemisphericalShadowMapCopy.SetUniform("ArrayIndex", ToUpdate);
-
-			TemporaryHemiSphericalShadowMap.BindDepthImage(0);
-
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D_ARRAY, HemiSphericalShadowMap);
-			glBindImageTexture(1, HemiSphericalShadowMap, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
-			DrawPostProcessQuad();
-
-			HemisphericalShadowMapCopy.UnBind();
-
-			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);*/
 		}
 		void SkyRendering::CreateDirectionMatrices()
 		{

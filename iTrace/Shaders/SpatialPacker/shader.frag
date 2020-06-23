@@ -20,5 +20,7 @@ void main() {
 
     float Roughness = RawNormal.w; 
     
-    Packed = vec4(RawNormal.xyz, LinearDepth(texture(InputDepth, TexCoord).x)); 
+	RawNormal.xyz = RawNormal.xyz * ((1.0-Roughness)*0.5+0.5); 
+
+    Packed = vec4(RawNormal.xyz, LinearDepth(texelFetch(InputDepth, ivec2(gl_FragCoord.xy)*2,0).x)); 
 }

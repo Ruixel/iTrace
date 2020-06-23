@@ -4,6 +4,7 @@ in vec2 TexCoord;
 
 layout(location = 0) out vec4 IndirectDiffuse;
 layout(location = 1) out vec4 Volumetrics;
+layout(location = 2) out vec4 IndirectSpecular;
 
 uniform sampler2D UpscaledDiffuse; 
 uniform sampler2D PreviousDiffuse; 
@@ -12,6 +13,10 @@ uniform sampler2D FrameCount;
 
 uniform sampler2D UpscaledVolumetrics; 
 uniform sampler2D PreviousVolumetrics; 
+
+uniform sampler2D UpscaledSpecular; 
+uniform sampler2D PreviousSpecular; 
+
 uniform bool DoTemporal; 
 uniform bool NewFiltering; 
 
@@ -67,8 +72,11 @@ void main() {
 
 	vec2 MotionVectors = texture(MotionVectors, TexCoord).xy; 
 	
-	float FrameCount = max(texture(FrameCount, TexCoord).x - 1.0,0.0); 
+	float FrameCount = max(texture(FrameCount, TexCoord + MotionVectors).x - 1.0,0.0); 
 	
+	if(MotionVectors.x < -.5 || MotionVectors.y < -.5) {
+		FrameCount = 0; 
+	}
 
 
 	float NewMaxTemporal = FrameCount < 4.0 ? 0.75 : (NewFiltering ? 0.99 : 0.95); 
@@ -76,7 +84,7 @@ void main() {
 
 
 	float MixFactor = min(FrameCount / (FrameCount+1.0),NewMaxTemporal);
-	float MixFactorVolume = min(FrameCount / (FrameCount+1.0),min(MaxTemporalShadow, 0.95));
+	float MixFactorVolume = min(FrameCount / (FrameCount+1.0),min(NewMaxTemporal, 0.0));
 
 	if(!DoTemporal) {
 		MixFactor = 0.0; 
@@ -85,10 +93,14 @@ void main() {
 
 	vec4 CurrentLightingSample = texture(UpscaledDiffuse, TexCoord); 
 	vec4 CurrentVolumetricSample = texture(UpscaledVolumetrics, TexCoord); 
+	vec4 CurrentSpecularSample = texture(UpscaledSpecular, TexCoord); 
 
 
 	IndirectDiffuse = mix(CurrentLightingSample, GetClamped(UpscaledDiffuse,PreviousDiffuse, TexCoord + MotionVectors,0.05), MixFactor); 
-	Volumetrics = mix(CurrentVolumetricSample, GetClamped(UpscaledVolumetrics,PreviousVolumetrics, TexCoord + MotionVectors,0.05), MixFactorVolume); 
+	Volumetrics = mix(CurrentVolumetricSample, GetClamped(UpscaledVolumetrics,PreviousVolumetrics, TexCoord + MotionVectors,0.05), MixFactorVolume);
+	IndirectSpecular = mix(CurrentSpecularSample, GetClamped(UpscaledSpecular, PreviousSpecular, TexCoord + MotionVectors, 0.05), min(MixFactor, 0.9375)); 
+	//IndirectSpecular.w = CurrentSpecularSample.w; 
+
 //	Volumetrics = CurrentVolumetricSample; 
 	//IndirectDiffuse.xyz = int(gl_FragCoord.x) % 2 == 0 ? vec3(1.0) : vec3(0.0); 
 
@@ -97,8 +109,5 @@ void main() {
 	//IndirectDiffuse.z = 0.0; 
 
 	IndirectDiffuse.xyz = max(IndirectDiffuse.xyz, vec3(0.0)); 
-
-	
-
-
+	IndirectSpecular.xyz = max(IndirectSpecular.xyz, vec3(0.0)); 
 }

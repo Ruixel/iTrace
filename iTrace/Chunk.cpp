@@ -406,7 +406,6 @@ namespace iTrace {
 								//create an empty with fill color. then save 
 
 
-
 								auto Colors = std::vector<sf::Color>(TEXTURE_RES * TEXTURE_RES, sf::Color(FillingColor.x, FillingColor.y, FillingColor.z, FillingColor.w));
 
 								sf::Image Image;
@@ -463,7 +462,14 @@ namespace iTrace {
 
 					for (int SubImageIdx = 0; SubImageIdx < TextureDirectories.size(); SubImageIdx++) {
 
-						auto& Directory = TextureDirectories[SubImageIdx];
+
+
+
+						auto Directory = TextureDirectories[SubImageIdx];
+
+						std::cout << Directory.BaseDirectory << '\n'; 
+						
+
 						std::string FullPath = "Materials/" + Directory.BaseDirectory + "/";
 						std::string FilePath = FullPath + TextureNames[idx];
 
@@ -572,12 +578,6 @@ namespace iTrace {
 
 
 					}
-
-
-
-
-
-
 
 					int InternalFormat =
 						format == GL_RGBA ? GL_RGBA8 :
@@ -689,7 +689,7 @@ namespace iTrace {
 
 								//std::cout << "Pathname: " << PathName << '\n';
 
-								for (auto& Name : Keywords[1]) {
+								for (auto& Name : Keywords[3]) {
 
 
 									if (ToLower(FileName).find(ToLower(Name)) != std::string::npos) {
@@ -710,20 +710,29 @@ namespace iTrace {
 								NormalizeImage(FoundPath);
 								ResizeAndSaveImage(FoundPath, FilePath, BAKE_RESOLUTION);
 
-								if (!NeededParallax) {
-
-									Parallax.PrepareParallaxBaker();
-
-									NeededParallax = true;
-
-								}
-
-								Parallax.BakeParallaxMap(FilePath, FinalPath, Directory.ParallaxStrenght);
-
+								
 
 							}
+
+
+							
+
 						}
 
+						if (!FileExists(FinalPath) && FileExists(FilePath)) {
+
+							if (!NeededParallax) {
+
+								Parallax.PrepareParallaxBaker();
+
+								NeededParallax = true;
+
+							}
+
+							Parallax.BakeParallaxMap(FilePath, FinalPath, Directory.ParallaxStrenght);
+
+
+						}
 
 
 
@@ -737,8 +746,11 @@ namespace iTrace {
 				glGenTextures(static_cast<int>(TextureType::SIZE), TextureArrays.data());
 
 				GenTextureArray(0, GL_RGB, 3, Vector4i(255));
-				GenTextureExtensionsArray(1, GL_RED, 1, Vector2i((BAKE_RESOLUTION+2)*BAKE_DIRECTIONS, BAKE_RESOLUTION));
-				GenTextureExtensionsArray(2, GL_RED, 1, Vector2i(TEXTURE_RES));
+				GenTextureArray(1, GL_RGB, 3, Vector4i(128, 128, 255, 255));
+				GenTextureArray(2, GL_RGB, 3, Vector4i(128,128,128,255));
+				GenTextureExtensionsArray(3, GL_RED, 1, Vector2i((BAKE_RESOLUTION+2)*BAKE_DIRECTIONS, BAKE_RESOLUTION));
+				GenTextureExtensionsArray(4, GL_RED, 1, Vector2i(TEXTURE_RES));
+				GenTextureExtensionsArray(5, GL_RED, 1, Vector2i(TEXTURE_RES));
 
 				auto ExtensionPixelData = std::vector<unsigned char>(TextureDirectories.size() * static_cast<int>(TextureExtension::SIZE));
 
@@ -759,9 +771,9 @@ namespace iTrace {
 
 				glBindTexture(GL_TEXTURE_1D, TextureExtensionData);
 				glTexImage1D(GL_TEXTURE_1D, 0,
-					GL_RG8
+					GL_RGB8
 					, ExtensionPixelData.size(), 0,
-					GL_RG, GL_UNSIGNED_BYTE, ExtensionPixelData.data());
+					GL_RGB, GL_UNSIGNED_BYTE, ExtensionPixelData.data());
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 				glBindTexture(GL_TEXTURE_1D, 0);
@@ -787,8 +799,6 @@ namespace iTrace {
 				//Identify and generate parallax maps! 
 
 				
-
-
 			}
 
 			unsigned int GetTextureArrayList(unsigned char Idx)
@@ -1561,3 +1571,4 @@ namespace iTrace {
 	}
 
 }
+	

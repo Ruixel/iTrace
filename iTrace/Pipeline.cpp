@@ -12,7 +12,6 @@
 #endif
 namespace iTrace {
 
-
 	std::vector<std::string> Echo(std::vector<std::string> Input) {
 
 		if (Input[0] == ">help") {
@@ -406,6 +405,8 @@ namespace iTrace {
 		RequestBoolean("noclip", true); 
 		RequestBoolean("slowframes", false);
 		RequestBoolean("newfiltering", true);
+		RequestBoolean("bettershadows", true);
+		RequestBoolean("spatialupscale", true);
 
 		//GetGlobalCommandPusher().World = &World; 
 		
@@ -434,6 +435,7 @@ namespace iTrace {
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
+		Core::PrepareHaltonSequence(); 
 
 
 		
@@ -576,6 +578,14 @@ namespace iTrace {
 				Frames = 0;
 			}
 
+			//FOV management
+
+			
+
+
+
+
+
 
 
 			World.GenerateWorld(Camera);
@@ -584,19 +594,34 @@ namespace iTrace {
 
 			if (!Commands.Active && Active) {
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-					Sky.Direction.x += .09 * Window.GetFrameTime() * ShadowMultiplier;
+					Sky.Direction.x += .015 * Window.GetFrameTime() * ShadowMultiplier;
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-					Sky.Direction.x -= .09 * Window.GetFrameTime() * ShadowMultiplier;
+					Sky.Direction.x -= .015 * Window.GetFrameTime() * ShadowMultiplier;
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-					Sky.Direction.y += .09 * Window.GetFrameTime() * ShadowMultiplier;
+					Sky.Direction.y += .015 * Window.GetFrameTime() * ShadowMultiplier;
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-					Sky.Direction.y -= .09 * Window.GetFrameTime() * ShadowMultiplier;
+					Sky.Direction.y -= .015 * Window.GetFrameTime() * ShadowMultiplier;
 
 
 				Sky.UpdateDirection();
+
+				if (sf::Keyboard::isKeyPressed(sf::Keyboard::O)) {
+
+					Camera.fov += 45.0 * Window.GetFrameTime();
+					Camera.fov = glm::clamp(Camera.fov, 10.0f, 90.0f);
+					Camera.Project = glm::perspective(glm::radians(Camera.fov), float(Window.GetResolution().x) / float(Window.GetResolution().y), Camera.znear, Camera.zfar);
+
+				}
+				else if (sf::Keyboard::isKeyPressed(sf::Keyboard::L)) {
+
+					Camera.fov -= 45.0 * Window.GetFrameTime();
+					Camera.fov = glm::clamp(Camera.fov, 10.0f, 90.0f);
+					Camera.Project = glm::perspective(glm::radians(Camera.fov), float(Window.GetResolution().x) / float(Window.GetResolution().y), Camera.znear, Camera.zfar);
+
+
+				}
+
 			}
-
-
 
 			Frames++;
 			Window.SetFrameTime(GameClock.getElapsedTime().asSeconds());
@@ -611,6 +636,7 @@ namespace iTrace {
 
 			GetGlobalCommandPusher().GivenConstantData["camera_pos"] = Camera.Position;
 			GetGlobalCommandPusher().GivenConstantData["camera_rot"] = Camera.Rotation;
+			GetGlobalCommandPusher().GivenConstantData["camera_fov"] = Camera.fov;
 
 
 			if (!PollAnimation(Camera, Window)) {
@@ -625,8 +651,7 @@ namespace iTrace {
 
 			Camera.PrevView = Camera.View;
 			Camera.View = Core::ViewMatrix(Camera.Position, Camera.Rotation);
-			Camera.PrevProject = Camera.Project;
-			Camera.Project = Camera.RawProject;
+			//Camera.Project = Camera.RawProject;
 
 			Sky.RenderSky(Window, Camera, World);
 
@@ -665,6 +690,7 @@ namespace iTrace {
 
 			Window.GetRawWindow()->display();
 
+			Camera.PrevProject = Camera.Project;
 
 		}
 

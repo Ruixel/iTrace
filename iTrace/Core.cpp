@@ -1,6 +1,6 @@
 #include "Core.h"
 #include <iostream>
-
+#include "BooleanCommands.h"
 
 namespace iTrace {
 	namespace Core {
@@ -86,7 +86,11 @@ namespace iTrace {
 		Matrix4f UpscalingMatrix(Vector2f TexelSize, int Frame)
 		{
 
-			Vector2f Jitter = Upscaler[Frame % 4]; 
+			Vector2f Jitter = (Upscaler[Frame % 4] * 2.0f) * 2.0f - 1.0f; 
+
+			if (!GetBoolean("bettershadows"))
+				Jitter = Vector2f(0.); 
+
 
 			return glm::translate(Matrix4f(), glm::vec3(Jitter.x * TexelSize.x, Jitter.y * TexelSize.y, 0.0f));
 		}
@@ -96,7 +100,7 @@ namespace iTrace {
 
 			Vector2f Jitter = HaltonSequence[Sample % 32];
 			Vector2f TexelSize = 1.0f / Vector2f(Resolution);
-			return glm::translate(Matrix4f(), glm::vec3(2.0 * Jitter.x * TexelSize.x, 2.0 * Jitter.y * TexelSize.y, 0.0f));
+			return glm::translate(Matrix4f(), glm::vec3((2.0 * Jitter.x - 1.0) * TexelSize.x, (2.0 * Jitter.y - 1.0) * TexelSize.y, 0.0f));
 		}
 
 		Vector3f SphericalCoordinate(float Pitch, float Yaw, bool Degrees)

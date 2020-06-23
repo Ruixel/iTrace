@@ -10,9 +10,8 @@ namespace iTrace {
 
 	namespace Rendering {
 
-		const float Ranges[5] = { 7.5, 15.0, 45.0, 90.0, 300.0 };
-		const unsigned char UpdateQueue[] = { 0,1,0,2,0,1,0,2,0,1,0,3,0,1,0,2,0,1,0,2,0,1,0,3,0,4 };
-		const int SHADOWMAP_RES = 2048; 
+		const float Ranges[4] = { 15.0, 45.0, 90.0, 300.0 };
+		const int SHADOWMAP_RES = 1024; 
 
 		const int YSplits = 3; 
 		const int XSplits[] = { 24, 16, 8 }; 
@@ -25,11 +24,11 @@ namespace iTrace {
 
 			MultiPassFrameBufferObject SkyIncident; 
 			CubeMultiPassFrameBufferObject SkyCube; 
-			FrameBufferObject ShadowMaps[5];
-			Matrix4f ViewMatrices[5], ProjectionMatrices[5]; 
+			FrameBufferObject ShadowMaps[4];
+			Matrix4f ViewMatrices[4], ProjectionMatrices[4], ProjectionMatricesRaw[4]; 
 			FrameBufferObject TemporaryHemiSphericalShadowMap;
 
-			Shader SkyIncidentShader, SkyCubeShader, ShadowDeferred, HemisphericalShadowMapCopy; 
+			Shader SkyIncidentShader, SkyCubeShader, ShadowDeferred, ShadowDeferredPlayer, HemisphericalShadowMapCopy; 
 
 			std::vector<Vector3f> HemiDirections;
 			std::vector<Matrix4f> HemiViewMatrices, RawHemiViewMatrices;

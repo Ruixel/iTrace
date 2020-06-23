@@ -43,12 +43,16 @@ const vec3 BlockBiTangents[6] = vec3[](
 	vec3(0.0,-1.0,0.0),
 	vec3(0.0,-1.0,0.0),
 	vec3(0.0,-1.0,0.0),
-	vec3(0.0,0.0,-1.0),
+	vec3(0.0,0.0,1.0),
 	vec3(0.0,0.0,-1.0)
 ); 
 uniform sampler2DArray DiffuseTextures; 
 uniform sampler2DArray EmissiveTextures; 
 uniform sampler2DArray DisplacementTextures; 
+uniform sampler2DArray NormalTextures; 
+uniform sampler2DArray RoughnessTextures; 
+uniform sampler2DArray MetalnessTextures; 
+
 
 uniform sampler1D TextureData; 
 uniform sampler1D TextureExData; 
@@ -171,7 +175,7 @@ void main() {
 
 	int TextureIdx = GetTextureIdx(int(BlockType), int(BlockSide));
 	
-	ivec2 TextureExData = ivec2(texelFetch(TextureExData, TextureIdx,0).xy * 255); 
+	ivec3 TextureExData = ivec3(texelFetch(TextureExData, TextureIdx,0).xyz * 255); 
 
 	vec2 TC = RawTCData.xy; 
 
@@ -268,6 +272,7 @@ void main() {
 	else {
 		Albedo.xyz = pow(texture(DiffuseTextures, vec3(TC.xy, TextureIdx)).xyz,vec3(2.2));
 	}
+	Albedo.w = 0.0; 
 
 	HighFreqNormal.xyz = Normal.xyz; 
 
@@ -275,7 +280,15 @@ void main() {
 	if(TextureExData.y != 0) {
 		Normal.w = textureLod(EmissiveTextures, vec3(TC.xy, TextureExData.y-1),0.0).x * texelFetch(BlockData, int(BlockType),0).x; 
 	}
-	
+
+	if(TextureExData.z != 0) {
+		Albedo.w = textureLod(MetalnessTextures, vec3(TC.xy, TextureExData.z-1),0.0).x; 
+	}
+
+	HighFreqNormal.w = 0.5; 
+	HighFreqNormal.xyz = normalize(TBN * (normalize(texture(NormalTextures, vec3(TC.xy, TextureIdx)).xyz * 2.0 - 1.0)));
+	HighFreqNormal.w = texture(RoughnessTextures, vec3(TC, TextureIdx)).x;	
+
 
 	//vec3 LightVolumeSample = WorldPos.xyz + normalize(mix(Normal.xyz,HighFreqNormal.xyz,0.4)) * .5; 
 

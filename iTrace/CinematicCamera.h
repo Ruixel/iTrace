@@ -23,6 +23,7 @@ namespace iTrace {
 			InterpolationMode FirstHalf = LINEAR, SecondHalf = LINEAR; 
 
 			Vector3f Position, Rotation; 
+			float Fov; 
 
 		};
 
@@ -35,6 +36,8 @@ namespace iTrace {
 				this->SecondHalf = key.SecondHalf;
 				this->Position = key.Position;
 				this->Rotation = key.Rotation;
+				this->Fov = key.Fov; 
+
 
 			}
 

@@ -19,7 +19,7 @@ namespace iTrace {
 		namespace Chunk {
 
 #define CHUNK_SIZE 128
-#define TEXTURE_RES 256
+#define TEXTURE_RES 512
 #define LONGESTLIGHT 10
 #define MAX_GREEDY 128
 
@@ -32,24 +32,24 @@ namespace iTrace {
 				Vector3f(0.0, 0.0, -1.)
 			};
 
-			const enum class TextureType : std::uint8_t { ALBEDO, DISPLACEMENT,EMISSION, SIZE };
-			const enum class TextureExtension : std::uint8_t {METALNESS, EMISSION, SIZE};
+			const enum class TextureType : std::uint8_t { ALBEDO, NORMAL, ROUGHNESS, DISPLACEMENT, EMISSION, METALNESS, SIZE };
+			const enum class TextureExtension : std::uint8_t {DISPLACEMENT, EMISSION, METALNESS, SIZE};
 			const enum class BLOCK_ACTION : std::uint8_t {BREAK, PLACE};
-			const std::array<std::string, static_cast<int>(TextureType::SIZE)> TextureNames = { "Albedo.png","Parallax.png","Emission.png" }; 
+			const std::array<std::string, static_cast<int>(TextureType::SIZE)> TextureNames = { "Albedo.png", "Normal.png", "Roughness.png", "Parallax.png","Emission.png", "Metalness.png"}; 
 			
-			const std::vector<std::vector<std::string>> Keywords = { {"col", "color", "alb", "albedo", "diffuse", "diff","_a","_c"}, {"displace", "disp"}, {"emission", "emissive","em","emis","_e"} };
+			const std::vector<std::vector<std::string>> Keywords = { {"col", "color", "alb", "albedo", "diffuse", "diff","_a","_c"}, {"norm", "normal", "_n"},{"rough", "roughness", "_r", "_s"} , {"displace", "disp", "height", "_h"}, {"emission", "emissive","emis","_e", "em"}, {"met", "metalness", "metallic", "spec", "specular", "_m"} };
 
 
 			struct TextureDir {
 
 				std::string BaseDirectory = "";
 				float ParallaxStrenght = 0.0f; 
-				std::array<int, static_cast<int>(TextureExtension::SIZE)> Extensions = {-1,-1};
+				std::array<int, static_cast<int>(TextureExtension::SIZE)> Extensions = {-1,-1, -1};
 				Vector3f EmissiveAverage = Vector3f(0.0); 
 
 				TextureDir(std::string BaseDir, float ParallaxStrenght) :
 					BaseDirectory(BaseDir), ParallaxStrenght(ParallaxStrenght) {
-					
+					BaseDirectory = BaseDir; 
 				}
 
 				TextureDir operator=(const std::string& s) {
@@ -71,13 +71,17 @@ namespace iTrace {
 				BlockType() {}
 				BlockType(std::string Name, std::vector<unsigned char> TexIds, bool IsSolid, bool IsEmpty, bool IsNone, float EmissiveStrength=0.0) : 
 					Name(Name),
-					TexIds{TexIds[0],TexIds[1],TexIds[2],TexIds[3],TexIds[4],TexIds[5]},
+					
 					IsSolid(IsSolid),
 					IsEmpty(IsEmpty),
 					IsNone(IsNone),
 					EmissiveStrength(EmissiveStrength),
 					IsEmissive(EmissiveStrength>0.1)
 				{
+					for (int i = 0; i < 6; i++) {
+						this->TexIds[i] = TexIds[glm::min(i, (int)(TexIds.size() - 1))]; 
+					}
+
 
 				}
 

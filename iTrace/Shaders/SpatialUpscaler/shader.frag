@@ -3,6 +3,7 @@
 in vec2 TexCoord; 
 
 layout(location = 0) out vec4 IndirectDiffuse;
+layout(location = 1) out vec4 IndirectSpecular;
 
 uniform float znear; 
 uniform float zfar; 
@@ -13,8 +14,10 @@ uniform sampler2D Normal;
 uniform sampler2D Lighting; 
 uniform sampler2D PackedGeometryData; 
 uniform sampler2D Specular; 
+uniform sampler2D Direct; 
+
 uniform mat4 IncidentMatrix; 
-uniform bool UsePreviousUpscaling; 
+uniform bool SpatialUpscaling; 
 
 float LinearDepth(float z)
 {
@@ -49,10 +52,13 @@ void main() {
 	float BaseRoughness = BaseNormal.w; 
 
 	float BestWeight = -1.0;
+	float BestShadowWeight = BestWeight; 
 
 	
 	vec2 BestTC = TexCoord; 
-	
+	vec2 BestShadowTC = TexCoord; 
+
+
 	vec2 Res = textureSize(Lighting, 0).xy; 
 
 
@@ -60,10 +66,10 @@ void main() {
 
 	vec3 BaseReflection = reflect(BaseIncident, BaseNormal.xyz); 
 	
-	IndirectDiffuse = texture(Lighting, TexCoord); 
-	return; 
+	
 
-	if(!UsePreviousUpscaling)
+	float r = 0.0; 
+	if(SpatialUpscaling)
 	for(int x = -1; x <= 1; x++) {
 		for(int y = -1; y <= 1; y++) {
 			
@@ -82,14 +88,20 @@ void main() {
 
 			float Weight = 0.0; 
 			
-			float BaseWeight = abs(BaseData.w - CurrentData.w) + 100.0*pow(min(100.0*abs(BaseRoughness - CurrentRoughness),10.0),2.0);
+			float BaseWeight = abs(BaseData.w - CurrentData.w);
 
-			Weight = 100.0 * (1.0-pow(dot(CurrentData.xyz, BaseData.xyz),3.0)) + BaseWeight; 
+			Weight = 100.0 * (1.0-pow(dot(CurrentData.xyz, BaseData.xyz),3.0)) + BaseWeight + 100.0*abs(BaseRoughness - CurrentRoughness); 
 
 
 			if(Weight < BestWeight || BestWeight < 0.0f) {
 				BestWeight = Weight; 
 				BestTC = CurrentTC; 
+				r = CurrentRoughness; 
+			}
+
+			if(BaseWeight < BestShadowWeight || BestShadowWeight < 0.0) {
+				BestShadowWeight = BaseWeight; 
+				BestShadowTC = CurrentTC; 
 			}
 
 
@@ -97,4 +109,7 @@ void main() {
 		}
 	}
 
+	IndirectDiffuse = texture(Lighting, BestTC); 
+	IndirectSpecular.xyz = texture(Specular, BestTC).xyz; 
+	IndirectSpecular.w = texture(Specular, BestTC).w; 
 }

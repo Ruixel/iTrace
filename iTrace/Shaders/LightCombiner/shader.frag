@@ -18,6 +18,8 @@ uniform sampler2D ShadowMaps[5];
 
 uniform sampler2D Volumetrics; 
 
+uniform sampler2D DirectVisibility; 
+
 uniform bool NoAlbedo; 
 
 
@@ -65,38 +67,31 @@ void main() {
 		vec3 SpecDir = reflect(Incident, HighfreqNormalSample.xyz); 
 
 		vec4 IndirectDiffuse = texture(Indirect, TexCoord); 
-		vec4 ShCoCg = texture(IndirectSpecular, TexCoord); 
+		vec4 IndirectSpecular = texture(IndirectSpecular, TexCoord); 
 
-		float ShadowFetch = IndirectDiffuse.w; 
 
 		float Roughness = HighfreqNormalSample.w; 
-
-		vec3 Direct =  vec3(ShadowFetch); 
-		vec3 DirectSpecular = SunColor * pow(max(dot(SpecDir,LightDirection),0.0),mix(32.0,1024.0,pow(1.0-max(Roughness,0.0),5.0))) * ShadowFetch * (1.0 + pow(1.0-Roughness,5.0)*20.0); 
 
 
 		vec4 AlbedoFetch =  texture(Albedo, TexCoord); 
 
+		if(NoAlbedo) {
+			AlbedoFetch.xyz = vec3(1.0); 
+		}
 		vec3 F0 = mix(vec3(0.04), AlbedoFetch.xyz, AlbedoFetch.w); 
 
 		vec3 SpecularColor = Fresnel(Incident, HighfreqNormalSample.xyz, F0, Roughness); 
-		vec3 DiffuseColor = mix(AlbedoFetch.xyz,vec3(0.0),AlbedoFetch.w); 
+		vec3 DiffuseColor = mix(AlbedoFetch.xyz,vec3(0.0),AlbedoFetch.w); 		
 
-		vec3 RawIndirectSpec = ShCoCg.xyz; 
-		vec3 RawIndirect = IndirectDiffuse.xyz; 
+		vec3 Direct = IndirectSpecular.w * max(dot(LightDirection, HighfreqNormalSample.xyz),0.0) * SunColor; 
 
-
-		Lighting.xyz = (RawIndirect * IndirectDiffuse.www + NormalFetch.www);
-		if(!NoAlbedo) 
-			Lighting.xyz *= AlbedoFetch.xyz; 
-		
-		
-
+		Lighting.xyz = DiffuseColor * ((IndirectDiffuse.xyz* IndirectDiffuse.www + Direct) * IndirectDiffuse.www ) + SpecularColor * (IndirectSpecular.xyz) + AlbedoFetch.xyz * NormalFetch.www;
+		//Lighting.xyz = IndirectDiffuse.xyz * IndirectDiffuse.www; 
 	}
 	else {
 		Lighting = texture(Sky, TexCoord); 
 	}
 	vec4 Volumetrics = texture(Volumetrics, TexCoord); 
 
-	Lighting.xyz = mix(Lighting.xyz, Volumetrics.xyz,1.0-Volumetrics.w);
+	Lighting.xyz =   mix(Lighting.xyz, Volumetrics.xyz,1.0-Volumetrics.w);
 }

@@ -27,6 +27,11 @@ uniform bool DoVolumetrics;
 uniform mat4 HemisphericalMatrices[48]; 
 uniform vec3 HemisphericalDirections[48]; 
 
+uniform sampler2DShadow DirectionalCascades[4]; 
+uniform mat4 DirectionMatrices[4]; 
+uniform vec3 SunColor; 
+uniform vec3 LightDirection; 
+
 uniform vec3 CameraPosition; 
 uniform int Frame; 
 
@@ -57,7 +62,7 @@ float PhaseFunction() {
 
 float GetDensity(vec3 WorldPosition) {
 	//return 1.0; 
-	return (1.0 - clamp((WorldPosition.y - 40.0) * 0.05, 0.0, 1.0)) * texture(Wind, (WorldPosition.xz *.1 + Time * .1)* .01).x; 
+	return 1.0 * (1.0 - clamp((WorldPosition.y - 40.0) * 0.05, 0.0, 1.0)) * texture(Wind, (WorldPosition.xz *.1 + Time * .1)* .01).x; 
 }
 
 ivec2 States[] = ivec2[](
@@ -99,6 +104,8 @@ vec3 GetHemisphericalShadowMaphit(vec3 WorldPos) {
 }
 
 
+
+
 vec3 GetHemisphericalShadowMaphit2(vec3 WorldPos) {
 	
 	ivec2 PixelShift = ivec2(gl_FragCoord) % ivec2(2); 
@@ -133,6 +140,33 @@ vec3 GetHemisphericalShadowMaphit2(vec3 WorldPos) {
 
 }
 
+
+float DirectBasic(vec3 Position) {
+
+	vec3 NDC = vec3(-1.0); 
+
+	int Cascade = -1; 
+
+	for(int i = 0; i < 4; i++) {
+		
+		vec4 Clip = DirectionMatrices[i] * vec4(Position, 1.0); 
+	
+		NDC = Clip.xyz / Clip.w; 
+
+		if((abs(NDC.x) < 0.9 && abs(NDC.y) < 0.9) || (abs(NDC.x) < 1.0 && abs(NDC.y) < 1.0 && i == 3)) {
+			Cascade = i; 
+			break; 
+		}
+
+	}
+	if(Cascade == -1) 
+		return 0.0; 
+
+	return texture(DirectionalCascades[Cascade], vec3(NDC.xy * 0.5 + 0.5, (NDC.z * 0.5 + 0.5)-0.00009)); 
+
+}
+
+
 void main() {
 	
 	if(!DoVolumetrics) {
@@ -140,8 +174,8 @@ void main() {
 		return; 
 	}
 
-	float SigmaS = 0.2; 
-	float SigmaA = 0.06667; 
+	float SigmaS = 0.2 * 0.25; 
+	float SigmaA = 0.06667 * 0.25; 
 	float SigmaE = SigmaS + SigmaA; 
 
 	vec4 Volumetric = vec4(0.0,0.0,0.0,1.0); 
@@ -179,8 +213,8 @@ void main() {
 		ActualDistance = VOLUMETRIC_MAX_DISTANCE; 
 	}
 
-	State = ((Frame / 4) * 7195); 
-		
+	//State = ((Frame / 4) * 7195); 
+		State = 0; 
 	float StepSize = ActualDistance / float(VOLUMETRIC_STEPS); 
 
 	if(CONSTANT_STEP_SIZE) {
@@ -202,7 +236,7 @@ void main() {
 		
 			//grab lighting at current point 
 
-			vec3 LightingData = (textureLod(ChunkLighting, (Position).zyx / 128.0, 0.0).xyz * 10.0 + GetHemisphericalShadowMaphit(Position) * 2.0); 
+			vec3 LightingData = (textureLod(ChunkLighting, (Position).zyx / 128.0, 0.0).xyz * 10.0 + GetHemisphericalShadowMaphit(Position) * 2.0 + DirectBasic(Position) * SunColor); 
 
 			vec3 S = LightingData * SampleSigmaS * PhaseFunction(); 
 

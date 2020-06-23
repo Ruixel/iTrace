@@ -2,6 +2,7 @@
 #include "Chunk.h"
 #include <fstream>
 #include "ParallaxBaker.h"
+#include "External/BlueNoiseData.h"
 
 namespace iTrace {
 
@@ -66,6 +67,8 @@ namespace iTrace {
 
 			Shader CubeItemDrawer = Shader("Shaders/CubeItemDrawer"); 
 
+			TextureGL HDRI = LoadTextureGL("textures/hdri.jpg"); 
+
 			CubeItemDrawer.Bind(); 
 
 			CubeItemDrawer.SetUniform("Matrix", CubeDrawerProject * CubeDrawerView);
@@ -73,12 +76,54 @@ namespace iTrace {
 			CubeItemDrawer.SetUniform("DisplacementTextures", 1);
 			CubeItemDrawer.SetUniform("TextureData", 2);
 			CubeItemDrawer.SetUniform("TextureExData", 3);
+
+			CubeItemDrawer.SetUniform("NormalTextures", 4);
+			CubeItemDrawer.SetUniform("RoughnessTextures", 5);
+			CubeItemDrawer.SetUniform("MetalnessTextures", 6);
+
+			CubeItemDrawer.SetUniform("HDRI", 7);
+			CubeItemDrawer.SetUniform("Sobol", 8);
+			CubeItemDrawer.SetUniform("Ranking", 9);
+			CubeItemDrawer.SetUniform("Scrambling", 10);
+
+			CubeItemDrawer.SetUniform("EmissiveTextures", 11);
+			CubeItemDrawer.SetUniform("BlockData", 12);
+
+
 			CubeItemDrawer.SetUniform("ParallaxDirections", BAKE_DIRECTIONS);
 			CubeItemDrawer.SetUniform("ParallaxResolution", BAKE_RESOLUTION);
 
 			CubeItemDrawer.SetUniform("CameraPosition", Vector3f(2.0));
 
 			CubeItemDrawer.UnBind(); 
+
+			unsigned int SobolTexture, RankingTexture, ScramblingTexture; 
+
+			glGenTextures(1, &SobolTexture);
+			glBindTexture(GL_TEXTURE_2D, SobolTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 256, 256, 0, GL_RED, GL_UNSIGNED_BYTE, sobol_256spp_256d);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glBindTexture(GL_TEXTURE_2D, 0);
+
+			glGenTextures(1, &RankingTexture);
+			glBindTexture(GL_TEXTURE_2D, RankingTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 256, 512, 0, GL_RED, GL_UNSIGNED_BYTE, rankingTile);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glBindTexture(GL_TEXTURE_2D, 0);
+
+			glGenTextures(1, &ScramblingTexture);
+			glBindTexture(GL_TEXTURE_2D, ScramblingTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 256, 512, 0, GL_RED, GL_UNSIGNED_BYTE, scramblingTile);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 
 			glClearColor(0.0, 0.0, 0.0, 0.0); 
@@ -101,13 +146,39 @@ namespace iTrace {
 					glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(0));
 
 					glActiveTexture(GL_TEXTURE1);
-					glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(1));
+					glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(3));
 
 					glActiveTexture(GL_TEXTURE2);
 					glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockDataTexture());
 
 					glActiveTexture(GL_TEXTURE3);
 					glBindTexture(GL_TEXTURE_1D, Chunk::GetTextureExtensionData());
+
+					glActiveTexture(GL_TEXTURE4);
+					glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(1));
+
+					glActiveTexture(GL_TEXTURE5);
+					glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(2));
+
+					glActiveTexture(GL_TEXTURE6);
+					glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(5));
+
+					HDRI.Bind(7); 
+
+					glActiveTexture(GL_TEXTURE8);
+					glBindTexture(GL_TEXTURE_2D, SobolTexture);
+
+					glActiveTexture(GL_TEXTURE9);
+					glBindTexture(GL_TEXTURE_2D, RankingTexture);
+
+					glActiveTexture(GL_TEXTURE10);
+					glBindTexture(GL_TEXTURE_2D, ScramblingTexture);
+
+					glActiveTexture(GL_TEXTURE11);
+					glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(4));
+
+					glActiveTexture(GL_TEXTURE12);
+					glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockExtraDataTexture());
 
 					CubeItemDrawer.Bind(); 
 
