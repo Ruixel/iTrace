@@ -8,15 +8,18 @@ namespace iTrace {
 	namespace Rendering {
 
 		struct WorldManager {
-
+			
+#define CHUNK_RENDER_DISTANCE 1 //likely NOT going to change, EVER. 
 		
 			Chunk::Chunk * Chunk = nullptr; //will be replaced with some kind of container when more chunks are allowed 
 
+			unsigned int ChunkContainer; 
 
 			void PrepareWorldManger(); 
 			void GenerateWorld(Camera& Camera); 
 			void RenderWorld(Camera& Camera, Shader & RenderToShader);
-			
+			void RenderWorldTransparent(Camera& Camera, Shader& RenderToShader); 
+
 			void AddLightBlock(Vector3i Location, Vector3i & OriginLocation, std::vector<unsigned char> &Data, int Distance); 
 			void AddLightSource(Vector3i Location, Vector3f Color); 
 			void SpreadSkyLight(Vector2i Coordinate); 

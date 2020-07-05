@@ -24,7 +24,9 @@ namespace iTrace {
 			int ID; 
 			std::string Title = "None"; 
 
-		};
+		};	
+
+		std::vector<ItemIconRequest> GetBlockRequests(); 
 
 		struct ItemRenderer {
 

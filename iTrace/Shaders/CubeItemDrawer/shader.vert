@@ -11,5 +11,5 @@ void main(void) {
 	TexCoord = Texc; 
 	Normal = Norm; 
 	Position = Vert; 
-	gl_Position = Matrix * vec4(Position,1.0); 
+	gl_Position = Matrix * vec4(Position * 0.8,1.0); 
 }

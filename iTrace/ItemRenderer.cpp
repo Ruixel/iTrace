@@ -18,7 +18,7 @@ namespace iTrace {
 
 		void RenderItemRequests()
 		{
-
+			
 			auto FileExists = [](const std::string FileName) {
 				std::ifstream f(FileName.c_str());
 				return f.good();
@@ -88,6 +88,7 @@ namespace iTrace {
 
 			CubeItemDrawer.SetUniform("EmissiveTextures", 11);
 			CubeItemDrawer.SetUniform("BlockData", 12);
+			CubeItemDrawer.SetUniform("OpacityTextures", 13);
 
 
 			CubeItemDrawer.SetUniform("ParallaxDirections", BAKE_DIRECTIONS);
@@ -180,9 +181,13 @@ namespace iTrace {
 					glActiveTexture(GL_TEXTURE12);
 					glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockExtraDataTexture());
 
+					glActiveTexture(GL_TEXTURE13);
+					glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(6));
+
 					CubeItemDrawer.Bind(); 
 
 					CubeItemDrawer.SetUniform("BlockType", Request.ID); 
+					CubeItemDrawer.SetUniform("Refractive", Chunk::GetBlock(Request.ID).RenderType == Chunk::BLOCK_RENDER_TYPE::REFRACTIVE); 
 
 					DrawPostProcessCube(); 
 
@@ -243,6 +248,11 @@ namespace iTrace {
 				
 			}
 
+		}
+
+		std::vector<ItemIconRequest> GetBlockRequests()
+		{
+			return Requests;
 		}
 
 	}

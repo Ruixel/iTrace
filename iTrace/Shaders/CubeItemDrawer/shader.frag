@@ -6,12 +6,14 @@ in vec3 Position;
 layout(location = 0) out vec4 Lighting;
 
 uniform int BlockType; 
+uniform bool Refractive; 
 uniform sampler2DArray DiffuseTextures; 
 uniform sampler2DArray DisplacementTextures; 
 uniform sampler2DArray NormalTextures; 
 uniform sampler2DArray RoughnessTextures; 
 uniform sampler2DArray MetalnessTextures; 
 uniform sampler2DArray EmissiveTextures; 
+uniform sampler2DArray OpacityTextures; 
 
 uniform sampler1D TextureData;
 uniform sampler1D TextureExData; 
@@ -212,7 +214,7 @@ vec3 SampleLighting(vec3 Direction) {
 
 const vec3 BlockTangents[3] = vec3[](
 	vec3(1.0,0.0,0.0),
-	vec3(0.0,0.0,1.0),
+	vec3(0.0,0.0,-1.0),
 	vec3(1.0,0.0,0.0)
 ); 
 
@@ -257,7 +259,13 @@ void main() {
 
 	int TextureIdx = GetTextureIdx(BlockType, Side); 
 
-	ivec3 TextureExData = ivec3(texelFetch(TextureExData, TextureIdx,0).xyz * 255); 
+	ivec4 TextureExData = ivec4(texelFetch(TextureExData, TextureIdx,0) * 255); 
+
+	if(TextureExData.w != 0) {
+		float Opacity = texture(OpacityTextures, vec3(ATC.xy, uint(TextureExData.w)-1u)).x; 
+		if(Opacity < 0.95) 
+			discard; 
+	}
 
 	if(TextureExData.x != 0) {
 		vec3 IncidentProjected; 
@@ -286,11 +294,22 @@ void main() {
 
 	vec3 Bitangent = normalize(cross(Tangent, Normal.xyz)); 
 
+
+
 	mat3 TBN = mat3(Tangent, Bitangent, Normal); 
 	
 	vec3 NormalMap = normalize(TBN * (texture(NormalTextures, vec3(ATC, TextureIdx)).xyz * 2.0 - 1.0)); 
 
 	Lighting.w = 1.0; 
+
+	if(Refractive) {
+		vec3 RefractionVector = refract(Incident, NormalMap, 1.0/1.1); 
+
+		Lighting.xyz = Albedo.xyz * SampleLighting(RefractionVector); 
+		Lighting.xyz = clamp(Lighting.xyz * 2.0, vec3(0.0), vec3(1.0)); 
+		return; 
+	}
+
 
 	vec3 ReflectionVector = reflect(Incident, NormalMap); 
 
@@ -318,6 +337,12 @@ void main() {
 	vec3 DiffuseColor = mix(Albedo, vec3(0.0), Metalness); 
 
 	Lighting.xyz = DiffuseColor * DiffuseLighting + SpecularLighting * SpecularColor + Emissive * Albedo; 
-	Lighting.xyz = clamp(Lighting.xyz, vec3(0.0), vec3(1.0)); 
+	Lighting.xyz = clamp(Lighting.xyz * 2.0, vec3(0.0), vec3(1.0)); 
 	Lighting.w = 1.0; 
+
+	
+
+	//if(Side == 2) 
+	//	Lighting.xyz = vec3(1.0); 
+
 }

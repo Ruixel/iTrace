@@ -18,22 +18,25 @@ so it is very very cheap.
 
 namespace iTrace {
 
-	const int Divisors[3] = { 16,8,4 }; 
+	const int Divisors[3] = { 8,4,2 }; 
 
 	namespace Rendering {
 
 
-		struct GlowRenderer {
+		struct PostProcess {
 
-			Shader PrepShader, BlurShader[2], DofShader[2], GlowPrepShader; 
+			Shader PrepShader, BlurShader[2], DofShader, GlowPrepShader, DoFPrepShader; 
 
-			FrameBufferObject GlowBuffer[3][2], DoFBuffer[2]; 
-			MultiPassFrameBufferObject PrepBuffer; 
+			FrameBufferObject GlowBuffer[3][2], DoFBuffer; 
+			MultiPassFrameBufferObject PrepBuffer, DoFPrepBuffer; 
 
 
-			void PrepareGlow(Window & Window, Camera & Camera);
-			void RenderGlow(Window& Window, SkyRendering& Sky, IndirectLightingHandler & Indirect, DeferredRenderer& Deferred, LightCombiner & Combined); 
+			void PreparePostProcess(Window & Window, Camera & Camera);
+			void RenderPostProcess(Window& Window, SkyRendering& Sky, LightManager & Indirect, DeferredRenderer& Deferred, LightCombiner & Combined); 
+			void ReloadPostProcess(Window& Window, Camera& Camera);
 
+		private: 
+			void SetShaderUniforms(Window& Window, Camera & Camera); 
 
 		};
 

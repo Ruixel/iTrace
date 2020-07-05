@@ -12,12 +12,12 @@ void main() {
 
 
 
-	vec2 MotionVectors = texture(MotionVectors, TexCoord).xy; 
-	float _f = max(texture(PreviousFrame, TexCoord + MotionVectors).x,0.0); 
+	vec3 MotionVectors = texture(MotionVectors, TexCoord).xyz; 
+	float _f = max(texture(PreviousFrame, TexCoord + MotionVectors.xy).x,0.0); 
 
 	float l = length(MotionVectors); 
 
-	if(MotionVectors.x <= -.99 || MotionVectors.y <= -.99)  {
+	if(MotionVectors.x <= -.99 || MotionVectors.y <= -.99 || MotionVectors.z <= -.99)  {
 		_f = 0.0; 
 	}
 	Frame = _f + 1.0;  

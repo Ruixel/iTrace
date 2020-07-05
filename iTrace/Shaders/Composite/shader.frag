@@ -89,7 +89,7 @@ void main() {
     float Depth = LinearDepth(texture(Depth, TexCoord).x); 
 
 	Lighting = texture(CombinedLighting, TexCoord);
-    vec3 DofFetch = texture(DoF, TexCoord).xyz; 
+    vec4 DofFetch = texture(DoF, TexCoord); 
 
     float LensDirtFetch = texture(LensDirt, TexCoord*.4).x * 0.5 + 0.5; 
 
@@ -100,8 +100,13 @@ void main() {
 
 
     }
-    if(DoGlow) 
-        Lighting += texture(Glow, TexCoord) * LensDirtFetch; 
+
+	if(DoGlow) 
+       Lighting += texture(Glow, TexCoord); 
+	   
+	Lighting.xyz = mix(Lighting.xyz,DofFetch.xyz,min(DofFetch.w/2.0,1.0)); 
+
+
 
     Lighting.xyz = ACESFitted(Lighting.xyz, 1.0); 
 

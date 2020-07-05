@@ -1,6 +1,7 @@
 #include "Indirect.h"
 #include "External/BlueNoiseData.h"
 #include "BooleanCommands.h"
+#include "ParallaxBaker.h"
 
 namespace iTrace {
 
@@ -8,7 +9,7 @@ namespace iTrace {
 
 
 
-		void IndirectLightingHandler::PrepareIndirectLightingHandler(Window& Window)
+		void LightManager::PrepareIndirectLightingHandler(Window& Window)
 		{
 			RequestBoolean("raytracing", true); 
 			RequestBoolean("volumetrics", true);
@@ -18,19 +19,21 @@ namespace iTrace {
 			
 			for (int x = 0; x < 4; x++) {
 				RawPathTrace[x] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 5, { GL_RGBA16F, GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_R16F }, false);
-				MotionVectors[x] = FrameBufferObject(Window.GetResolution() / 2, GL_RG16F, false); 
+				MotionVectors[x] = FrameBufferObject(Window.GetResolution() / 2, GL_RGB16F, false); 
 				SpatialyFiltered[x * 2] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 				SpatialyFiltered[x * 2 + 1] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 				VolumetricFBO[x] = FrameBufferObject(Window.GetResolution() / 4, GL_RGBA16F, false); 
-				
+				Clouds[x] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 2, { GL_RGBA16F, GL_R32F }, false);
+
 			}
 
 			DirectBlockerBuffer = FrameBufferObject(Window.GetResolution() / 8, GL_RG16F, false);
 			TemporalFrameCount = FrameBufferObjectPreviousData(Window.GetResolution() / 2, GL_R16F, false);
-			TemporalyUpscaled = MultiPassFrameBufferObject(Window.GetResolution() / 2, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
-			PackedSpatialData = FrameBufferObject(Window.GetResolution() / 2, GL_RGBA16F, false); 
-			TemporallyFiltered = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 2, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
+			TemporalyUpscaled = MultiPassFrameBufferObject(Window.GetResolution() / 2, 4, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
+			PackedSpatialData = FrameBufferObject(Window.GetResolution() / 2, GL_RGBA16F, false);
+			TemporallyFiltered = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 2, 4, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 			SpatialyUpscaled = MultiPassFrameBufferObject(Window.GetResolution(), 2, { GL_RGBA16F,GL_RGBA16F }, false);
+			ProjectedClouds = FrameBufferObjectPreviousData(Vector2i(256), GL_RGBA16F, false); 
 
 			IndirectLightShader = Shader("Shaders/RawPathTracing");
 			TemporalUpscaler = Shader("Shaders/TemporalUpscaler");
@@ -42,6 +45,8 @@ namespace iTrace {
 			FrameCount = Shader("Shaders/TemporalFrameCounter");
 			Volumetrics = Shader("Shaders/Volumetrics"); 
 			DirectBlocker = Shader("Shaders/DirectBlocker"); 
+			CloudRenderer = Shader("Shaders/Clouds"); 
+			CloudProjection = Shader("Shaders/CloudProjection"); 
 
 			SetShaderUniforms(Window); 
 			
@@ -76,10 +81,13 @@ namespace iTrace {
 
 			WindNoise = LoadTextureGL("Textures/Wind.jpg"); 
 			SimplifiedBlueNoise = LoadTextureGL("Textures/Noise.png");
+			WeatherMap = LoadTextureGL("Textures/CloudsWeather.PNG"); 
+
+			CloudNoise = LoadTextureGL3D("Textures/CloudsWorley.png", Vector3i(128)); 
 
 		}
 
-		void IndirectLightingHandler::RenderIndirectLighting(Window& Window, Camera& Camera, DeferredRenderer& Deferred, WorldManager& World, SkyRendering& Sky)
+		void LightManager::RenderIndirectLighting(Window& Window, Camera& Camera, DeferredRenderer& Deferred, WorldManager& World, SkyRendering& Sky)
 		{
 
 
@@ -93,6 +101,9 @@ namespace iTrace {
 			FindDirectBlocker(Window, Camera, Deferred, Sky);
 			Profiler::SetPerformance("Direct blocker finder");
 	
+			RenderClouds(Window, Camera, Deferred, Sky);
+			Profiler::SetPerformance("Cloud Rendering");
+
 			GenerateMotionVectors(Window, Camera, Deferred);
 			Profiler::SetPerformance("Motion vectors");
 
@@ -101,6 +112,8 @@ namespace iTrace {
 
 			SpatialyFilter(Window, Camera, Deferred);
 			Profiler::SetPerformance("Spatial filter");
+
+			
 
 			TemporalyUpscale(Window, Camera, Deferred);
 			Profiler::SetPerformance("Temporal upscale");
@@ -113,7 +126,7 @@ namespace iTrace {
 
 		}
 
-		void IndirectLightingHandler::FindDirectBlocker(Window& Window, Camera& Camera, DeferredRenderer& Deferred, SkyRendering& Sky)
+		void LightManager::FindDirectBlocker(Window& Window, Camera& Camera, DeferredRenderer& Deferred, SkyRendering& Sky)
 		{
 
 			DirectBlocker.Bind(); 
@@ -141,7 +154,7 @@ namespace iTrace {
 
 		}
 
-		void IndirectLightingHandler::DoRawPathTrace(Window& Window, Camera& Camera, DeferredRenderer& Deferred, WorldManager& World, SkyRendering& Sky)
+		void LightManager::DoRawPathTrace(Window& Window, Camera& Camera, DeferredRenderer& Deferred, WorldManager& World, SkyRendering& Sky)
 		{
 
 			RawPathTrace[Window.GetFrameCount()%4].Bind(); 
@@ -212,6 +225,8 @@ namespace iTrace {
 			DirectBlockerBuffer.BindImage(24); 
 
 			IndirectLightShader.SetUniform("CameraPosition", Camera.Position);
+			IndirectLightShader.SetUniform("CameraMatrix", Camera.Project * Camera.View);
+
 			IndirectLightShader.SetUniform("FrameCount", Window.GetFrameCount() % 1024);
 			IndirectLightShader.SetUniform("State", Window.GetFrameCount() % 4);
 
@@ -222,6 +237,16 @@ namespace iTrace {
 			IndirectLightShader.SetUniform("LightDirection", Sky.Orientation);
 			IndirectLightShader.SetUniform("SunColor", Sky.SunColor);
 
+			glActiveTexture(GL_TEXTURE25);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(3));
+
+			Deferred.Deferred.BindImage(5, 26);
+			Deferred.Deferred.BindImage(6, 27);
+			Deferred.Deferred.BindImage(0, 28);
+
+			glActiveTexture(GL_TEXTURE29);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(1));
+
 			DrawPostProcessQuad();
 
 			IndirectLightShader.UnBind();
@@ -231,7 +256,7 @@ namespace iTrace {
 
 		}
 
-		void IndirectLightingHandler::SpatialyFilter(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
+		void LightManager::SpatialyFilter(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
 		{
 
 			int Addon = (Window.GetFrameCount() % 4) * 2; 
@@ -269,11 +294,13 @@ namespace iTrace {
 			VolumetricFBO[Window.GetFrameCount() % 4].BindImage(4); 
 			RawPathTrace[Window.GetFrameCount() % 4].BindImage(3, 5);
 			MotionVectors[Window.GetFrameCount() % 4].BindImage(6);
+			RawPathTrace[Window.GetFrameCount() % 4].BindImage(4, 7);
 
 
 			for (int x = 0; x < 3; x++) {
 
 				SpatialFilter.SetUniform("StepSize", StepSizes[x]);
+				SpatialFilter.SetUniform("Final", x == 2);
 
 				SpatialyFiltered[Addon + x % 2].Bind();
 
@@ -293,7 +320,7 @@ namespace iTrace {
 
 		}
 
-		void IndirectLightingHandler::TemporalyUpscale(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
+		void LightManager::TemporalyUpscale(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
 		{
 
 			
@@ -309,7 +336,7 @@ namespace iTrace {
 				SpatialyFiltered[x * 2].BindImage(0, x + 8); 
 				SpatialyFiltered[x * 2].BindImage(1, x + 12);
 				SpatialyFiltered[x * 2].BindImage(2, x + 22);
-				RawPathTrace[x].BindImage(4, x + 26);
+				Clouds[x].BindImage(0, x + 26);
 
 				MotionVectors[x].BindImage(x + 16); 
 
@@ -319,7 +346,7 @@ namespace iTrace {
 			PackedSpatialData.BindImage(21); 
 
 
-			TemporalUpscaler.SetUniform("Upscale", sf::Keyboard::isKeyPressed(sf::Keyboard::U)); 
+			//TemporalUpscaler.SetUniform("Upscale", sf::Keyboard::isKeyPressed(sf::Keyboard::U)); 
 			TemporalUpscaler.SetUniform("CurrentFrame", Window.GetFrameCount()%4);
 			TemporalUpscaler.SetUniform("NewFiltering", GetBoolean("newfiltering"));
 
@@ -333,7 +360,7 @@ namespace iTrace {
 
 		}
 
-		void IndirectLightingHandler::TemporalyFilter(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
+		void LightManager::TemporalyFilter(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
 		{
 
 			TemporallyFiltered.Bind();
@@ -353,6 +380,9 @@ namespace iTrace {
 			TemporalyUpscaled.BindImage(2, 7);
 			TemporallyFiltered.BindImagePrevious(2, 8);
 
+
+			TemporalyUpscaled.BindImage(3, 9);
+			TemporallyFiltered.BindImagePrevious(3, 10);
 			
 			TemporalFilter.SetUniform("DoTemporal", GetBoolean("temporal")); 
 			TemporalFilter.SetUniform("NewFiltering", GetBoolean("newfiltering"));
@@ -366,7 +396,7 @@ namespace iTrace {
 
 		}
 
-		void IndirectLightingHandler::DoVolumetricLighting(Window& Window, Camera& Camera, DeferredRenderer& Deferred, WorldManager& World, SkyRendering& Sky)
+		void LightManager::DoVolumetricLighting(Window& Window, Camera& Camera, DeferredRenderer& Deferred, WorldManager& World, SkyRendering& Sky)
 		{
 
 			Volumetrics.Bind(); 
@@ -427,7 +457,7 @@ namespace iTrace {
 
 		}
 
-		void IndirectLightingHandler::GenerateMotionVectors(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
+		void LightManager::GenerateMotionVectors(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
 		{
 
 			MotionVectors[Window.GetFrameCount() % 4].Bind();
@@ -438,6 +468,9 @@ namespace iTrace {
 			Deferred.Deferred.BindImage(0, 1);
 			Deferred.Deferred.BindImagePrevious(0, 2);
 			Deferred.Deferred.BindImagePrevious(1, 3);
+			Deferred.Deferred.BindImage(7, 4);
+			Deferred.Deferred.BindImagePrevious(7, 5);
+			Clouds[Window.GetFrameCount() % 4].BindImage(1, 6); 
 
 			RTMotionVectorCalculator.SetUniform("CameraPosition", Camera.Position);
 			RTMotionVectorCalculator.SetUniform("MotionMatrix", Camera.PrevProject * Camera.PrevView);
@@ -467,7 +500,42 @@ namespace iTrace {
 
 		}
 
-		void IndirectLightingHandler::ReloadIndirect(Window& Window)
+		void LightManager::RenderClouds(Window& Window, Camera& Camera, DeferredRenderer& Deferred, SkyRendering& Sky)
+		{
+			Clouds[Window.GetFrameCount() % 4].Bind(); 
+			
+			CloudRenderer.Bind(); 
+
+			SpatialyFiltered[(Window.GetFrameCount() % 4)*2].BindImage(2, 0);
+			RawPathTrace[Window.GetFrameCount() % 4].BindImage(4, 1);
+
+			SimplifiedBlueNoise.Bind(2); 
+
+			CloudNoise.Bind(3); 
+
+			WeatherMap.Bind(4); 
+
+			CloudRenderer.SetUniform("IncidentMatrix", glm::inverse(Camera.Project * Matrix4f(Matrix3f(Camera.View))));
+			
+			CloudRenderer.SetUniform("LightDirection", Sky.Orientation);
+			CloudRenderer.SetUniform("SunColor", Sky.SunColor);
+			CloudRenderer.SetUniform("AmbientColor", Sky.SkyColor);
+
+			CloudRenderer.SetUniform("Time", Window.GetTimeOpened());
+			CloudRenderer.SetUniform("SubFrame", Window.GetFrameCount()%4);
+			CloudRenderer.SetUniform("Frame", Window.GetFrameCount());
+			CloudRenderer.SetUniform("TextureSize", Window.GetResolution()/2);
+			CloudRenderer.SetUniform("CameraPosition", Camera.Position);
+
+			DrawPostProcessQuad(); 
+
+			CloudRenderer.UnBind();
+
+			Clouds[Window.GetFrameCount() % 4].UnBind();
+
+		}
+
+		void LightManager::ReloadIndirect(Window& Window)
 		{
 			IndirectLightShader.Reload("Shaders/RawPathTracing");
 			TemporalUpscaler.Reload("Shaders/TemporalUpscaler");
@@ -479,12 +547,13 @@ namespace iTrace {
 			FrameCount.Reload("Shaders/TemporalFrameCounter");
 			Volumetrics.Reload("Shaders/Volumetrics"); 
 			DirectBlocker.Reload("Shaders/DirectBlocker"); 
+			CloudRenderer.Reload("Shaders/Clouds"); 
 
 			SetShaderUniforms(Window); 
 
 		}
 
-		void IndirectLightingHandler::SetShaderUniforms(Window& Window)
+		void LightManager::SetShaderUniforms(Window& Window)
 		{
 			IndirectLightShader.Bind();
 
@@ -509,6 +578,13 @@ namespace iTrace {
 			IndirectLightShader.SetUniform("DirectionalCascades[3]", 22);
 			IndirectLightShader.SetUniform("SkyNoMie", 23);
 			IndirectLightShader.SetUniform("BlockerData", 24);
+			IndirectLightShader.SetUniform("DisplacementTextures", 25);
+			IndirectLightShader.SetUniform("ParallaxDirections", BAKE_DIRECTIONS);
+			IndirectLightShader.SetUniform("ParallaxResolution", BAKE_RESOLUTION);
+			IndirectLightShader.SetUniform("ParallaxData", 26);
+			IndirectLightShader.SetUniform("TCData", 27);
+			IndirectLightShader.SetUniform("LowFrequencyNormal", 28);
+			IndirectLightShader.SetUniform("NormalTextures", 29);
 
 			IndirectLightShader.UnBind();
 
@@ -547,10 +623,10 @@ namespace iTrace {
 			TemporalUpscaler.SetUniform("FramesIndirectSpecular[2]", 24);
 			TemporalUpscaler.SetUniform("FramesIndirectSpecular[3]", 25);
 
-			TemporalUpscaler.SetUniform("FramesDirect[0]", 26);
-			TemporalUpscaler.SetUniform("FramesDirect[1]", 27);
-			TemporalUpscaler.SetUniform("FramesDirect[2]", 28);
-			TemporalUpscaler.SetUniform("FramesDirect[3]", 29);
+			TemporalUpscaler.SetUniform("FramesClouds[0]", 26);
+			TemporalUpscaler.SetUniform("FramesClouds[1]", 27);
+			TemporalUpscaler.SetUniform("FramesClouds[2]", 28);
+			TemporalUpscaler.SetUniform("FramesClouds[3]", 29);
 
 			TemporalUpscaler.SetUniform("Resolution", Window.GetResolution() / 4);
 
@@ -562,6 +638,10 @@ namespace iTrace {
 			RTMotionVectorCalculator.SetUniform("Normal", 1);
 			RTMotionVectorCalculator.SetUniform("NormalPrevious", 2);
 			RTMotionVectorCalculator.SetUniform("PreviousWorldPos", 3);
+			RTMotionVectorCalculator.SetUniform("CurrentLighting", 4);
+			RTMotionVectorCalculator.SetUniform("PreviousLighting", 5);
+			RTMotionVectorCalculator.SetUniform("CloudDepth", 6);
+
 			RTMotionVectorCalculator.SetUniform("Resolution", Vector2f(Window.GetResolution() / 2));
 
 			RTMotionVectorCalculator.UnBind();
@@ -582,6 +662,7 @@ namespace iTrace {
 			SpatialFilter.SetUniform("InputVolumetric", 4);
 			SpatialFilter.SetUniform("InputSpecular", 5);
 			SpatialFilter.SetUniform("MotionVectors", 6);
+			SpatialFilter.SetUniform("Direct", 7);
 
 
 			SpatialFilter.UnBind();
@@ -609,6 +690,9 @@ namespace iTrace {
 
 			TemporalFilter.SetUniform("UpscaledSpecular", 7);
 			TemporalFilter.SetUniform("PreviousSpecular", 8);
+
+			TemporalFilter.SetUniform("UpscaledClouds", 9);
+			TemporalFilter.SetUniform("PreviousClouds", 10);
 
 			TemporalFilter.UnBind();
 
@@ -650,11 +734,23 @@ namespace iTrace {
 			DirectBlocker.SetUniform("Depth", 5);
 
 			DirectBlocker.UnBind(); 
+			
+			CloudRenderer.Bind(); 
+
+			CloudRenderer.SetUniform("RawSpecular", 0); 
+			CloudRenderer.SetUniform("RawDirect", 1);
+			CloudRenderer.SetUniform("BasicBlueNoise", 2);
+			CloudRenderer.SetUniform("CloudNoise", 3);
+			CloudRenderer.SetUniform("WeatherMap", 4);
+
+			CloudRenderer.SetUniform("TextureSize", Window.GetResolution() / 2);
+
+			CloudRenderer.UnBind(); 
 
 
 		}
 
-		void IndirectLightingHandler::SpatialyUpscale(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
+		void LightManager::SpatialyUpscale(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
 		{
 
 			SpatialyUpscaled.Bind(); 

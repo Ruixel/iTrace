@@ -13,7 +13,10 @@ uniform sampler2D FrameCount;
 uniform sampler2D InputVolumetric;
 uniform sampler2D InputSpecular; 
 uniform sampler2D MotionVectors; 
+uniform sampler2D Direct; 
+
 uniform bool DoSpatial; 
+uniform bool Final; 
 
 uniform int Radius; 
 uniform int StepSize; 
@@ -46,6 +49,12 @@ float Luminance(vec3 x) {
 }
 
 
+
+
+
+
+
+
 float WeightHeavy(vec4 LightingFetch, vec4 BaseFetch, float FrameCount, float BaseWeight, int StepSize) {
 	
 	float Weight = BaseWeight; 
@@ -55,6 +64,10 @@ float WeightHeavy(vec4 LightingFetch, vec4 BaseFetch, float FrameCount, float Ba
 	float OldWeight = Weight; 
 
 	Weight *= max(1.0-power*(abs(BaseFetch.w-LightingFetch.w)/min(BaseFetch.w,LightingFetch.w)),0.0); 
+
+	if(BaseFetch.w < 0.001 || LightingFetch.w < 0.001) {
+		return 0.0; 
+	}
 				
 	//temporary, might not be used in the future! 
 				
@@ -64,7 +77,7 @@ float WeightHeavy(vec4 LightingFetch, vec4 BaseFetch, float FrameCount, float Ba
 	Weight *= max(1.0-power*(abs(L1-L2)/min(L1,L2)),1.0); 
 
 	if(StepSize <= 3) {
-		Weight = mix(Weight, OldWeight, 0.25); 
+		Weight = mix(Weight, OldWeight, 0.125); 
 	}
 
 	return Weight; 
@@ -113,7 +126,9 @@ void main() {
 		IndirectDiffuse /= TotalWeight; 
 		Volumetric /= TotalWeightVolumetric; 
 		IndirectSpecular /= TotalWeightSpecular; 
-
+		if(Final) {
+		IndirectSpecular.w = texelFetch(Direct, Pixel,0).x; 
+		}
 		return; 
 	}
 
@@ -193,5 +208,11 @@ void main() {
 	Volumetric /= TotalWeightVolumetric;
 	IndirectSpecular.xyz /= TotalWeightSpecular; 
 	IndirectSpecular.w /= TotalWeightAO; 
+
+	if(Final) {
+		IndirectSpecular.w = texelFetch(Direct, Pixel,0).x; 
+	}
+
+
 
 }

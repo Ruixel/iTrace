@@ -37,24 +37,4 @@ vec3 SuperiorClamp(vec3 Input) {
 void main() {
 	LightingGlow = mix(texture(GlowInput, TexCoord).xyz, textureLod(RawInput, TexCoord, Lod).xyz, Mix); 
 
-	if(LensFlare) {
-		
-		vec2 GhostCoord = 1.0 - TexCoord; 
-
-		vec2 GhostVec = (0.5 - GhostCoord) * 0.37; 
-
-		for(int j = 1; j < 8; j++) {
-			
-			vec2 Offset = fract(GhostCoord + GhostVec * j); 
-			
-			float Weight = length(vec2(0.5) - Offset) / 0.707106781; 
-
-			LightingGlow += SuperiorClamp(TextureDistorted(GlowInput, Offset, normalize(vec2(0.7,1.0)), vec3(.0,.005,.01))) * pow(1.0 - Weight, 50.0); 
-
-		}
-
-
-
-	}
-
 }

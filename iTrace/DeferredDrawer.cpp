@@ -16,7 +16,8 @@ namespace iTrace {
 
 			DeferredManager = Shader("Shaders/Deferred"); 
 			DeferredUnwrapper = Shader("Shaders/DeferredUnwrapper"); 
-			Deferred = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 4, { GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_RGBA16F }, false);
+			TransparentDeferredManager = Shader("Shaders/DeferredTransparent"); 
+			Deferred = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 8, { GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_RGBA16F, GL_R16F,GL_RGBA16F,GL_RGB16F,GL_RGB16F }, false);
 			RawDeferred = FrameBufferObject(Window.GetResolution(), GL_RGBA16F); 
 			TestStoneTexture = LoadTextureGL("Materials/Stone/Albedo.png"); 
 
@@ -42,6 +43,23 @@ namespace iTrace {
 			World.RenderWorld(Camera, DeferredManager);
 
 			DeferredManager.UnBind();
+
+			TransparentDeferredManager.Bind(); 
+
+			TransparentDeferredManager.SetUniform("Time", Window.GetTimeOpened()); 
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockDataTexture());
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_1D, Chunk::GetTextureExtensionData());
+
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(6));
+
+			World.RenderWorldTransparent(Camera, DeferredManager); 
+
+			TransparentDeferredManager.UnBind(); 
 
 			RawDeferred.UnBind();
 
@@ -127,12 +145,22 @@ namespace iTrace {
 			DeferredUnwrapper.SetUniform("MetalnessTextures", 14);
 
 			DeferredUnwrapper.UnBind();
+
+			TransparentDeferredManager.Bind(); 
+
+			TransparentDeferredManager.SetUniform("TextureData", 0);
+			TransparentDeferredManager.SetUniform("TextureExData", 1);
+			TransparentDeferredManager.SetUniform("OpacityTextures", 2);
+
+			TransparentDeferredManager.UnBind(); 
+
 		}
 
 		void DeferredRenderer::ReloadDeferred(Window& Window)
 		{
 			DeferredManager.Reload("Shaders/Deferred");
 			DeferredUnwrapper.Reload("Shaders/DeferredUnwrapper");
+			TransparentDeferredManager.Reload("Shaders/DeferredTransparent"); 
 			SetUniforms(Window); 
 		}
 

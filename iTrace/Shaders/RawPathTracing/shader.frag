@@ -14,7 +14,6 @@ layout(location = 2) out vec3 WorldPos;
 layout(location = 3) out vec4 IndirectSpecular;
 layout(location = 4) out float Direct;
 
-
 uniform sampler2D Normals;
 uniform sampler2D WorldPosition;
 uniform sampler3D Voxels;
@@ -23,7 +22,13 @@ uniform sampler2D Ranking;
 uniform sampler2D Scrambling;
 uniform sampler2DArray DiffuseTextures;
 uniform sampler2DArray EmissiveTextures;
+uniform sampler2DArray DisplacementTextures; 
+uniform sampler2DArray NormalTextures; 
+
 uniform sampler2D Depth; 
+uniform sampler2D ParallaxData; 
+uniform sampler2D TCData; 
+uniform sampler2D LowFrequencyNormal; 
 
 uniform sampler1D TextureData;
 uniform samplerCube Sky;
@@ -47,6 +52,11 @@ uniform mat4 DirectionMatrices[4];
 uniform vec3 SunColor; 
 uniform vec3 LightDirection; 
 
+uniform int ParallaxDirections; 
+uniform int ParallaxResolution; 
+uniform bool DoParallax; 
+
+uniform mat4 CameraMatrix; 
 
 int FetchFromTexture(sampler2D Texture, int Index) {
 
@@ -132,13 +142,15 @@ float DirectHQ(vec3 Position, float Penumbra, vec2 ScreenPos) {
 
 	int Cascade = -1; 
 
+	float Edge = 0.9 - hash(ivec2(ScreenPos),0,13) * 0.05; 
+
 	for(int i = 0; i < 4; i++) {
 		
 		vec4 Clip = DirectionMatrices[i] * vec4(Position, 1.0); 
 	
 		NDC = Clip.xyz / Clip.w; 
 
-		if((abs(NDC.x) < 0.9 && abs(NDC.y) < 0.9) || (abs(NDC.x) < 1.0 && abs(NDC.y) < 1.0 && i == 3)) {
+		if((abs(NDC.x) < Edge && abs(NDC.y) < Edge) || (abs(NDC.x) < 1.0 && abs(NDC.y) < 1.0 && i == 3)) {
 			Cascade = i; 
 			break; 
 		}
@@ -150,18 +162,18 @@ float DirectHQ(vec3 Position, float Penumbra, vec2 ScreenPos) {
 
 	float Shadow = 0.0; 
 
-	float Noise = hash(ivec2(ScreenPos),FrameCount / 4,0) * 2.4; 
+	float Noise = hash(ivec2(ScreenPos),0,12) * 2.4; 
 
 
 	for(int Sample = 0; Sample < 8; Sample++) {
 
 		vec2 VogelFetch = VogelDisk(Sample, 8, 2.82842712475, Noise); 
 
-		vec2 ShadowCoord = (NDC.xy) * 0.5 + 0.5 + VogelFetch * clamp(Penumbra * 1.45,0.0,0.05); 
+		vec2 ShadowCoord = (NDC.xy) * 0.5 + 0.5 + VogelFetch * clamp(Penumbra * 0.1,0.0,0.05); 
 
 		ShadowCoord = clamp(ShadowCoord, vec2(0.0), vec2(1.0)); 
 
-		Shadow += texture(DirectionalCascades[Cascade], vec3(ShadowCoord.xy,(NDC.z*0.5+0.5) -0.000018)); 
+		Shadow += texture(DirectionalCascades[Cascade], vec3(ShadowCoord.xy,(NDC.z*0.5+0.5) -0.000018 * clamp(Penumbra*100.0,1.0,50.0))); 
 
 	}
 
@@ -210,6 +222,34 @@ vec3 BlockNormals[6] = vec3[](
 	vec3(0.0, 0.0, 1.0),
 	vec3(0.0, 0.0, -1.0)
 	);
+
+const vec3 _BlockNormals[6] = vec3[](
+				vec3(0.0, 0.0, 1.0),
+				vec3(0.0, 0.0, -1.0),
+				vec3(1.0, 0.0, 0.0),
+				vec3(-1.0, 0.0, 0.0),
+				vec3(0.0, 1.0, 0.0),
+				vec3(0.0, -1.0, 0.0)
+);
+
+
+const vec3 _BlockTangents[6] = vec3[](
+	vec3(-1.0,0.0,0.0),
+	vec3(1.0,0.0,0.0),
+	vec3(0.0,0.0,1.0),
+	vec3(0.0,0.0,-1.0),
+	vec3(1.0,0.0,0.0),
+	vec3(1.0,0.0,0.0)
+); 
+
+const vec3 _BlockBiTangents[6] = vec3[](
+	vec3(0.0,-1.0,0.0),
+	vec3(0.0,-1.0,0.0),
+	vec3(0.0,-1.0,0.0),
+	vec3(0.0,-1.0,0.0),
+	vec3(0.0,0.0,1.0),
+	vec3(0.0,0.0,-1.0)
+); 
 
 int SidesTranslated[6] = int[](
 	2, 3, 4, 5, 0, 1
@@ -625,9 +665,128 @@ bool RayBoxIntersect(vec3 Origin, vec3 Direction, vec3 InverseDirection, vec3 Mi
 
 }
 
+vec3 ToTBNSpace(int Side, vec3 WorldPosition) {
+	if(Side == 0) {
+		return -WorldPosition.xyz; 
+	}
+	else if(Side == 1) {
+		return WorldPosition.xyz * vec3(1.0,-1.0,1.0); 
+	}
+	else if(Side == 2) {
+		return WorldPosition.zyx * vec3(1.0,-1.0,1.0); 
+	}
+	else if(Side == 3) {
+		return WorldPosition.zyx * vec3(-1.0,-1.0,1.0); 
+	}
+	else {
+		return WorldPosition.xzy; 
+	}
+}
+
+float SampleParallaxMap(vec3 Point, uint Texture, float lod) {
+	
+	Point = fract(Point); 
+	
+	int z = int(Point.y * ParallaxDirections); 
+	
+	int NextZ = (z+1) % ParallaxDirections; 
+	
+	float Interp = fract(Point.y*ParallaxDirections); 
+	
+
+	vec2 PixelSize = 1.0 / vec2((ParallaxResolution+2)*ParallaxDirections, ParallaxResolution); 
+
+	float AddonSize = 1.0 / ParallaxDirections; 
+
+	float Multiply = float(ParallaxResolution) / float((ParallaxResolution+2)*ParallaxDirections); 
+	Point.z = 1.0 - Point.z; 
+
+	vec2 PixelPoint = Point.xz; 
+	PixelPoint.x = (PixelPoint.x + PixelSize.x) * Multiply + AddonSize * z; 
+
+	vec2 PixelPoint2 = Point.xz; 
+	PixelPoint2.x = (PixelPoint2.x + PixelSize.x) * Multiply + AddonSize * NextZ; 
+	return mix(textureLod(DisplacementTextures, vec3(PixelPoint, Texture),lod).x, textureLod(DisplacementTextures, vec3(PixelPoint2,Texture),lod).x, Interp); 
+}
+
+float GetTraversal(vec2 TC, vec3 Direction, uint Side, uint Type, inout vec3 DirectionProjected, float Lod) {
+	DirectionProjected = ToTBNSpace(int(Side),Direction); 
+
+	vec2 DirectionXZ = normalize(DirectionProjected.xy); 
+	
+	float Angle = atan(DirectionXZ.x, DirectionXZ.y); 
+
+	return SampleParallaxMap(vec3(TC.x, (Angle-1.57079633) / 6.28318531,TC.y), Type, Lod) * 0.5; //temporary! 
+}
 
 
-vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular) {
+
+
+uniform float znear; 
+uniform float zfar; 
+
+float LinearDepth(float z)
+{
+    return 2.0 * znear * zfar / (zfar + znear - (z * 2.0 - 1.0) * (zfar - znear));
+} 
+
+
+float ScreenSpaceTraceShadows(vec3 Origin, vec3 Direction, float MaxTraversal, int Steps) {
+
+	vec4 PreviousClip = CameraMatrix * vec4(Origin, 1.0); 
+	PreviousClip.xyz /= PreviousClip.w; 
+	if(abs(PreviousClip.x) > 1 || abs(PreviousClip.y) > 1 || abs(PreviousClip.z) > 1) 
+			return 1.0; 
+	PreviousClip.xyz = PreviousClip.xyz * 0.5 + 0.5; 
+	vec3 Pos = Origin; 
+	vec3 Step = (Direction * MaxTraversal) / float(Steps); 
+
+	float LinPrev = LinearDepth(PreviousClip.z); 
+
+	ivec2 TextureSize = textureSize(Depth, 0).xy; 
+
+	for(int i = 0; i < Steps; i++) {
+		
+		Pos += Step; 
+
+		vec4 CurrentClip = CameraMatrix * vec4(Pos, 1.0); 
+		CurrentClip.xyz /= CurrentClip.w; 
+
+		if(abs(CurrentClip.x) > 1 || abs(CurrentClip.y) > 1 || abs(CurrentClip.z) > 1) 
+			return 1.0; 
+
+		CurrentClip.xyz = CurrentClip.xyz * 0.5 + 0.5; 
+
+		
+
+		float zFetch = texelFetch(Depth, ivec2(CurrentClip.xy * TextureSize),0).x; 
+
+		//were we behind it and are we NOW ahead of it?
+
+		float LinCur = LinearDepth(CurrentClip.z); 
+
+		if(CurrentClip.z > zFetch && abs(LinearDepth(zFetch)-LinCur) < max(10.0 * abs(LinCur-LinPrev),0.1)) {
+			return pow(float(i)/float(Steps),3); 
+		}
+		LinPrev = LinCur;  
+		PreviousClip = CurrentClip; 
+
+	}
+
+	return 1.0; 
+
+}
+	
+
+//refined screen-space trace function (uses a binary search for the extra refinement) to be used for higher settings! 
+float ScreenSpaceTraceHQ(vec3 Origin, vec3 Direction, float MaxTraversal, int Steps, int BSSteps) {
+	return 0.0; 
+}
+
+
+
+
+vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4 ParallaxData, vec3 TC, vec3 LowFrequencyNormal) {
 
 
 	if(!DoRayTracing) {
@@ -642,17 +801,59 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular) {
 	int Block, Face;
 	vec3 OutNormal, Position;
 	vec2 TexCoord;
-
+	vec3 BlockColor = vec3(0.0); 
 	vec4 LightingDataInc = textureLod(LightingData, (Origin + Normal * .5).zyx / 128.0, 0.0); 
-		
-
+	float Emissive = 0.0; 
+	float DirectMultiplier = 1.0; 
 
 	// return vec4(LightingDataInc.xyz,1.0); 
 	//return vec4(GetHemisphericalShadowMaphit(Origin, Normal), 1.0); 
 	 
 	//bool Hit = RayBoxIntersect(Origin, Direction, 1.0/Direction, CameraPosition.xyz - vec3(0.3,1.49,0.3), CameraPosition.xyz + vec3(0.3,0.0,0.3), OutNormal, Position); 
 	bool Hit = false; 
-	bool PlayerHit = Hit; 
+	
+	//Parallax hit! 
+
+	vec3 DirectionProjected; 
+
+
+	float TraversalDirection = GetTraversal((TC.xy), Direction, uint(ParallaxData.x+.1), uint(ParallaxData.y+.1)-1u,DirectionProjected,ParallaxData.z); 
+
+
+
+	if((TraversalDirection+0.00390625) < ParallaxData.w * (1.0-pow(abs(DirectionProjected.z),4.0))) {
+		
+		vec2 ProjectedTC = TC.xy + DirectionProjected.xy * TraversalDirection;
+		
+		BlockColor = pow(texture(DiffuseTextures, vec3(ProjectedTC, int(TC.z+.2))).xyz, vec3(2.2));  
+		Position = Origin; 
+
+		int Side = int(ParallaxData.x+.1); 
+
+		mat3 TBN = mat3(_BlockTangents[Side], _BlockBiTangents[Side], _BlockNormals[Side]);
+		
+		OutNormal = normalize(TBN * (texture(NormalTextures, vec3(ProjectedTC, int(TC.z+.2))).xyz * 2.0 - 1.0));
+		//Emissive = 30.0 * texture(EmissiveTextures, vec3(ProjectedTC, int(2))).x; 
+		//return vec4(max(OutNormal,vec3(0.0)),0.0); 
+		Hit = true; 
+
+		vec3 SunProjected; 
+
+		vec2 NewTC = TC.xy + DirectionProjected.xy * TraversalDirection; 
+
+		float TraversalSun = GetTraversal(NewTC.xy, LightDirection, uint(ParallaxData.x+.1), uint(ParallaxData.y+.1)-1u, SunProjected, ParallaxData.z); 
+
+
+
+		DirectMultiplier = ((TraversalSun+0.00390625) >= ParallaxData.w * (1.0-pow(abs(SunProjected.z),4.0)) ? 1.0 : 0.0);
+
+
+	}
+
+	//return vec4(ParallaxData.www,1.0);
+
+
+	bool ParallaxHit = Hit; 
 
 	if(!Hit)
 		Hit = RawTraceOld(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 4);
@@ -662,13 +863,12 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular) {
 	}
 
 
-
 	vec4 Diffuse = vec4(0.0); 
 
 	if (Hit) {
-		vec3 BlockColor = vec3(0.745098039,0.549019608,0.521568627); 
-		float Emissive = 0.0; 
-		if(!PlayerHit) {
+		
+		
+		if(!ParallaxHit) {
 
 		
 
@@ -756,7 +956,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular) {
 
 		Diffuse.xyz += BlockColor * HemiSpherical; 
 
-		Diffuse.xyz += DirectBasic(Position) * max(dot(OutNormal, LightDirection), 0.0) * SunColor * BlockColor; 
+		Diffuse.xyz += DirectBasic(Position) * max(dot(OutNormal, LightDirection), 0.0) * SunColor * BlockColor * DirectMultiplier; 
 
 		//Diffuse.xyz = OutNormal; 
 
@@ -778,7 +978,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular) {
 	else {
 		//GI: 
 		if(Specular) {
-			Diffuse.xyz = textureLod(Sky, Direction,0.0).xyz; 
+			Diffuse.xyz = textureLod(SkyNoMie, Direction,0.0).xyz; 
 		}
 		else {
 			Diffuse.xyz = textureLod(SkyNoMie, Direction,8.0).xyz; 
@@ -836,13 +1036,8 @@ ivec2 States[] = ivec2[](
 	ivec2(0, 0),
 	ivec2(1, 0));
 
-uniform float znear; 
-uniform float zfar; 
 
-float LinearDepth(float z)
-{
-    return 2.0 * znear * zfar / (zfar + znear - (z * 2.0 - 1.0) * (zfar - znear));
-} 
+
 
 
 void main() {
@@ -882,12 +1077,10 @@ void main() {
 	Penum /= PenumWeight; 
 
 
-
-	Direct = DirectHQ(WorldPos,max(Penum,0.0002),vec2(Pixel) / 2); 
+	Direct = DirectHQ(WorldPos,max(Penum,0.007),vec2(Pixel) / 2); 
+	Direct *= ScreenSpaceTraceShadows(WorldPos + Normal.xyz * 0.01, normalize(LightDirection), 0.15,9); 
 	//Direct = pow(texelFetch(Depth, Pixel, 0).x,3000.0); 
 	//	Direct = texture(BlockerData, TexCoord).x; 
-
-
 
 	vec2 hash = hash2();
 
@@ -895,11 +1088,16 @@ void main() {
 		hash = hash2(Pixel / 2, FrameCount / 4, 0);
 	}
 
+	vec4 ParallaxData = texelFetch(ParallaxData, Pixel, 0); 
+	vec3 TC = texelFetch(TCData, Pixel, 0).xyz; 
+	vec3 LowFrequencyNormal = texelFetch(LowFrequencyNormal, Pixel, 0).xyz; 
+
 	vec3 Incident = normalize(WorldPos - CameraPosition);
 	vec3 Direction = cosWeightedRandomHemisphereDirection(Normal.xyz, hash);
+
 	vec3 SpecularDirection = GetSpecularRayDirection(reflect(Incident, Normal.xyz), Normal.xyz, Incident, RawNormal.w, Pixel);
-	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.0025, Direction,Normal.xyz, false); 
-	vec4 Specular = GetRayShading(WorldPos + Normal.xyz * 0.0025, SpecularDirection, Normal.xyz, true); 
+	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.0025, Direction,Normal.xyz, false, ParallaxData,TC,LowFrequencyNormal); 
+	vec4 Specular = GetRayShading(WorldPos + Normal.xyz * 0.0025, SpecularDirection, Normal.xyz, true, ParallaxData,TC,LowFrequencyNormal); 
 
 	float L = length(Normal.xyz); 
 

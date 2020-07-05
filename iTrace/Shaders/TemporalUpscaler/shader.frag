@@ -5,13 +5,14 @@ in vec2 TexCoord;
 layout(location = 0) out vec4 IndirectDiffuse;
 layout(location = 1) out vec4 Volumetrics;
 layout(location = 2) out vec4 IndirectSpecular;
+layout(location = 3) out vec4 Clouds;
 
 uniform sampler2D FramesNormal[4]; 
 uniform sampler2D FramesWorldPos[4]; 
 uniform sampler2D FramesIndirectDiffuse[4]; 
 uniform sampler2D FramesVolumetric[4]; 
 uniform sampler2D FramesIndirectSpecular[4]; 
-uniform sampler2D FramesDirect[4]; 
+uniform sampler2D FramesClouds[4]; 
 
 uniform sampler2D MotionVectors[4]; 
 uniform sampler2D WorldPos; 
@@ -165,7 +166,7 @@ void main() {
 			IndirectDiffuse = texelFetch(FramesIndirectDiffuse[2], Pixel, 0); 
 			Volumetrics = texelFetch(FramesVolumetric[2], Pixel, 0); 
 			IndirectSpecular = texelFetch(FramesIndirectSpecular[2], Pixel, 0); 
-			IndirectSpecular.w = texelFetch(FramesDirect[2], Pixel, 0).x;
+			Clouds = texelFetch(FramesClouds[2], Pixel, 0); 
 
 
 		}
@@ -234,7 +235,7 @@ void main() {
 			IndirectDiffuse = texelFetch(FramesIndirectDiffuse[3], Pixel, 0); 
 			Volumetrics = texelFetch(FramesVolumetric[3], Pixel, 0); 
 			IndirectSpecular = texelFetch(FramesIndirectSpecular[3], Pixel, 0); 
-			IndirectSpecular.w = texelFetch(FramesDirect[3], Pixel, 0).x;
+			Clouds = texelFetch(FramesClouds[3], Pixel, 0); 
 		}
 	}
 	else if(State == 2) {
@@ -301,7 +302,7 @@ void main() {
 			IndirectDiffuse = texelFetch(FramesIndirectDiffuse[0], Pixel, 0); 
 			Volumetrics = texelFetch(FramesVolumetric[0], Pixel, 0); 
 			IndirectSpecular = texelFetch(FramesIndirectSpecular[0], Pixel, 0); 
-			IndirectSpecular.w = texelFetch(FramesDirect[0], Pixel, 0).x;
+			Clouds = texelFetch(FramesClouds[0], Pixel, 0); 
 
 
 		}
@@ -367,7 +368,7 @@ void main() {
 			IndirectDiffuse = texelFetch(FramesIndirectDiffuse[1], Pixel, 0); 
 			Volumetrics = texelFetch(FramesVolumetric[1], Pixel, 0); 
 			IndirectSpecular = texelFetch(FramesIndirectSpecular[1], Pixel, 0); 
-			IndirectSpecular.w = texelFetch(FramesDirect[1], Pixel, 0).x;
+			Clouds = texelFetch(FramesClouds[1], Pixel, 0); 
 
 
 		}
@@ -411,9 +412,7 @@ void main() {
 		IndirectDiffuse = texelFetch(FramesIndirectDiffuse[CurrentFrame], BestPixel, 0); 
 		Volumetrics = texelFetch(FramesVolumetric[CurrentFrame], BestPixel , 0); 
 		IndirectSpecular = texelFetch(FramesIndirectSpecular[CurrentFrame], BestPixel, 0); 
-		IndirectSpecular.w = texelFetch(FramesDirect[CurrentFrame], BestPixel, 0).x;
-
+		Clouds = texelFetch(FramesClouds[CurrentFrame], BestPixel, 0); 
 	}
-
 
 }

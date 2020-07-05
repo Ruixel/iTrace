@@ -16,7 +16,7 @@ namespace iTrace {
 
 
 			void PrepareCompositing(); 
-			void DoCompositing(Camera & Camera,DeferredRenderer & Deferred,LightCombiner & Combined, GlowRenderer & Glow); 
+			void DoCompositing(Camera & Camera,DeferredRenderer & Deferred,LightCombiner & Combined, PostProcess & Glow); 
 
 		};
 		

@@ -61,8 +61,8 @@ float PhaseFunction() {
 }
 
 float GetDensity(vec3 WorldPosition) {
-	//return 1.0; 
-	return 1.0 * (1.0 - clamp((WorldPosition.y - 40.0) * 0.05, 0.0, 1.0)) * texture(Wind, (WorldPosition.xz *.1 + Time * .1)* .01).x; 
+	return .3 * pow(texture(Wind, (WorldPosition.xz *.1 + Time * .1) * .05).x,2.0); 
+	return 1.0 * (1.0 - clamp((WorldPosition.y - 60.0) * 0.05, 0.0, 1.0)) * texture(Wind, (WorldPosition.xz *.1 + Time * .1)* .01).x; 
 }
 
 ivec2 States[] = ivec2[](
@@ -75,14 +75,14 @@ vec3 GetHemisphericalShadowMaphit(vec3 WorldPos) {
 	
 	ivec2 PixelShift = ivec2(gl_FragCoord) % ivec2(2); 
 
-	int Dither = ((PixelShift.x * 2 + PixelShift.y + Frame/4) % 4) * 4 ;
+	int Dither = ((PixelShift.x * 2 + PixelShift.y) % 4) * 12 ;
 
 	
 	vec3 Result = vec3(0.0); 
 
 	for(int i = 0; i < 12; i++) {
 
-		int Sample = Dither + i * 4; 
+		int Sample = Dither; 
 
 		vec4 ClipSpace = HemisphericalMatrices[Sample+i] * vec4(WorldPos, 1.0); 
 
@@ -99,7 +99,7 @@ vec3 GetHemisphericalShadowMaphit(vec3 WorldPos) {
 
 	}
 
-	return Result / 12.0; 
+	return Result; 
 
 }
 
@@ -236,7 +236,7 @@ void main() {
 		
 			//grab lighting at current point 
 
-			vec3 LightingData = (textureLod(ChunkLighting, (Position).zyx / 128.0, 0.0).xyz * 10.0 + GetHemisphericalShadowMaphit(Position) * 2.0 + DirectBasic(Position) * SunColor); 
+			vec3 LightingData = (textureLod(ChunkLighting, (Position).zyx / 128.0, 0.0).xyz * 10.0 +  DirectBasic(Position) * SunColor * 3.0); 
 
 			vec3 S = LightingData * SampleSigmaS * PhaseFunction(); 
 

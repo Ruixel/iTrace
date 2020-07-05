@@ -88,7 +88,7 @@ void main() {
 
 			float Weight = 0.0; 
 			
-			float BaseWeight = abs(BaseData.w - CurrentData.w);
+			float BaseWeight = abs(BaseData.w - CurrentData.w) + 0.25 * length(vec2(x,y));
 
 			Weight = 100.0 * (1.0-pow(dot(CurrentData.xyz, BaseData.xyz),3.0)) + BaseWeight + 100.0*abs(BaseRoughness - CurrentRoughness); 
 
@@ -111,5 +111,5 @@ void main() {
 
 	IndirectDiffuse = texture(Lighting, BestTC); 
 	IndirectSpecular.xyz = texture(Specular, BestTC).xyz; 
-	IndirectSpecular.w = texture(Specular, BestTC).w; 
+	IndirectSpecular.w = texture(Specular, BestShadowTC).w; 
 }

@@ -11,7 +11,7 @@ namespace iTrace {
 		void LightCombiner::PrepareLightCombiner(Window& Window)
 		{
 
-			CombinedLighting = FrameBufferObject(Window.GetResolution(), GL_RGB16F, false); 
+			CombinedLighting = MultiPassFrameBufferObject(Window.GetResolution(), 2, { GL_RGB16F,GL_RGB16F }, false);
 			LightCombinerShader = Shader("Shaders/LightCombiner"); 
 
 			RequestBoolean("noalbedo", false); 
@@ -20,7 +20,7 @@ namespace iTrace {
 		}
 
 
-		void LightCombiner::CombineLighting(Window& Window, Camera & Camera, IndirectLightingHandler& Indirect, DeferredRenderer& Deferred, SkyRendering& Sky)
+		void LightCombiner::CombineLighting(Window& Window, Camera & Camera, LightManager& Indirect, DeferredRenderer& Deferred, SkyRendering& Sky)
 		{
 
 			CombinedLighting.Bind(); 
@@ -33,6 +33,7 @@ namespace iTrace {
 			//Indirect.RawPathTrace[Window.GetFrameCount() % 4].BindImage(0, 0); 
 
 			Indirect.TemporallyFiltered.BindImage(1, 12); 
+			Deferred.Deferred.BindImage(4, 13);
 
 			Deferred.Deferred.BindImage(2, 2);
 			Deferred.Deferred.BindImage(0, 3);
@@ -49,6 +50,10 @@ namespace iTrace {
 				LightCombinerShader.SetUniform(Title, Sky.ProjectionMatrices[i] * Sky.ViewMatrices[i]);
 
 			}
+
+			Deferred.Deferred.BindImage(7, 14);
+			Indirect.TemporallyFiltered.BindImage(3, 15);
+
 
 			LightCombinerShader.SetUniform("LightDirection", Sky.Orientation);
 			LightCombinerShader.SetUniform("SunColor", Sky.SunColor);
@@ -83,6 +88,9 @@ namespace iTrace {
 			LightCombinerShader.SetUniform("ShadowMaps[4]", 11);
 
 			LightCombinerShader.SetUniform("Volumetrics", 12);
+			LightCombinerShader.SetUniform("DirectMultiplier", 13);
+			LightCombinerShader.SetUniform("SimpleLight", 14);
+			LightCombinerShader.SetUniform("Clouds", 15);
 
 
 			LightCombinerShader.UnBind();

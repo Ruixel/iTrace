@@ -42,7 +42,7 @@ namespace iTrace {
 			
 				for (int i = 0; i < Objects.size(); i++) {
 					std::string IndexName = Name + "[" + std::to_string(i) + "]"; 
-					SetUniform(IndexName, Objects[i]); 
+					SetUniform(IndexName, Objects[i]);	
 				}
 			
 			}

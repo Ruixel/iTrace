@@ -421,7 +421,7 @@ namespace iTrace {
 		Deferred.PrepareDeferredRenderer(Window);
 		Indirect.PrepareIndirectLightingHandler(Window);
 		Compositor.PrepareCompositing();
-		Glow.PrepareGlow(Window, Camera);
+		Glow.PreparePostProcess(Window, Camera);
 		Sky.PrepareSkyRenderer(Window);
 		Combiner.PrepareLightCombiner(Window);
 		Text = TextSystem("Textures/Font.png");
@@ -440,7 +440,7 @@ namespace iTrace {
 
 		
 
-
+		Inventory.PrepareInventory(); 
 
 	}
 
@@ -484,13 +484,13 @@ namespace iTrace {
 						Block -= Chunk::GetBlockSize();
 					}
 
+					Inventory.ActiveSlot = Block;
 
 					break;
 
 				case sf::Event::MouseButtonPressed:
 
 					if (Event.mouseButton.button == sf::Mouse::Left) {
-
 						World.CastBlock(Camera, Chunk::BLOCK_ACTION::BREAK, 128, 0);
 
 						//Chunk::GetBlock(Camera, Chunk::BLOCK_ACTION::BREAK, 128, 0);
@@ -501,6 +501,8 @@ namespace iTrace {
 						World.CastBlock(Camera, Chunk::BLOCK_ACTION::PLACE, 128, Block);
 
 					}
+
+
 					break;
 
 				case sf::Event::KeyPressed:
@@ -523,6 +525,7 @@ namespace iTrace {
 								Deferred.ReloadDeferred(Window);
 								Combiner.ReloadLightCombiner(Window);
 								Sky.ReloadSky(); 
+								Glow.ReloadPostProcess(Window, Camera); 
 							}
 							break;
 						case sf::Keyboard::F1:
@@ -659,10 +662,9 @@ namespace iTrace {
 
 
 			Deferred.RenderDeferred(Window, Camera, World, Sky.Orientation);
-
 			Indirect.RenderIndirectLighting(Window, Camera, Deferred, World, Sky);
 			Combiner.CombineLighting(Window, Camera, Indirect, Deferred, Sky);
-			Glow.RenderGlow(Window, Sky, Indirect, Deferred, Combiner);
+			Glow.RenderPostProcess(Window, Sky, Indirect, Deferred, Combiner);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, NULL);
 
@@ -672,14 +674,17 @@ namespace iTrace {
 			if (ShowGUI) {
 
 				Text.PrepareTextDrawing();
-				Text.DisplayText("Framerate: " + std::to_string(FramesPerSecond), Window, 0.005, Vector2f(-.97, .95), Vector3f(1.0));
+				//Text.DisplayText("Framerate: " + std::to_string(FramesPerSecond), Window, 0.005, Vector2f(-.97, .95), Vector3f(1.0));
 				//Text.DisplayText("X: " + std::to_string(Camera.Position.x) + " Y: " + std::to_string(Camera.Position.y) + " Z: " + std::to_string(Camera.Position.z), Window, 0.005, Vector2f(-.97, .9), Vector3f(1.0));
-				Text.DisplayText("Type: " + Chunk::GetBlock(Block).Name, Window, 0.005, Vector2f(-.97, .85), Vector3f(1.0));
+				//Text.DisplayText("Type: " + Chunk::GetBlock(Block).Name, Window, 0.005, Vector2f(-.97, .85), Vector3f(1.0));
 				Commands.DrawCommandText(&Text, Window); 
 
-				//Profiler::DrawProfiling(Window, Text);
+				Profiler::DrawProfiling(Window, Text);
 
 				Text.EndTextDrawing();
+
+				Inventory.DrawInventory(Window);
+
 			}
 
 			glFinish();
@@ -687,6 +692,8 @@ namespace iTrace {
 			if (GetBoolean("slowframes")) {
 				Sleep(30); 
 			}
+
+			
 
 			Window.GetRawWindow()->display();
 

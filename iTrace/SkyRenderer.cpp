@@ -23,6 +23,7 @@ namespace iTrace {
 			SkyCubeShader = Shader("Shaders/SkyCubeShader");
 			ShadowDeferred = Shader("Shaders/ShadowDeferred"); 
 			ShadowDeferredPlayer = Shader("Shaders/PlayerModelShader");
+			ShadowTransparentDeferred = Shader("Shaders/DeferredTransparent"); 
 
 			//HemisphericalShadowMapCopy = Shader("Shaders/HemisphericalShadowMapCopy"); 
 			
@@ -88,6 +89,14 @@ namespace iTrace {
 			CreateDirectionMatrices(); 
 
 			HemiProjectionMatrix = Core::ShadowOrthoMatrix(250.0f, 100.f, 2500.f);
+
+			ShadowTransparentDeferred.Bind(); 
+
+			ShadowTransparentDeferred.SetUniform("TextureData", 0);
+			ShadowTransparentDeferred.SetUniform("TextureExData", 1);
+			ShadowTransparentDeferred.SetUniform("OpacityTextures", 2);
+
+			ShadowTransparentDeferred.UnBind(); 
 
 		}
 
@@ -203,10 +212,10 @@ namespace iTrace {
 
 			iTrace::Camera ShadowCamera; 
 
-			int ToUpdate = Window.GetFrameCount() % 4;
+			int ToUpdate = UpdateQueue[Window.GetFrameCount() % 12];
 
 			ViewMatrices[ToUpdate] = Core::ViewMatrix(Camera.Position + Orientation * 500.0f, Vector3f(Direction.x, Direction.y, 0.));
-			ProjectionMatrices[ToUpdate] = Core::UpscalingMatrix(1.0f / Vector2f(SHADOWMAP_RES * 2), Window.GetFrameCount() / 4) * ProjectionMatricesRaw[ToUpdate];
+			ProjectionMatrices[ToUpdate] = ProjectionMatricesRaw[ToUpdate];
 
 			ShadowCamera.Project = ProjectionMatrices[ToUpdate]; 
 			ShadowCamera.View = ViewMatrices[ToUpdate]; 
@@ -220,14 +229,33 @@ namespace iTrace {
 
 			ShadowDeferred.UnBind();
 
+			
+
 			ShadowDeferredPlayer.Bind(); 
 
 			ShadowDeferredPlayer.SetUniform("CameraPosition", Camera.Position); 
 			ShadowDeferredPlayer.SetUniform("IdentityMatrix", ShadowCamera.Project * ShadowCamera.View); 
 
-			//DrawPostProcessCube(); 
+			DrawPostProcessCube(); 
 
 			ShadowDeferredPlayer.UnBind();
+
+			ShadowTransparentDeferred.Bind();
+
+			ShadowTransparentDeferred.SetUniform("Time", Window.GetTimeOpened());
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockDataTexture());
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_1D, Chunk::GetTextureExtensionData());
+
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(6));
+
+			World.RenderWorldTransparent(ShadowCamera, ShadowTransparentDeferred);
+
+			ShadowTransparentDeferred.UnBind();
 
 			ShadowMaps[ToUpdate].UnBind();
 

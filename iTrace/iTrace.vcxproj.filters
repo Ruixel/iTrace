@@ -142,6 +142,30 @@
     <Filter Include="Shaders\PlayerModelShader">
       <UniqueIdentifier>{3f6cf519-1fdb-48c1-8ece-890361881ca7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\InventoryUIShader">
+      <UniqueIdentifier>{8db8d9a1-b53d-4e23-9c45-bc0de25b1096}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\DoF">
+      <UniqueIdentifier>{c00a981f-6f18-40e0-99f5-c2dde28ffbb4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\DoFPrep">
+      <UniqueIdentifier>{b1db0f7c-8f0c-497c-af2d-cfe270a68bc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\DeferredTransparent">
+      <UniqueIdentifier>{47ac888a-9e6b-438c-94b4-46848fae4958}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BenchMark">
+      <UniqueIdentifier>{7a282e6d-04ce-43fb-b290-53fc840256d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BenchMark\BenchCoherent">
+      <UniqueIdentifier>{44f82f28-feeb-4275-8833-7b789cd08379}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BenchMark\BenchRandom">
+      <UniqueIdentifier>{db738048-0d5b-44b6-8a9a-56fa0f6f29f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Clouds">
+      <UniqueIdentifier>{c5dbc05c-9cfd-486a-9226-ed183c16301f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -225,6 +249,9 @@
     <ClInclude Include="Inventory.h">
       <Filter>Header Files\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Sound.h">
+      <Filter>Header Files\Engine Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">
@@ -301,6 +328,12 @@
     </ClCompile>
     <ClCompile Include="SkyRenderer.cpp">
       <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Inventory.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Sound.cpp">
+      <Filter>Source Files\Engine Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -471,6 +504,48 @@
     </None>
     <None Include="Shaders\PlayerModelShader\shader.frag">
       <Filter>Shaders\PlayerModelShader</Filter>
+    </None>
+    <None Include="Shaders\InventoryUIShader\shader.vert">
+      <Filter>Shaders\InventoryUIShader</Filter>
+    </None>
+    <None Include="Shaders\InventoryUIShader\shader.frag">
+      <Filter>Shaders\InventoryUIShader</Filter>
+    </None>
+    <None Include="Shaders\DoF\shader.vert">
+      <Filter>Shaders\DoF</Filter>
+    </None>
+    <None Include="Shaders\DoF\shader.frag">
+      <Filter>Shaders\DoF</Filter>
+    </None>
+    <None Include="Shaders\DoFPrep\shader.vert">
+      <Filter>Shaders\DoFPrep</Filter>
+    </None>
+    <None Include="Shaders\DoFPrep\shader.frag">
+      <Filter>Shaders\DoFPrep</Filter>
+    </None>
+    <None Include="Shaders\DeferredTransparent\shader.vert">
+      <Filter>Shaders\DeferredTransparent</Filter>
+    </None>
+    <None Include="Shaders\DeferredTransparent\shader.frag">
+      <Filter>Shaders\DeferredTransparent</Filter>
+    </None>
+    <None Include="Benchmark\BenchCoherent\shader.vert">
+      <Filter>BenchMark\BenchCoherent</Filter>
+    </None>
+    <None Include="Benchmark\BenchCoherent\shader.frag">
+      <Filter>BenchMark\BenchCoherent</Filter>
+    </None>
+    <None Include="Benchmark\BenchRandom\shader.vert">
+      <Filter>BenchMark\BenchRandom</Filter>
+    </None>
+    <None Include="Benchmark\BenchRandom\shader.frag">
+      <Filter>BenchMark\BenchRandom</Filter>
+    </None>
+    <None Include="Shaders\Clouds\shader.frag">
+      <Filter>Shaders\Clouds</Filter>
+    </None>
+    <None Include="Shaders\Clouds\shader.vert">
+      <Filter>Shaders\Clouds</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -223,7 +223,7 @@ public:
     ////////////////////////////////////////////////////////////
     SoundBuffer& operator =(const SoundBuffer& right);
 
-private:
+protected:
 
     friend class Sound;
 

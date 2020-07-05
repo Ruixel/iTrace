@@ -4,6 +4,7 @@
 #include "Compositor.h"
 #include "CommandManager.h"
 #include "CommandPusher.h"
+#include "Inventory.h"
 
 namespace iTrace {
 
@@ -13,13 +14,14 @@ namespace iTrace {
 
 		WorldManager World; 
 		DeferredRenderer Deferred; 
-		IndirectLightingHandler Indirect; 
+		LightManager Indirect; 
 		SkyRendering Sky; 
 		Compositing Compositor; 
-		GlowRenderer Glow; 
+		PostProcess Glow; 
 		LightCombiner Combiner; 
 		TextSystem Text; 
 		CommandManager Commands; 
+		Inventory Inventory; 
 
 		void PreparePipeline(Camera& Camera, Window& Window);
 		void RunPipeline(Camera& Camera, Window& Window);

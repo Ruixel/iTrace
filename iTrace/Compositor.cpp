@@ -27,7 +27,7 @@ namespace iTrace {
 
 		}
 
-		void Compositing::DoCompositing(Camera& Camera, DeferredRenderer& Deferred, LightCombiner& Combined, GlowRenderer& Glow)
+		void Compositing::DoCompositing(Camera& Camera, DeferredRenderer& Deferred, LightCombiner& Combined, PostProcess& Glow)
 		{
 
 
@@ -39,10 +39,10 @@ namespace iTrace {
 			CompositorShader.SetUniform("zfar", Camera.zfar);
 			CompositorShader.SetUniform("DoGlow", GetBoolean("hdrpostprocess"));
 
-			Combined.CombinedLighting.BindImage(0); 
+			Combined.CombinedLighting.BindImage(0,0); 
 			Deferred.Deferred.BindDepthImage(1); 
 			Glow.GlowBuffer[2][1].BindImage(2); 
-			Glow.DoFBuffer[1].BindImage(3);
+			Glow.DoFBuffer.BindImage(3);
 			LensDirt.Bind(5); 
 
 			DrawPostProcessQuad(); 

@@ -21,7 +21,7 @@ namespace iTrace {
 #define CHUNK_SIZE 128
 #define TEXTURE_RES 512
 #define LONGESTLIGHT 10
-#define MAX_GREEDY 128
+#define MAX_GREEDY 32
 
 			const Vector3f BlockNormals[6] = {
 				Vector3f(1.0, 0.0, 0.0),
@@ -32,19 +32,32 @@ namespace iTrace {
 				Vector3f(0.0, 0.0, -1.)
 			};
 
-			const enum class TextureType : std::uint8_t { ALBEDO, NORMAL, ROUGHNESS, DISPLACEMENT, EMISSION, METALNESS, SIZE };
-			const enum class TextureExtension : std::uint8_t {DISPLACEMENT, EMISSION, METALNESS, SIZE};
+			const Vector3i VIndicies[8] = {
+					Vector3i(0,0,0),
+					Vector3i(0,0,1),
+					Vector3i(0,1,0),
+					Vector3i(0,1,1),
+					Vector3i(1,0,0),
+					Vector3i(1,0,1),
+					Vector3i(1,1,0),
+					Vector3i(1,1,1)
+			};
+
+
+			const enum class TextureType : std::uint8_t { ALBEDO, NORMAL, ROUGHNESS, DISPLACEMENT, EMISSION, METALNESS, OPACITY, SIZE };
+			const enum class TextureExtension : std::uint8_t {DISPLACEMENT, EMISSION, METALNESS, OPACITY, SIZE};
 			const enum class BLOCK_ACTION : std::uint8_t {BREAK, PLACE};
-			const std::array<std::string, static_cast<int>(TextureType::SIZE)> TextureNames = { "Albedo.png", "Normal.png", "Roughness.png", "Parallax.png","Emission.png", "Metalness.png"}; 
+			const enum class BLOCK_RENDER_TYPE : std::uint8_t {OPAQUE, TRANSPARENT, REFRACTIVE};
+			const std::array<std::string, static_cast<int>(TextureType::SIZE)> TextureNames = { "Albedo.png", "Normal.png", "Roughness.png", "Parallax.png","Emission.png", "Metalness.png", "Opacity.png"}; 
 			
-			const std::vector<std::vector<std::string>> Keywords = { {"col", "color", "alb", "albedo", "diffuse", "diff","_a","_c"}, {"norm", "normal", "_n"},{"rough", "roughness", "_r", "_s"} , {"displace", "disp", "height", "_h"}, {"emission", "emissive","emis","_e", "em"}, {"met", "metalness", "metallic", "spec", "specular", "_m"} };
+			const std::vector<std::vector<std::string>> Keywords = { {"col", "color", "alb", "albedo", "diffuse", "diff","_a","_c"}, {"norm", "normal", "_n","nor"},{"rough", "roughness", "_r", "_s"} , {"displace", "disp", "height", "_h"}, {"emission", "emissive","emis","_e"}, {"met", "metalness", "metallic", "spec", "specular", "_m"},{"opacity", "alpha","opaque"} };
 
 
 			struct TextureDir {
 
 				std::string BaseDirectory = "";
 				float ParallaxStrenght = 0.0f; 
-				std::array<int, static_cast<int>(TextureExtension::SIZE)> Extensions = {-1,-1, -1};
+				std::array<int, static_cast<int>(TextureExtension::SIZE)> Extensions = {-1,-1, -1, -1};
 				Vector3f EmissiveAverage = Vector3f(0.0); 
 
 				TextureDir(std::string BaseDir, float ParallaxStrenght) :
@@ -68,15 +81,17 @@ namespace iTrace {
 				bool IsEmissive = false; 
 				bool IsMetallic = false; 
 				float EmissiveStrength = 0.0; 
+				BLOCK_RENDER_TYPE RenderType; 
 				BlockType() {}
-				BlockType(std::string Name, std::vector<unsigned char> TexIds, bool IsSolid, bool IsEmpty, bool IsNone, float EmissiveStrength=0.0) : 
+				BlockType(std::string Name, std::vector<unsigned char> TexIds, bool IsSolid, bool IsEmpty, bool IsNone, float EmissiveStrength=0.0, BLOCK_RENDER_TYPE RenderType = BLOCK_RENDER_TYPE::OPAQUE) : 
 					Name(Name),
 					
 					IsSolid(IsSolid),
 					IsEmpty(IsEmpty),
 					IsNone(IsNone),
 					EmissiveStrength(EmissiveStrength),
-					IsEmissive(EmissiveStrength>0.1)
+					IsEmissive(EmissiveStrength>0.1),
+					RenderType(RenderType)
 				{
 					for (int i = 0; i < 6; i++) {
 						this->TexIds[i] = TexIds[glm::min(i, (int)(TexIds.size() - 1))]; 
@@ -86,8 +101,6 @@ namespace iTrace {
 				}
 
 			};
-
-
 
 			void AddBlock(BlockType Type); 
 			BlockType &GetBlock(unsigned char Idx); 
@@ -116,22 +129,74 @@ namespace iTrace {
 
 			};
 
+
+			struct ChunkMeshData {
+
+				unsigned int ChunkVAOs[4][4], ChunkVBOs[4][4][3]; 
+				unsigned int Vertices[4][4]; 
+
+				void Create() {
+					for (int x = 0; x < 4; x++) {
+						for (int y = 0; y < 4; y++) {
+							glGenVertexArrays(1, &ChunkVAOs[x][y]); 
+							glBindVertexArray(ChunkVAOs[x][y]); 
+							glGenBuffers(3, ChunkVBOs[x][y]); 
+						}
+					}
+					glBindVertexArray(0);
+				}
+
+				void Delete() {
+					for (int x = 0; x < 4; x++) {
+						for (int y = 0; y < 4; y++) {
+							glBindVertexArray(ChunkVAOs[x][y]); 
+							glDeleteBuffers(3, ChunkVBOs[x][y]); 
+							glDeleteVertexArrays(1, &ChunkVAOs[x][y]); 
+						}
+					}
+				}
+
+				void Draw(unsigned char SubX, unsigned char SubY) {
+					glBindVertexArray(ChunkVAOs[SubX][SubY]); 
+					glDrawElements(GL_TRIANGLES, Vertices[SubX][SubY], GL_UNSIGNED_INT, nullptr);
+					glBindVertexArray(0);
+				}
+
+				ChunkMeshData() {
+					Create(); 
+				}
+
+				~ChunkMeshData() {
+					Delete(); 
+				}
+
+			};
+
 			struct Chunk {
 
 				std::vector<unsigned char> Blocks; //size is CHUNK_SIZE^3
 				std::vector<Vector4f> BlockLighting; 
 				
 				std::vector<unsigned char> TallestBlock; 
-				std::vector<BlockMask> Mask;
+
+				ChunkMeshData MeshDataOpaque, MeshDataTransparent, MeshDataRefractive; 
+				//			  Standard blocks Leaf-like blocks     Glass/water-like blocks
 
 				unsigned int ChunkTexID, ChunkLightTexID; //the 3D texture used for tracing. Weighs ~2.62 mb of vram 
 				unsigned int ChunkVAOID, ChunkVBOID[3]; //VBO IDs -> Triangles, Normals, Texture Coordinates (z component stores material), Tangents, Indicies 
 				long long X, Y; 
 				unsigned int Vertices = 0; 
 				
+				std::vector<unsigned char> ConstructMip(std::vector<unsigned char> Data, unsigned char Res); 
 				void Draw(Camera& Camera); //draws chunk data to  
+				void DrawTransparent(Camera& Camera); 
 				void Generate(std::vector<Chunk*> NeighbooringChunks);
 				void UpdateMeshData(std::vector<Chunk*> NeighbooringChunks); 
+				void UpdateMeshData(std::vector<Chunk*> NeighbooringChunks,int SubX, int SubY, BLOCK_RENDER_TYPE RenderType);
+				void UpdateAllMeshData(std::vector<Chunk*> NeighbooringChunks, BLOCK_RENDER_TYPE RenderType);
+				void UpdateMeshDataSpecificBlock(std::vector<Chunk*> NeighbooringChunks, Vector3i BlockPos, BLOCK_RENDER_TYPE RenderType);
+				void UpdateTextureData(); 
+
 				void SetBlock(unsigned char x, unsigned char y, unsigned char z, unsigned char type); 
 				unsigned char GetBlock(unsigned char x, unsigned char y, unsigned char z) {
 					return Blocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z]; 
@@ -149,6 +214,7 @@ namespace iTrace {
 
 
 				Chunk(long long X, long long Y); 
+				~Chunk(); 
 
 				void DumpToFile(); 
 				void LoadFromFile(); 

@@ -4,7 +4,10 @@ layout(location = 0) out vec4 Normal;
 layout(location = 1) out vec3 WorldPos; 
 layout(location = 2) out vec4 Albedo; 
 layout(location = 3) out vec4 HighFreqNormal; 
-
+layout(location = 4) out float DirectMultiplier; 
+layout(location = 5) out vec4 ParallaxData; 
+layout(location = 6) out vec3 _TC; 
+layout(location = 7) out vec3 SimpleLighting; 
 
 in vec2 TexCoord;
 
@@ -82,8 +85,6 @@ vec3 GetWorldPosition(float z) {
 }
 
 vec3 ToTBNSpace(int Side, vec3 WorldPosition) {
-
-
 	if(Side == 0) {
 		return -WorldPosition.xyz; 
 	}
@@ -99,10 +100,7 @@ vec3 ToTBNSpace(int Side, vec3 WorldPosition) {
 	else {
 		return WorldPosition.xzy; 
 	}
-
-
 }
-
 
 float SampleParallaxMap(vec3 Point, uint Texture, float lod) {
 	
@@ -141,7 +139,8 @@ float GetTraversal(vec2 TC, vec3 Direction, uint Side, mat3 TBN, uint Type, inou
 }
 
 void main() {	
-
+	DirectMultiplier = 1.0; 
+	ParallaxData = vec4(-1.0); 
 
 	float Depth = texelFetch(InDepth, ivec2(gl_FragCoord),0).x; 
 
@@ -188,42 +187,11 @@ void main() {
 
 		float lod = textureQueryLod(DiffuseTextures, TC.xy).x; 
 		lod = 0.0; 
-		if(BlockType == 31u) {
-			TC += vec2(Time*0.1,Time*0.05); 
-			TC = fract(TC); 
-		}
+		
 
 		vec3 IncidentProjected; 
 
 		float Traversal = GetTraversal(TC.xy, Incident, BlockSide, TBN, uint(TextureExData.x)-1u,IncidentProjected,lod) ;  
-		
-		if(BlockType == 31u) {
-	
-			vec3 IncidentProjected2; 
-
-			vec2 TC2 = TC -  vec2(Time*0.1,Time*0.05); 
-
-			TC2 = TC2 - vec2((Time+0.1)*0.05, (Time-0.7)*0.1); 
-
-			TC2 = fract(TC2); 
-
-
-
-			float Traversal2 = GetTraversal(TC2, Incident, BlockSide, TBN, uint(TextureExData.x)-1u,IncidentProjected2,lod) ;  
-
-			if(Traversal2 < Traversal) {
-
-				
-
-				Traversal = Traversal2; 
-				IncidentProjected = IncidentProjected2; 
-
-				TC = mix(TC,TC2,min(2.0*abs(Traversal2-Traversal),1.0)); 
-
-			}
-
-
-		}
 		
 		
 		float Traversal3D = Traversal / sqrt(1.0-clamp(Incident.y*Incident.y,0.0,1.0));; 
@@ -239,34 +207,21 @@ void main() {
 		Albedo.xyz = pow(texture(DiffuseTextures, vec3(TC,TextureIdx)).xyz,vec3(2.2));
 
 		//Arbitrary directions are not possible, due to limited data. boohoo
-		/*
-		if(BlockSide == 4u) {
 		
+	//	if(BlockSide == 4u) {
+		
+			//lets assume the sun is ALSO 2 dimensional!
 
-			float TraversalRequired = abs(Traversal3D * Incident.y) / SunDirection.y; 
+			vec3 SunProjected; 
 
-			vec3 ProjectedPosition = Traversal3D * Incident + SunDirection * TraversalRequired; 
+			float TraversalSun = GetTraversal(TC, SunDirection, BlockSide, TBN, uint(TextureExData.x)-1u,SunProjected,lod) ;  
 
+			DirectMultiplier = ((TraversalSun+0.00390625) >= Traversal * (1.0-pow(abs(SunProjected.z),4.0)) ? 1.0 : 0.0); 
 
-			vec2 SunTC = fract(TC + ProjectedPosition.xz); 
-
-			vec3 ProjectedSunDirection; 
-
-			float SunTraversal = GetTraversal(SunTC, SunDirection, BlockSide, TBN, uint(TextureExData.x)-1u, ProjectedSunDirection); 
-
-			float SunTraversal3D = SunTraversal / sqrt(1.0-clamp(SunDirection.y*SunDirection.y,0.0,1.0));; 
-			//SunTraversal3D = clamp(SunTraversal3D, 0.0, 0.4 / abs(SunDirection.y)); 
-
-			//Albedo.xyz =Albedo.xyz * vec3(TraversalRequired < SunTraversal3D ? 1.0 : 0.0); 
-			//Albedo.xyz *= (1.0-vec3(abs(Incident.y * Traversal3D))); 
-
-
-
-
-		}
-		*/
-
-
+			
+		//}
+		
+		ParallaxData = vec4(float(BlockSide), float(TextureExData.x),lod, Traversal); 
 
 	}
 	else {
@@ -288,10 +243,12 @@ void main() {
 	HighFreqNormal.w = 0.5; 
 	HighFreqNormal.xyz = normalize(TBN * (normalize(texture(NormalTextures, vec3(TC.xy, TextureIdx)).xyz * 2.0 - 1.0)));
 	HighFreqNormal.w = texture(RoughnessTextures, vec3(TC, TextureIdx)).x;	
+	//HighFreqNormal.w = 0.0; 
+	//HighFreqNormal.xyz = normalize(mix(HighFreqNormal.xyz,Normal.xyz,0.9)); 
 
-
-	//vec3 LightVolumeSample = WorldPos.xyz + normalize(mix(Normal.xyz,HighFreqNormal.xyz,0.4)) * .5; 
-
+	SimpleLighting = texture(LightData,(WorldPos.xyz + Normal.xyz * .5).zyx/128.0).xyz; 
 	
-	
+
+	_TC.xy = fract(TC);
+	_TC.z = TextureIdx; 
 }

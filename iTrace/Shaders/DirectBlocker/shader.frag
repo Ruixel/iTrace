@@ -12,7 +12,7 @@ uniform mat4 ShadowMatrix[4];
 
 uniform sampler2D WorldPosition; 
 uniform sampler2D Depth; 
-const float MAXPENUM = 0.02; 
+const float MAXPENUM = 0.05; 
 
 
 //A lot of the work done here is based on https://www.gamedev.net/tutorials/programming/graphics/contact-hardening-soft-shadows-made-fast-r4906/ 
@@ -44,7 +44,7 @@ float LinearDepth(float z)
 
 float AverageDepthToPenum(float NDCz, float AverageDepth) {
 	float Penum = (NDCz - AverageDepth) / AverageDepth; 
-	return clamp(40.0 * Penum * Penum, 0.0, 1.0); 
+	return clamp(100.0 * Penum * Penum, 0.0, 1.0); 
 }
 
 float Penumbra(int Cascade, float Noise, vec3 NDC, int Samples, float RootSamples) {
@@ -83,12 +83,15 @@ void main() {
 
 	int Cascade = -1; 
 	vec3 NDC; 
+
+	float Edge = 0.9 - GradientNoise(gl_FragCoord.yx) * 0.1; 
+
 	for(int i = 0; i < 4; i++) {
 	
 		vec4 Clip = ShadowMatrix[i] * vec4(WorldPos, 1); 
 		NDC = Clip.xyz / Clip.w; 
 
-		if((abs(NDC.x) < .94 && abs(NDC.y) < .94) || (abs(NDC.x) < 1.0 && abs(NDC.y) < 1.0 && i == 3)) {
+		if((abs(NDC.x) < Edge && abs(NDC.y) < Edge) || (abs(NDC.x) < 1.0 && abs(NDC.y) < 1.0 && i == 3)) {
 			Cascade = i; 
 			break; 
 		}

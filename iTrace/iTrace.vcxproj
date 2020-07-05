@@ -140,7 +140,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>sfml-window-s.lib;sfml-graphics-s.lib;sfml-system-s.lib;sfml-audio-s.lib;sfml-main.lib;jpeg.lib;glu32.lib;gdi32.lib;winmm.lib;opengl32.lib;OpenAL32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>sfml-window-s.lib;sfml-graphics-s.lib;sfml-system-s.lib;sfml-audio-s.lib;sfml-main.lib;jpeg.lib;glu32.lib;gdi32.lib;winmm.lib;opengl32.lib;OpenAL32.lib;flac.lib;ogg.lib;vorbis.lib;vorbisenc.lib;vorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -167,6 +167,7 @@
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="SkyRenderer.h" />
+    <ClInclude Include="Sound.h" />
     <ClInclude Include="text.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Window.h" />
@@ -186,6 +187,7 @@
     <ClCompile Include="Glow.cpp" />
     <ClCompile Include="include\GL\glad.c" />
     <ClCompile Include="Indirect.cpp" />
+    <ClCompile Include="Inventory.cpp" />
     <ClCompile Include="ItemRenderer.cpp" />
     <ClCompile Include="LightCombiner.cpp" />
     <ClCompile Include="main.cpp" />
@@ -194,22 +196,31 @@
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="SkyRenderer.cpp" />
+    <ClCompile Include="Sound.cpp" />
     <ClCompile Include="text.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WorldManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Benchmark\BenchCoherent\shader.frag" />
+    <None Include="Benchmark\BenchCoherent\shader.vert" />
+    <None Include="Benchmark\BenchRandom\shader.frag" />
+    <None Include="Benchmark\BenchRandom\shader.vert" />
     <None Include="Shaders\BlurCombiner\shader.frag" />
     <None Include="Shaders\BlurCombiner\shader.vert" />
     <None Include="Shaders\BlurHorizontal\shader.frag" />
     <None Include="Shaders\BlurHorizontal\shader.vert" />
     <None Include="Shaders\BlurVertical\shader.frag" />
     <None Include="Shaders\BlurVertical\shader.vert" />
+    <None Include="Shaders\Clouds\shader.frag" />
+    <None Include="Shaders\Clouds\shader.vert" />
     <None Include="Shaders\Composite\shader.frag" />
     <None Include="Shaders\Composite\shader.vert" />
     <None Include="Shaders\CubeItemDrawer\shader.frag" />
     <None Include="Shaders\CubeItemDrawer\shader.vert" />
+    <None Include="Shaders\DeferredTransparent\shader.frag" />
+    <None Include="Shaders\DeferredTransparent\shader.vert" />
     <None Include="Shaders\DeferredUnwrapper\shader.frag" />
     <None Include="Shaders\DeferredUnwrapper\shader.vert" />
     <None Include="Shaders\Deferred\shader.frag" />
@@ -218,10 +229,16 @@
     <None Include="Shaders\DirectBlocker\shader.vert" />
     <None Include="Shaders\DofHorizontal\shader.frag" />
     <None Include="Shaders\DofHorizontal\shader.vert" />
+    <None Include="Shaders\DoFPrep\shader.frag" />
+    <None Include="Shaders\DoFPrep\shader.vert" />
     <None Include="Shaders\DoFVertical\shader.frag" />
     <None Include="Shaders\DoFVertical\shader.vert" />
+    <None Include="Shaders\DoF\shader.frag" />
+    <None Include="Shaders\DoF\shader.vert" />
     <None Include="Shaders\HemiSphericalShadowMapCopy\shader.frag" />
     <None Include="Shaders\HemiSphericalShadowMapCopy\shader.vert" />
+    <None Include="Shaders\InventoryUIShader\shader.frag" />
+    <None Include="Shaders\InventoryUIShader\shader.vert" />
     <None Include="Shaders\LightCombiner\shader.frag" />
     <None Include="Shaders\LightCombiner\shader.vert" />
     <None Include="Shaders\ParallaxBakeShader\shader.frag" />

@@ -9,7 +9,6 @@
 #include "ParallaxBaker.h"
 
 namespace iTrace {
-
 	namespace Rendering {
 
 		namespace Chunk {
@@ -93,7 +92,7 @@ namespace iTrace {
 
 			void AddBlock(BlockType Type)
 			{
-				if (!Type.IsEmpty)
+				if (!Type.IsNone)
 					AddItemIconRequest(ItemRequestType::Block, Types.size(), Type.Name);
 				Types.push_back(Type);
 			}
@@ -659,7 +658,7 @@ namespace iTrace {
 					glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
 				};
-
+				
 				
 				//used for generating parallax map data. 
 				{
@@ -751,6 +750,8 @@ namespace iTrace {
 				GenTextureExtensionsArray(3, GL_RED, 1, Vector2i((BAKE_RESOLUTION+2)*BAKE_DIRECTIONS, BAKE_RESOLUTION));
 				GenTextureExtensionsArray(4, GL_RED, 1, Vector2i(TEXTURE_RES));
 				GenTextureExtensionsArray(5, GL_RED, 1, Vector2i(TEXTURE_RES));
+				GenTextureExtensionsArray(6, GL_RED, 1, Vector2i(TEXTURE_RES));
+
 
 				auto ExtensionPixelData = std::vector<unsigned char>(TextureDirectories.size() * static_cast<int>(TextureExtension::SIZE));
 
@@ -771,9 +772,9 @@ namespace iTrace {
 
 				glBindTexture(GL_TEXTURE_1D, TextureExtensionData);
 				glTexImage1D(GL_TEXTURE_1D, 0,
-					GL_RGB8
+					GL_RGBA8
 					, ExtensionPixelData.size(), 0,
-					GL_RGB, GL_UNSIGNED_BYTE, ExtensionPixelData.data());
+					GL_RGBA, GL_UNSIGNED_BYTE, ExtensionPixelData.data());
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 				glBindTexture(GL_TEXTURE_1D, 0);
@@ -797,7 +798,6 @@ namespace iTrace {
 				glBindTexture(GL_TEXTURE_1D, 0);
 
 				//Identify and generate parallax maps! 
-
 				
 			}
 
@@ -826,9 +826,50 @@ namespace iTrace {
 				return TextureDirectories[Idx];
 			}
 
+			std::vector<unsigned char> Chunk::ConstructMip(std::vector<unsigned char> Data, unsigned char Res)
+			{
+				
+				auto NewData = std::vector<unsigned char>((Res * Res * Res) / 8, 0);
+
+				for (int x = 0; x < Res / 2; x++) {
+					for (int y = 0; y < Res / 2; y++) {
+
+						for (int z = 0; z < Res / 2; z++) {
+
+							//look at the sub-voxels and encode those as a bitmask 
+
+							unsigned char BitMask = 0;
+
+							int Importance = 1;
+
+							for (int SubVoxel = 0; SubVoxel < 8; SubVoxel++) {
+
+								Vector3i SubVoxelLocation = VIndicies[SubVoxel];
+
+								Vector3i Voxel = Vector3i(x, y, z) * 2 + SubVoxelLocation;
+
+								auto Type = Data[Voxel.x * Res * Res + Voxel.y * Res + Voxel.z];
+
+								if (Type != 0) {
+									BitMask |= 1 << SubVoxel;
+								}
+
+							}
+
+							NewData[x * (Res / 2) * (Res / 2) + y * (Res / 2) + z] = BitMask;
+
+						}
+
+					}
+				}
+
+
+				return NewData;
+			}
+
 			void Chunk::Draw(Camera& Camera)
 			{
-
+				/*
 				glBindVertexArray(ChunkVAOID);
 
 			//	if(sf::Keyboard::isKeyPressed(sf::Keyboard::T))
@@ -841,7 +882,24 @@ namespace iTrace {
 			//		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 				glBindVertexArray(0);
+				*/
 
+				for (int x = 0; x < 4; x++) {
+					for (int y = 0; y < 4; y++) {
+						MeshDataOpaque.Draw(x, y); 
+					}
+				}
+
+
+			}
+
+			void Chunk::DrawTransparent(Camera& Camera)
+			{
+				for (int x = 0; x < 4; x++) {
+					for (int y = 0; y < 4; y++) {
+						MeshDataTransparent.Draw(x, y);
+					}
+				}
 			}
 
 			void Chunk::Generate(std::vector<Chunk*> NeighbooringChunks)
@@ -892,7 +950,7 @@ namespace iTrace {
 					int Dist = Height - MyY;
 
 					if (Dist == 1)
-						return 3; //grass
+						return (Height > 100 ? 31 : Height > 60 ? 3 : 20); //snow
 					else if (Dist < 4)
 						return 2; //dirt
 					return 1; //stone 
@@ -904,7 +962,7 @@ namespace iTrace {
 				Blocks = std::vector<unsigned char>(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, 0);
 				BlockLighting = std::vector<Vector4f>(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, Vector4f(0.0));
 				TallestBlock = std::vector<unsigned char>(CHUNK_SIZE * CHUNK_SIZE, 0);
-				Mask = std::vector<BlockMask>(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, BlockMask());
+				//Mask = std::vector<BlockMask>(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, BlockMask());
 #ifdef SKYGRID 
 				for (int x = 0; x < CHUNK_SIZE / 5; x++) {
 
@@ -958,34 +1016,67 @@ namespace iTrace {
 
 #else 
 
+
+				auto HeightMap = std::vector<unsigned char>(CHUNK_SIZE * CHUNK_SIZE); 
+
+				for (int x = 0; x < CHUNK_SIZE; x++) {
+
+					for (int z = 0; z < CHUNK_SIZE; z++) {
+						HeightMap[x*CHUNK_SIZE+z] = (fractalnoise(x / 1024., z / 1024., -1238, 3) * 0.5 + 0.5) * 80 + 40;
+					}
+
+				}
+
 				for (int x = 0; x < CHUNK_SIZE; x++) {
 
 					for (int z = 0; z < CHUNK_SIZE; z++) {
 
-						srand((x / 4) * (z / 4));
+						
 
-						unsigned char Height = fractalnoise(x / 128., z / 128., 0, 3) * 16 + 40;
+						auto Height = HeightMap[x * CHUNK_SIZE + z]; 
 
-						Height = 40; 
+						for (int y = 0; y < CHUNK_SIZE; y++) {
 
-						float RigidNoise = 1.0 - abs(noise(x / 16.f, z / 16.f, 12381));
+							unsigned char BlockType = 0; 
 
-						unsigned char CaveBaseY = (noise(z / 16.f, x / 16.f, 1237) * 0.5 + 0.5) * 16;
-						unsigned char CaveHeight = (noise(x / 32.f, z / 32.f, 1231) * 0.5 + 0.5) * 8;
+							srand((x / 5)* CHUNK_SIZE + (z / 5));
+
+							if (y < Height) {
+
+								BlockType = GetType(Height, y); 
+
+								//27, 43
+							}
+							else {
+
+								if (rand() % 17 == 0) {
+									//tree! 
+
+									auto RelativeX = x % 5; 
+									auto RelativeZ = z % 5; 
+
+									auto HeightBaseTree = HeightMap[int(x / 5) * 5 * CHUNK_SIZE + int(z / 5) * 5]; 
+
+									int HeightDiff = y - HeightBaseTree;
+
+									if (RelativeX == 2 && RelativeZ == 2 && HeightDiff <= 3)
+										BlockType = 27; 
+
+									for (int TreeH = 0; TreeH < 3; TreeH++) {
+										if ((((RelativeX == TreeH || RelativeX == 4-TreeH) && (RelativeZ >= TreeH && RelativeZ <= 4-TreeH)) || ((RelativeZ == TreeH || RelativeZ == 4 - TreeH) && (RelativeX >= TreeH && RelativeX <= 4 - TreeH))) && HeightDiff == 2+TreeH) {
+											BlockType = 42; 
+										}
+									}
 
 
-						//Height = glm::max(Height, unsigned char(60)); 
+								}
 
-						for (int y = 0; y < Height; y++) {
-
-							Blocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z] = GetType(Height, y);
-
-							//if (RigidNoise > 0.8 && y > CaveBaseY && y < CaveBaseY + CaveHeight)
-							//	Blocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z] = 0; 
+							}
 
 
-
+							Blocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z] = BlockType; 
 						}
+						
 						 
 					}
 
@@ -1023,7 +1114,7 @@ namespace iTrace {
 
 				std::vector<unsigned int> Indicies;
 
-				for (auto& El : Mask) El = BlockMask();
+				//for (auto& El : Mask) El = BlockMask();
 
 				auto VisibleFaces = std::vector<BlockMask>(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, BlockMask());
 				auto VisibleDiscardedFaces = VisibleFaces;
@@ -1233,76 +1324,303 @@ namespace iTrace {
 
 				//construct correct AC structure for the voxels! 
 
-				Vector3i VIndicies[8] = {
-					Vector3i(0,0,0),
-					Vector3i(0,0,1),
-					Vector3i(0,1,0),
-					Vector3i(0,1,1),
-					Vector3i(1,0,0),
-					Vector3i(1,0,1),
-					Vector3i(1,1,0),
-					Vector3i(1,1,1)
-				}; 
+				
+
+				UpdateTextureData(); 
+
+				std::cout << "Saved triangles: " << TriangleCountSaved * 2 << '\n'; 
+				std::cout << "Total triangles: " << TotalTriangles * 2 << '\n';
+
+			}
 
 
+			void Chunk::UpdateMeshData(std::vector<Chunk*> NeighbooringChunks, int SubX, int SubY, BLOCK_RENDER_TYPE RenderType)
+			{
+				
+				int CHUNK_SIZE_SPLIT = CHUNK_SIZE / 4; 
 
-				auto ConstructMip = [&](std::vector<unsigned char> Data, unsigned char Res) { //<- 0 = not opaque, !0 = opaque 
 
-					auto NewData = std::vector<unsigned char>((Res * Res * Res) / 8, 0); 
+				std::vector<Vector4f> Tris;
+				std::vector<Vector3f> TexCoord;
 
-					for (int x = 0; x < Res / 2; x++) {
-						for (int y = 0; y < Res / 2; y++) {
+				std::vector<unsigned int> Indicies;
 
-							for (int z = 0; z < Res / 2; z++) {
+				//for (auto& El : Mask) El = BlockMask();
 
-								//look at the sub-voxels and encode those as a bitmask 
+				auto VisibleFaces = std::vector<BlockMask>(32 * CHUNK_SIZE * 32, BlockMask());
+				auto VisibleDiscardedFaces = VisibleFaces;
 
-								unsigned char BitMask = 0; 
 
-								int Importance = 1; 
+				int Indicie = 0;
 
-								for (int SubVoxel = 0; SubVoxel < 8; SubVoxel++) {
+				auto GetBlock = [&](Vector3i BlockPosition) {
 
-									Vector3i SubVoxelLocation = VIndicies[SubVoxel];
+					if (BlockPosition.x >= 0 && BlockPosition.x < CHUNK_SIZE &&
+						BlockPosition.y >= 0 && BlockPosition.y < CHUNK_SIZE &&
+						BlockPosition.z >= 0 && BlockPosition.z < CHUNK_SIZE) {
 
-									Vector3i Voxel = Vector3i(x, y, z) * 2 + SubVoxelLocation; 
 
-									auto Type = Data[Voxel.x * Res * Res + Voxel.y * Res + Voxel.z]; 
+						return Types[Blocks[BlockPosition.x * CHUNK_SIZE * CHUNK_SIZE + BlockPosition.y * CHUNK_SIZE + BlockPosition.z]];
 
-									if (Type != 0) {
-										BitMask |= 1 << SubVoxel; 
-									}
 
-								}
-
-								NewData[x * (Res / 2) * (Res / 2) + y * (Res / 2) + z] = BitMask;
-
-							}
-
-						}
 					}
 
+					return Types[0];
 
-					return NewData; 
+				};
 
-				}; 
+				auto GetIndex = [](Vector3i Position) {
+
+					return Position.x * 32 * CHUNK_SIZE + Position.y * 32 + Position.z;
+
+				};
+
+				const int Dimensions[3] = {
+					0,2,1
+				};
+
+				const Vector3i DimensionX[3] = {
+
+					Vector3i(1,0,0),
+					Vector3i(0,0,1),
+					Vector3i(1,0,0)
+
+				};
+
+				const Vector3i DimensionY[3] = {
+
+					Vector3i(0,1,0),
+					Vector3i(0,1,0),
+					Vector3i(0,0,1)
+
+				};
+
+				unsigned char StartX = 32 * SubX; 
+				unsigned char StartZ = 32 * SubY; 
 
 
+
+				for (unsigned short x = StartX; x < StartX+32; x++) {
+					for (unsigned short y = 0; y < CHUNK_SIZE; y++) {
+						for (unsigned short z = StartZ; z < StartZ+32; z++) {
+
+							unsigned char BlockIdx = Blocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z];
+							auto& Block = Types[BlockIdx];
+
+
+							if (!Block.IsNone && Block.RenderType == RenderType) {
+
+
+								bool VisibleSides[6] = {
+
+									GetBlock(Vector3i(x, y, z + 1)).IsEmpty,
+									GetBlock(Vector3i(x, y, z - 1)).IsEmpty,
+									GetBlock(Vector3i(x + 1, y, z)).IsEmpty,
+									GetBlock(Vector3i(x - 1, y, z)).IsEmpty,
+									GetBlock(Vector3i(x, y + 1, z)).IsEmpty,
+									GetBlock(Vector3i(x, y - 1, z)).IsEmpty
+
+								};
+
+								int _x = x - StartX; 
+								int _z = z - StartZ; 
+
+								for (int i = 0; i < 6; i++)
+									VisibleFaces[_x * 32 * CHUNK_SIZE + y * 32 + _z].SetMask(i, VisibleSides[i]);
+
+
+
+
+
+
+							}
+						}
+					}
+				}
+
+				for (unsigned short x = StartX; x < StartX+32; x++) {
+					for (unsigned short y = 0; y < CHUNK_SIZE; y++) {
+						for (unsigned short z = StartZ; z < StartZ+32; z++) {
+
+							int _x = x - StartX;
+							int _z = z - StartZ;
+
+							auto CurrentVisibleFaces = VisibleFaces[GetIndex(Vector3i(_x, y, _z))];
+							auto& CurrentVisibleCulled = VisibleDiscardedFaces[GetIndex(Vector3i(_x, y, _z))];
+
+							unsigned char BlockIdx = Blocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z];
+							auto& Block = Types[BlockIdx];
+
+
+
+							if (!Block.IsNone && Block.RenderType == RenderType) {
+
+								for (int i = 0; i < 6; i++) {
+
+									if (CurrentVisibleFaces.GetMask(i) && !CurrentVisibleCulled.GetMask(i)) {
+
+										Vector2i BestGreedyRect = Vector2i(1, 1);
+
+										int Furthest = MAX_GREEDY;
+
+										for (int Greedyy = 0; Greedyy < MAX_GREEDY; Greedyy++) {
+
+											for (int Greedyx = 0; Greedyx < Furthest; Greedyx++) {
+
+
+												//are we exciting our current grid? 
+												
+												
+
+
+												Vector3i NewCoordinate = Vector3i(x, y, z) + Greedyx * DimensionX[i / 2] + Greedyy * DimensionY[i / 2];
+												Vector3i NewCoordinateSub = Vector3i(_x, y, _z) + Greedyx * DimensionX[i / 2] + Greedyy * DimensionY[i / 2];
+												int CurrentGridX = NewCoordinate.x / 32; 
+												int CurrentGridY = NewCoordinate.y / 32; 
+
+												if (CurrentGridX != SubX || CurrentGridY != SubY)
+													break; 
+
+
+												if (NewCoordinate.x >= CHUNK_SIZE || NewCoordinate.y >= CHUNK_SIZE || NewCoordinate.z >= CHUNK_SIZE) {
+													Furthest = Greedyx;
+													break;
+												}
+
+												if (this->GetBlock(NewCoordinate.x, NewCoordinate.y, NewCoordinate.z) != BlockIdx || !VisibleFaces[GetIndex(NewCoordinateSub)].GetMask(i) || VisibleDiscardedFaces[GetIndex(NewCoordinateSub)].GetMask(i)) {
+													Furthest = Greedyx;
+													break;
+												}
+
+												Vector2i CurrentGreedyRect = Vector2i(Greedyx, Greedyy) + Vector2i(1);
+
+												if (CurrentGreedyRect.x * CurrentGreedyRect.y > BestGreedyRect.x * BestGreedyRect.y) {
+													BestGreedyRect = CurrentGreedyRect;
+												}
+
+
+											}
+
+										}
+
+										//iterate over the largest greedy rect ! 
+
+										for (int rectX = 0; rectX < BestGreedyRect.x; rectX++) {
+
+											for (int rectY = 0; rectY < BestGreedyRect.y; rectY++) {
+
+												Vector3i NewCoordinate = Vector3i(_x, y, _z) + rectX * DimensionX[i / 2] + rectY * DimensionY[i / 2];
+
+												VisibleDiscardedFaces[GetIndex(NewCoordinate)].SetMask(i, true);
+
+
+
+											}
+
+										}
+
+										Vector3f TriangleSize = Vector3i(1.0) + (BestGreedyRect.x - 1) * DimensionX[i / 2] + (BestGreedyRect.y - 1) * DimensionY[i / 2];
+										Vector2f TexCoordSize = Vector2f(BestGreedyRect);
+										Vector3f ActualTexCoordSize = Vector3f(TexCoordSize, 1.0);
+
+										//triangle one
+										Tris.push_back(Vector4f(BlockVertices[i * 4] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4, BlockIdx) * ActualTexCoordSize);
+										Tris.push_back(Vector4f(BlockVertices[i * 4 + 1] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 1, BlockIdx) * ActualTexCoordSize);
+										Tris.push_back(Vector4f(BlockVertices[i * 4 + 2] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 2, BlockIdx) * ActualTexCoordSize);
+
+										//triangle two
+										Tris.push_back(Vector4f(BlockVertices[i * 4 + 2] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 2, BlockIdx) * ActualTexCoordSize);
+										Tris.push_back(Vector4f(BlockVertices[i * 4 + 3] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 3, BlockIdx) * ActualTexCoordSize);
+										Tris.push_back(Vector4f(BlockVertices[i * 4] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4, BlockIdx) * ActualTexCoordSize);
+										Indicies.push_back(Indicie++);
+
+									}
+								}
+
+
+
+							}
+						}
+					}
+				}
+				
+				ChunkMeshData* MeshData = nullptr; 
+				switch (RenderType) {
+				case BLOCK_RENDER_TYPE::OPAQUE: 
+					MeshData = &MeshDataOpaque; 
+					break; 
+
+				case BLOCK_RENDER_TYPE::TRANSPARENT:
+					MeshData = &MeshDataTransparent; 
+					break; 
+
+				case BLOCK_RENDER_TYPE::REFRACTIVE:
+					MeshData = &MeshDataRefractive; 
+					break; 
+
+				}
+
+
+
+				MeshData->Vertices[SubX][SubY] = Tris.size();
+
+			//	std::cout << "Vertices: " << Tris.size() << '\n'; 
+
+				glBindVertexArray(MeshData->ChunkVAOs[SubX][SubY]);
+
+				glBindBuffer(GL_ARRAY_BUFFER, MeshData->ChunkVBOs[SubX][SubY][1]);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(Tris[0])* Tris.size(), Tris.data(), GL_STATIC_DRAW);
+				glEnableVertexAttribArray(0);
+				glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+				glBindBuffer(GL_ARRAY_BUFFER, MeshData->ChunkVBOs[SubX][SubY][2]);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(TexCoord[0])* TexCoord.size(), TexCoord.data(), GL_STATIC_DRAW);
+				glEnableVertexAttribArray(1);
+				glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, MeshData->ChunkVBOs[SubX][SubY][0]);
+				glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indicies[0])* Indicies.size(), Indicies.data(), GL_STATIC_DRAW);
+
+				glBindVertexArray(0);
+
+
+			}
+
+			void Chunk::UpdateAllMeshData(std::vector<Chunk*> NeighbooringChunks, BLOCK_RENDER_TYPE RenderType)
+			{
+				for (int x = 0; x < 4; x++) {
+					for (int y = 0; y < 4; y++) {
+						UpdateMeshData(NeighbooringChunks, x, y, RenderType); 
+					}
+				}
+
+				UpdateTextureData(); 
+
+			}
+
+			void Chunk::UpdateMeshDataSpecificBlock(std::vector<Chunk*> NeighbooringChunks, Vector3i BlockPos, BLOCK_RENDER_TYPE RenderType)
+			{
+				UpdateMeshData(NeighbooringChunks, BlockPos.x / 32, BlockPos.z / 32, RenderType); 
+				UpdateTextureData(); 
+			}
+
+			void Chunk::UpdateTextureData()
+			{
 				glBindTexture(GL_TEXTURE_3D, ChunkTexID);
 
 				glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, Blocks.data());
 
 				int lowestMip = 5;
 
-				std::vector<unsigned char> Data[5]; 
+				std::vector<unsigned char> Data[5];
 
-				int Res = CHUNK_SIZE; 
+				int Res = CHUNK_SIZE;
 
 				glGenerateMipmap(GL_TEXTURE_3D);
 
 				glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 				glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-				
+
 				for (int i = 0; i < lowestMip; i++) {
 
 
@@ -1313,23 +1631,21 @@ namespace iTrace {
 
 					Res /= 2;
 
-					glTexSubImage3D(GL_TEXTURE_3D, i + 1, 0,0,0, Res, Res, Res, GL_RED, GL_UNSIGNED_BYTE, Data[i].data()); 
+					glTexSubImage3D(GL_TEXTURE_3D, i + 1, 0, 0, 0, Res, Res, Res, GL_RED, GL_UNSIGNED_BYTE, Data[i].data());
 
 				}
 
-				
+
 
 				glBindTexture(GL_TEXTURE_3D, 0);
+
+
 
 				glBindTexture(GL_TEXTURE_3D, ChunkLightTexID);
 				glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA16F, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, 0, GL_RGBA, GL_FLOAT, BlockLighting.data());
 				glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glBindTexture(GL_TEXTURE_3D, 0);
-
-				std::cout << "Saved triangles: " << TriangleCountSaved * 2 << '\n'; 
-				std::cout << "Total triangles: " << TotalTriangles * 2 << '\n';
-
 			}
 
 			void Chunk::SetBlock(unsigned char x, unsigned char y, unsigned char z, unsigned char type)
@@ -1348,6 +1664,27 @@ namespace iTrace {
 				glGenTextures(1, &ChunkTexID);
 				glGenTextures(1, &ChunkLightTexID);
 
+				MeshDataOpaque.Create(); 
+				MeshDataTransparent.Create(); 
+				MeshDataRefractive.Create(); 
+
+			}
+
+			Chunk::~Chunk()
+			{
+
+				glDeleteTextures(1, &ChunkTexID); 
+				glDeleteTextures(1, &ChunkLightTexID); 
+
+				MeshDataOpaque.Delete(); 
+				MeshDataTransparent.Delete(); 
+				MeshDataRefractive.Delete(); 
+
+				//Mask.clear(); 
+				TallestBlock.clear(); 
+				Blocks.clear(); 
+				BlockLighting.clear(); 
+
 			}
 
 			void Chunk::DumpToFile()
@@ -1357,8 +1694,6 @@ namespace iTrace {
 				File.open("World.bin", std::ios::out | std::ios::binary); 
 				File.write((char*)Blocks.data(), Blocks.size()); 
 				File.close(); 
-
-
 
 			}
 
@@ -1565,10 +1900,7 @@ namespace iTrace {
 
 			}
 
-
 		}
 
 	}
-
 }
-	

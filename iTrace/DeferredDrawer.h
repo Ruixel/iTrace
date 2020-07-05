@@ -10,7 +10,7 @@ namespace iTrace {
 
 		struct DeferredRenderer {
 
-			Shader DeferredManager, DeferredUnwrapper;
+			Shader DeferredManager, TransparentDeferredManager, DeferredUnwrapper;
 			FrameBufferObject RawDeferred; 
 			MultiPassFrameBufferObjectPreviousData Deferred; 
 			TextureGL ParallaxMap; 
