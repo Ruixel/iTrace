@@ -183,8 +183,8 @@ void main() {
 
 			WeightVolumetric /= pow(1.0 + 3.0 * abs(CurrentPackedData.w - BasePacked.w) / min(CurrentPackedData.w, BasePacked.w), 4.0); 
 
-			Volumetric += texelFetch(InputVolumetric, NewPixel, 0) * WeightVolumetric;  
-			TotalWeightVolumetric += WeightVolumetric; 
+			//Volumetric += texelFetch(InputVolumetric, NewPixel, 0) * WeightVolumetric;  
+			//TotalWeightVolumetric += WeightVolumetric; 
 
 			//AO: 
 

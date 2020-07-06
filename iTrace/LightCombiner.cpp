@@ -53,7 +53,7 @@ namespace iTrace {
 
 			Deferred.Deferred.BindImage(7, 14);
 			Indirect.TemporallyFiltered.BindImage(3, 15);
-
+			//Indirect.ProjectedClouds.BindImage(15); 
 
 			LightCombinerShader.SetUniform("LightDirection", Sky.Orientation);
 			LightCombinerShader.SetUniform("SunColor", Sky.SunColor);

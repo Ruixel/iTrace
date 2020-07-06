@@ -166,6 +166,9 @@
     <Filter Include="Shaders\Clouds">
       <UniqueIdentifier>{c5dbc05c-9cfd-486a-9226-ed183c16301f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\CloudProjection">
+      <UniqueIdentifier>{80a9711f-3217-4d94-8266-88e6873c218c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -546,6 +549,12 @@
     </None>
     <None Include="Shaders\Clouds\shader.vert">
       <Filter>Shaders\Clouds</Filter>
+    </None>
+    <None Include="Shaders\CloudProjection\shader.frag">
+      <Filter>Shaders\CloudProjection</Filter>
+    </None>
+    <None Include="Shaders\CloudProjection\shader.vert">
+      <Filter>Shaders\CloudProjection</Filter>
     </None>
   </ItemGroup>
 </Project>

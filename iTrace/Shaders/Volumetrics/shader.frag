@@ -15,8 +15,9 @@ layout(location = 0) out vec4 Volumetrics;
 uniform sampler2D WorldPosition; 
 uniform sampler2D WindNoise; 
 uniform sampler3D ChunkLighting; //used for volumetrics from player-based light sources
+uniform sampler2D ProjectedClouds; 
 uniform sampler2D BasicBlueNoise; 
-uniform sampler2DArrayShadow HemisphericalShadowMap; 
+uniform sampler2D CloudDepth; 
 uniform samplerCube Sky; 
 uniform sampler2D Normal; 
 uniform sampler2D Wind; 
@@ -24,8 +25,6 @@ uniform mat4 IncidentMatrix;
 uniform float Time; 
 uniform bool DoVolumetrics; 
 
-uniform mat4 HemisphericalMatrices[48]; 
-uniform vec3 HemisphericalDirections[48]; 
 
 uniform sampler2DShadow DirectionalCascades[4]; 
 uniform mat4 DirectionMatrices[4]; 
@@ -36,9 +35,9 @@ uniform vec3 CameraPosition;
 uniform int Frame; 
 
 //the max distance for the volumetrics (useful for the sky!) 
-const float VOLUMETRIC_MAX_DISTANCE = 100.0; 
+const float VOLUMETRIC_MAX_DISTANCE = 200.0; 
 //the steps used for the volumetrics 
-const int VOLUMETRIC_STEPS = 1;
+const int VOLUMETRIC_STEPS = 8;
 //should step count or step size be constant 
 const bool CONSTANT_STEP_SIZE = false;
 //use blue-noise based dithering 
@@ -54,13 +53,14 @@ vec2 hash2() {
 }
 
 
-
-
 float PhaseFunction() {
 	return 1.0 / (4.0 * 3.1415); 
 }
 
 float GetDensity(vec3 WorldPosition) {
+	 
+	return .5 * (1.0 - clamp((WorldPosition.y - 70.0) * 0.02, 0.0, 1.0)) * pow(texture(Wind, (WorldPosition.xz *.001 + Time * .001)).x,2.0); 
+
 	return .3 * pow(texture(Wind, (WorldPosition.xz *.1 + Time * .1) * .05).x,2.0); 
 	return 1.0 * (1.0 - clamp((WorldPosition.y - 60.0) * 0.05, 0.0, 1.0)) * texture(Wind, (WorldPosition.xz *.1 + Time * .1)* .01).x; 
 }
@@ -70,76 +70,6 @@ ivec2 States[] = ivec2[](
 	ivec2(0, 1),
 	ivec2(0, 0),
 	ivec2(1, 0));
-
-vec3 GetHemisphericalShadowMaphit(vec3 WorldPos) {
-	
-	ivec2 PixelShift = ivec2(gl_FragCoord) % ivec2(2); 
-
-	int Dither = ((PixelShift.x * 2 + PixelShift.y) % 4) * 12 ;
-
-	
-	vec3 Result = vec3(0.0); 
-
-	for(int i = 0; i < 12; i++) {
-
-		int Sample = Dither; 
-
-		vec4 ClipSpace = HemisphericalMatrices[Sample+i] * vec4(WorldPos, 1.0); 
-
-		ClipSpace.xyz /= ClipSpace.w; 
-
-		ClipSpace.xyz = ClipSpace.xyz * 0.5 + 0.5; 
-
-
-		vec3 Direction = HemisphericalDirections[Sample+i]; 
-
-		float Weight = 4.0 * max(Direction.y, 0.0); 
-
-		Result += texture(Sky, Direction).xyz * texture(HemisphericalShadowMap, vec4(ClipSpace.xy,Sample+i,ClipSpace.z-0.00009)) * Weight; 
-
-	}
-
-	return Result; 
-
-}
-
-
-
-
-vec3 GetHemisphericalShadowMaphit2(vec3 WorldPos) {
-	
-	ivec2 PixelShift = ivec2(gl_FragCoord) % ivec2(2); 
-
-	int Dither = (PixelShift.x * 2 + PixelShift.y) * 3;
-
-	
-	vec3 Result = vec3(0.0); 
-
-	for(int i = 0; i < 3; i++) {
-
-		int Sample = Dither + i; 
-
-		vec4 ClipSpace = HemisphericalMatrices[Sample+i] * vec4(WorldPos, 1.0); 
-
-		ClipSpace.xyz /= ClipSpace.w; 
-
-		ClipSpace.xyz = ClipSpace.xyz * 0.5 + 0.5; 
-
-
-		vec3 Direction = HemisphericalDirections[Sample+i]; 
-
-		float Weight = 4.0 * max(Direction.y, 0.0); 
-
-
-
-		Result += texture(Sky, Direction).xyz * texture(HemisphericalShadowMap, vec4(ClipSpace.xy,Sample+i,ClipSpace.z-0.00009)) * Weight; 
-
-	}
-
-	return Result / 3.0; 
-
-}
-
 
 float DirectBasic(vec3 Position) {
 
@@ -166,6 +96,21 @@ float DirectBasic(vec3 Position) {
 
 }
 
+vec4 SampleCloud(vec3 Origin, vec3 Direction) {
+	const vec3 PlayerOrigin = vec3(0,6200,0); 
+	const float PlanetRadius = 6373; 
+
+	float Traversal = (PlanetRadius - (PlayerOrigin.y + Origin.y)) / Direction.y; 
+
+	vec3 NewPoint = PlayerOrigin + Origin + Direction * Traversal; 
+
+	//Fetch it! 
+
+	return texture(ProjectedClouds, fract(vec2((NewPoint.x + Time + 500) / 1024, (NewPoint.z + 500) / 1024))); 
+
+}
+
+
 
 void main() {
 	
@@ -175,10 +120,10 @@ void main() {
 	}
 
 	float SigmaS = 0.2 * 0.25; 
-	float SigmaA = 0.06667 * 0.25; 
+	float SigmaA = 0.1 * 0.25; 
 	float SigmaE = SigmaS + SigmaA; 
 
-	vec4 Volumetric = vec4(0.0,0.0,0.0,1.0); 
+	Volumetrics = vec4(0.0,0.0,0.0,1.0); 
 
 	int SubFrame = Frame % 4; 
 
@@ -207,18 +152,16 @@ void main() {
 	Vector /= ActualDistance; 
 
 	float L = length(NormalSample); 
-	ActualDistance = min(ActualDistance, VOLUMETRIC_MAX_DISTANCE); 
 	if(L < 0.75 || L > 1.25) {
 		Vector = normalize(vec3(IncidentMatrix * vec4(TexCoord * 2.0 - 1.0, 1.0, 1.0)));
-		ActualDistance = VOLUMETRIC_MAX_DISTANCE; 
+		ActualDistance = texelFetch(CloudDepth, ivec2(gl_FragCoord.xy), 0).x; 
 	}
-
-	//State = ((Frame / 4) * 7195); 
-		State = 0; 
+ 
+	State = Frame / 4; 
 	float StepSize = ActualDistance / float(VOLUMETRIC_STEPS); 
 
 	if(CONSTANT_STEP_SIZE) {
-		StepSize = VOLUMETRIC_MAX_DISTANCE / float(VOLUMETRIC_STEPS); 
+	//	StepSize = VOLUMETRIC_MAX_DISTANCE / float(VOLUMETRIC_STEPS); 
 	}
 
 	float Traversal = hash2().x * StepSize; 
@@ -226,33 +169,36 @@ void main() {
 	vec3 Position = CameraPosition + Vector * Traversal; 
 
 	while(Traversal < ActualDistance) {
-		
+	
 		float Density = GetDensity(Position); 
 
-		if(Density > 0.001) {
+		if(Density > 0.0001) {
 		
 			float SampleSigmaS = SigmaS * Density; 
 			float SampleSigmaE = SigmaE * Density; 
-		
-			//grab lighting at current point 
 
-			vec3 LightingData = (textureLod(ChunkLighting, (Position).zyx / 128.0, 0.0).xyz * 10.0 +  DirectBasic(Position) * SunColor * 3.0); 
+			float DirectDensity = SampleCloud(Position.xyz, LightDirection).a; 
 
-			vec3 S = LightingData * SampleSigmaS * PhaseFunction(); 
+			DirectDensity = pow(DirectDensity, 4.0); 
 
-			float Tr = exp(-SampleSigmaE * StepSize); 
+			vec3 LightFetch = DirectBasic(Position) * SunColor * DirectDensity; 
 
-			vec3 SIntegrated = (S - S * Tr) / SampleSigmaE; 
+			
 
-			Volumetric.xyz += SIntegrated * Volumetric.a; 
-			Volumetric.a *= Tr; 
-		
+			vec3 S = SampleSigmaS * LightFetch; 
+
+			float Transmittance = exp(-SampleSigmaE * StepSize); 
+
+			vec3 SIntegrated = (S - S * Transmittance) / SampleSigmaE; 
+
+			Volumetrics.xyz += SIntegrated * Volumetrics.a; 
+			Volumetrics.a *= Transmittance; 
+
 		}
-
 
 		Position += Vector * StepSize; 
 		Traversal += StepSize; 
+
 	}
 
-	Volumetrics = Volumetric; 
 }

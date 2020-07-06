@@ -213,6 +213,8 @@
     <None Include="Shaders\BlurHorizontal\shader.vert" />
     <None Include="Shaders\BlurVertical\shader.frag" />
     <None Include="Shaders\BlurVertical\shader.vert" />
+    <None Include="Shaders\CloudProjection\shader.frag" />
+    <None Include="Shaders\CloudProjection\shader.vert" />
     <None Include="Shaders\Clouds\shader.frag" />
     <None Include="Shaders\Clouds\shader.vert" />
     <None Include="Shaders\Composite\shader.frag" />

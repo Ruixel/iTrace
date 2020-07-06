@@ -2,19 +2,16 @@
 
 in vec2 TexCoord; 
 layout(location = 0) out vec4 Clouds;
-layout(location = 1) out float Depth; 
 
-uniform sampler2D ProjectedClouds; 
 uniform sampler2D BasicBlueNoise; 
 uniform sampler2D WeatherMap; 
+uniform sampler2D PreviousCloudResult; 
 
 uniform sampler3D CloudNoise; 
-uniform mat4 IncidentMatrix; 
 
 uniform vec3 LightDirection; 
 uniform vec3 SunColor; 
 uniform vec3 AmbientColor; 
-uniform vec3 CameraPosition; 
 
 
 uniform float Time; 
@@ -22,14 +19,6 @@ uniform float Time;
 uniform int SubFrame; 
 uniform int Frame; 
 
-uniform ivec2 TextureSize; 
-
-
-ivec2 States[] = ivec2[](
-	ivec2(1, 1),
-	ivec2(0, 1),
-	ivec2(0, 0),
-	ivec2(1, 0));
 
 int State = 0;
 
@@ -39,14 +28,14 @@ const vec3 PlayerOrigin = vec3(0,6200,0);
 const float PlanetRadius = 6373; 
 const float AtmosphereRadius = 6573; 
 const float Size = AtmosphereRadius - PlanetRadius; 
-const int Steps = 8; 
-const int LightSteps = 8; 
-const float Epsilon = 1e-4; 
+const int Steps = 2; 
+const int LightSteps = 1; 
+const float Epsilon = 1e-6; 
 
 //Cloud properties 
 
-const float SigmaS = 0.2 * 200; 
-const float SigmaA = 0.2 * 200; 
+const float SigmaS = 0.2 * 300; 
+const float SigmaA = 0.2 * 300; 
 const vec3 CloudColor = vec3(1.0); //<- is this really physically plausible? 
 
 vec2 hash2() {
@@ -58,31 +47,15 @@ vec2 hash2() {
 
 float GetDensity(vec3 P, float T, float Height) {
 	 
-	vec2 NewPDetail = P.xz + vec2(Time * 1 + 500, 500.0); 
-	vec3 NewP = P += vec3(Time * .5,0.0,0.0); 
+	vec2 NewPDetail = P.xz; 
+	vec3 NewP = P += vec3(Time * -.5,0.0,0.0); 
 
 	vec4 DensityGrab = texture(CloudNoise, NewP / 128 ); 
-	vec4 WeatherMap = texture(WeatherMap, (NewPDetail)/ 1024); 
+	vec4 WeatherMap = texture(WeatherMap, NewPDetail/ 1024); 
 
-
-
-
-	return 1 * pow(DensityGrab.x * DensityGrab.x * DensityGrab.x  * DensityGrab.x  * DensityGrab.x  * DensityGrab.x * DensityGrab.y *  DensityGrab.y *  DensityGrab.y * DensityGrab.y  * DensityGrab.z * DensityGrab.z * DensityGrab.w *  DensityGrab.w *  DensityGrab.w * DensityGrab.w * DensityGrab.w,7.0) * pow(WeatherMap.x,5.0) * pow(abs((WeatherMap.x*0.5+0.3)-Height/Size),8.0); 
+	return 3 * pow(DensityGrab.x * DensityGrab.x * DensityGrab.x  * DensityGrab.x  * DensityGrab.x  * DensityGrab.x * DensityGrab.y *  DensityGrab.y *  DensityGrab.y * DensityGrab.y  * DensityGrab.z * DensityGrab.z * DensityGrab.w *  DensityGrab.w *  DensityGrab.w * DensityGrab.w * DensityGrab.w,7.0) * pow(WeatherMap.x,5.0) * pow(abs((WeatherMap.x*0.5+0.3)-Height/Size),8.0); 
 }
 
-vec4 SampleCloud(vec3 Origin, vec3 Direction) {
-	const vec3 PlayerOrigin = vec3(0,6200,0); 
-	const float PlanetRadius = 6373; 
-
-	float Traversal = (PlanetRadius - (Origin.y)) / Direction.y; 
-
-	vec3 NewPoint = PlayerOrigin + Origin + Direction * Traversal; 
-
-	//Fetch it! 
-
-	return texture(ProjectedClouds, fract(vec2((NewPoint.x + Time + 500) / 1024, (NewPoint.z + 500) / 1024))); 
-
-}
 
 float GetSunShading(vec3 Point, float SigmaA, vec3 Direction, float Dither) {
 
@@ -138,20 +111,17 @@ void main() {
 	
 	float SigmaE = SigmaS + SigmaA; 
 
-	vec2 TexelSize = 1 / vec2(TextureSize); 
-
 	ivec2 RawPixel = ivec2(gl_FragCoord.xy); 
-	Pixel = RawPixel * 2 + States[SubFrame]; 
-	vec2 NewTexCoord = vec2(Pixel) * TexelSize;  
-
-	vec3 Direction = normalize(vec3(IncidentMatrix * vec4(NewTexCoord * 2.0 - 1.0, 1.0, 1.0)));
+	Pixel = RawPixel; 
 
 	//assume player is never in the atmosphere -> 
 
 	//float Start = intersectSphere(PlayerOrigin,Direction, PlanetRadius); 
 	//float End = intersectSphere(PlayerOrigin,Direction, AtmosphereRadius); 
 
-	vec3 Origin = PlayerOrigin + CameraPosition; 
+	vec3 Origin = vec3(TexCoord.x * 1000.0, PlanetRadius, TexCoord.y * 1000.0); 
+	vec3 Direction = vec3(0.0,1.0,0.0); 
+
 
 	float Start = (PlanetRadius - Origin.y) / Direction.y;  
 	float End = (AtmosphereRadius - Origin.y) / Direction.y;  
@@ -165,7 +135,7 @@ void main() {
 	Start = max(Start, 0.0); 
 	
 	Clouds = vec4(0.0,0.0,0.0,1.0);
-	Depth = 300.0; 
+
 	if(End < 0.0)  
 		return; 
 	
@@ -183,8 +153,6 @@ void main() {
 
 	float DitherStart = hash.x; 
 
-	Depth = 0.0; 
-	float DepthWeight = 0.0; 
 
 	for(int Step = 0; Step < Steps; Step++) {
 	
@@ -227,18 +195,14 @@ void main() {
 
 			Clouds.xyz += SIntegrated * Clouds.a; 
 			Clouds.a *= Transmittance; 
-			Depth += (Traversal + Start) * (Density / Epsilon); 
-			DepthWeight += (Density / Epsilon); 
 		}
 
 		PreviousTraversal = Traversal; 
 
 	}
 
-//Clouds = SampleCloud(Origin, Direction); 
+	float MixFactor = min(float(Frame) / float(Frame+1), 0.975); 
 
-	Depth = mix(Depth / max(DepthWeight,1e-4),End,pow(Clouds.a,12.0)); 
-
-	Depth = mix(Depth, 300.0, pow(1.0-Direction.y, 16.0)); 
-
+	Clouds = mix(Clouds, texture(PreviousCloudResult, TexCoord), MixFactor); 
+	Clouds = clamp(Clouds, vec4(0.0), vec4(100.0)); 
 }

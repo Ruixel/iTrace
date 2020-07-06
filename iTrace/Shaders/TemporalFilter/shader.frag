@@ -85,7 +85,7 @@ void main() {
 
 	float NewMaxTemporal = FrameCount < 4.0 ? 0.0 : (NewFiltering ? 0.99 : 0.95); 
 	float MaxTemporalShadow = FrameCount < 6.0 ? 0.0 : 0.95; 
-	float MaxTemporalClouds = 0.97; 
+	float MaxTemporalClouds = 0.9; 
 
 	float MixFactor = min(FrameCount / (FrameCount+1.0),NewMaxTemporal);
 	float MixFactorVolume = min(FrameCount / (FrameCount+1.0),min(NewMaxTemporal, 0.0));
@@ -104,7 +104,7 @@ void main() {
 
 
 	IndirectDiffuse = mix(CurrentLightingSample, GetClamped(UpscaledDiffuse,PreviousDiffuse, TexCoord + MotionVectors,0.05), MixFactor); 
-	Volumetrics = mix(CurrentVolumetricSample, GetClamped(UpscaledVolumetrics,PreviousVolumetrics, TexCoord + MotionVectors,0.05), MixFactorVolume);
+	Volumetrics = mix(CurrentVolumetricSample, GetClamped(UpscaledVolumetrics,PreviousVolumetrics, TexCoord + MotionVectors,0.05), MixFactorClouds);
 	IndirectSpecular = mix(CurrentSpecularSample, GetClamped(UpscaledSpecular, PreviousSpecular, TexCoord + MotionVectors, 0.05), min(MixFactor, 0.9)); 
 	Clouds = mix(CurrentClouds, texture(PreviousClouds, TexCoord + MotionVectors),MixFactorClouds);  
 	IndirectSpecular.w = CurrentSpecularSample.w; 

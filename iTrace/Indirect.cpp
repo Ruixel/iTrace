@@ -33,7 +33,7 @@ namespace iTrace {
 			PackedSpatialData = FrameBufferObject(Window.GetResolution() / 2, GL_RGBA16F, false);
 			TemporallyFiltered = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 2, 4, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 			SpatialyUpscaled = MultiPassFrameBufferObject(Window.GetResolution(), 2, { GL_RGBA16F,GL_RGBA16F }, false);
-			ProjectedClouds = FrameBufferObjectPreviousData(Vector2i(256), GL_RGBA16F, false); 
+			ProjectedClouds = FrameBufferObjectPreviousData(Vector2i(512), GL_RGBA16F, false); 
 
 			IndirectLightShader = Shader("Shaders/RawPathTracing");
 			TemporalUpscaler = Shader("Shaders/TemporalUpscaler");
@@ -228,6 +228,8 @@ namespace iTrace {
 			IndirectLightShader.SetUniform("CameraMatrix", Camera.Project * Camera.View);
 
 			IndirectLightShader.SetUniform("FrameCount", Window.GetFrameCount() % 1024);
+			IndirectLightShader.SetUniform("Time", Window.GetTimeOpened());
+
 			IndirectLightShader.SetUniform("State", Window.GetFrameCount() % 4);
 
 			IndirectLightShader.SetUniform("UseWhiteNoise", sf::Keyboard::isKeyPressed(sf::Keyboard::V));
@@ -246,6 +248,8 @@ namespace iTrace {
 
 			glActiveTexture(GL_TEXTURE29);
 			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(1));
+
+			ProjectedClouds.BindImage(30); 
 
 			DrawPostProcessQuad();
 
@@ -445,6 +449,10 @@ namespace iTrace {
 
 			}
 
+			ProjectedClouds.BindImage(12);
+			Clouds[Window.GetFrameCount()%4].BindImage(1,13);
+
+
 			Volumetrics.SetUniform("LightDirection", Sky.Orientation);
 			Volumetrics.SetUniform("SunColor", Sky.SunColor);
 
@@ -502,12 +510,46 @@ namespace iTrace {
 
 		void LightManager::RenderClouds(Window& Window, Camera& Camera, DeferredRenderer& Deferred, SkyRendering& Sky)
 		{
+		
+
+
+
+
+			ProjectedClouds.Bind(); 
+
+			CloudProjection.Bind(); 
+
+			ProjectedClouds.BindImagePrevious(0); 
+
+			CloudProjection.SetUniform("LightDirection", Sky.Orientation);
+			CloudProjection.SetUniform("SunColor", Sky.SunColor);
+			CloudProjection.SetUniform("AmbientColor", Sky.SkyColor);
+
+			CloudProjection.SetUniform("Time", Window.GetTimeOpened());
+			CloudProjection.SetUniform("SubFrame", Window.GetFrameCount() % 4);
+			CloudProjection.SetUniform("Frame", Window.GetFrameCount());
+
+			SimplifiedBlueNoise.Bind(2);
+
+			CloudNoise.Bind(3);
+
+			WeatherMap.Bind(4);
+
+			DrawPostProcessQuad(); 
+
+			
+
+			CloudProjection.UnBind(); 
+
+			ProjectedClouds.UnBind(Window); 
+
+
+
 			Clouds[Window.GetFrameCount() % 4].Bind(); 
 			
 			CloudRenderer.Bind(); 
 
-			SpatialyFiltered[(Window.GetFrameCount() % 4)*2].BindImage(2, 0);
-			RawPathTrace[Window.GetFrameCount() % 4].BindImage(4, 1);
+			ProjectedClouds.BindImage(0);
 
 			SimplifiedBlueNoise.Bind(2); 
 
@@ -548,6 +590,7 @@ namespace iTrace {
 			Volumetrics.Reload("Shaders/Volumetrics"); 
 			DirectBlocker.Reload("Shaders/DirectBlocker"); 
 			CloudRenderer.Reload("Shaders/Clouds"); 
+			CloudProjection.Reload("Shaders/CloudProjection"); 
 
 			SetShaderUniforms(Window); 
 
@@ -585,6 +628,7 @@ namespace iTrace {
 			IndirectLightShader.SetUniform("TCData", 27);
 			IndirectLightShader.SetUniform("LowFrequencyNormal", 28);
 			IndirectLightShader.SetUniform("NormalTextures", 29);
+			IndirectLightShader.SetUniform("ProjectedClouds", 30);
 
 			IndirectLightShader.UnBind();
 
@@ -721,6 +765,8 @@ namespace iTrace {
 			Volumetrics.SetUniform("DirectionalCascades[1]", 9);
 			Volumetrics.SetUniform("DirectionalCascades[2]", 10);
 			Volumetrics.SetUniform("DirectionalCascades[3]", 11);
+			Volumetrics.SetUniform("ProjectedClouds", 12); 
+			Volumetrics.SetUniform("CloudDepth", 13);
 
 			Volumetrics.UnBind(); 
 
@@ -737,15 +783,23 @@ namespace iTrace {
 			
 			CloudRenderer.Bind(); 
 
-			CloudRenderer.SetUniform("RawSpecular", 0); 
-			CloudRenderer.SetUniform("RawDirect", 1);
+			CloudRenderer.SetUniform("ProjectedClouds", 0); 
 			CloudRenderer.SetUniform("BasicBlueNoise", 2);
 			CloudRenderer.SetUniform("CloudNoise", 3);
 			CloudRenderer.SetUniform("WeatherMap", 4);
 
 			CloudRenderer.SetUniform("TextureSize", Window.GetResolution() / 2);
 
-			CloudRenderer.UnBind(); 
+			CloudRenderer.UnBind();
+
+			CloudProjection.Bind();
+
+			CloudProjection.SetUniform("PreviousCloudResult", 0);
+			CloudProjection.SetUniform("BasicBlueNoise", 2);
+			CloudProjection.SetUniform("CloudNoise", 3);
+			CloudProjection.SetUniform("WeatherMap", 4);
+
+			CloudProjection.UnBind();
 
 
 		}

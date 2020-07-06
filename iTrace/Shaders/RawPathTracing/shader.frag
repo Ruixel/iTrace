@@ -37,6 +37,10 @@ uniform sampler3D LightingData;
 uniform sampler1D TextureExData; 
 uniform sampler1D BlockData; 
 uniform sampler2D BlockerData; 
+uniform sampler2D ProjectedClouds;
+
+uniform sampler2D DeferredNormalData; 
+uniform sampler2DArray Deferred; 
 
 uniform sampler2DArrayShadow HemisphericalShadowMap; 
 uniform mat4 HemisphericalMatrices[48]; 
@@ -53,6 +57,7 @@ uniform vec3 SunColor;
 uniform vec3 LightDirection; 
 
 uniform int ParallaxDirections; 
+uniform float Time; 
 uniform int ParallaxResolution; 
 uniform bool DoParallax; 
 
@@ -783,6 +788,20 @@ float ScreenSpaceTraceHQ(vec3 Origin, vec3 Direction, float MaxTraversal, int St
 	return 0.0; 
 }
 
+vec4 SampleCloud(vec3 Origin, vec3 Direction) {
+	const vec3 PlayerOrigin = vec3(0,6200,0); 
+	const float PlanetRadius = 6373; 
+
+	float Traversal = (PlanetRadius - (PlayerOrigin.y + Origin.y)) / Direction.y; 
+
+	vec3 NewPoint = PlayerOrigin + Origin + Direction * Traversal; 
+
+	//Fetch it! 
+
+	return texture(ProjectedClouds, fract(vec2((NewPoint.x + Time + 500) / 1024, (NewPoint.z + 500) / 1024))); 
+
+}
+
 
 
 
@@ -938,7 +957,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 			ClipSpace.xyz = ClipSpace.xyz * 0.5 + 0.5; 
 
 
-			HemiSpherical += texture(Sky, Direction).xyz * texture(HemisphericalShadowMap, vec4(ClipSpace.xy,Sample,ClipSpace.z-0.00027)) * _Weight; 
+			HemiSpherical += texture(SkyNoMie, Direction).xyz * texture(HemisphericalShadowMap, vec4(ClipSpace.xy,Sample,ClipSpace.z-0.00027)) * _Weight; 
 			j = 0; 
 
 			i++; 
@@ -952,11 +971,15 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 		//HemiSpherical =  GetHemisphericalShadowMaphit(Position, OutNormal, 0, 1); 
 	
-		
+		float DirectDensity = SampleCloud(Position.xyz, LightDirection).a; 
+
+		DirectDensity = pow(DirectDensity, 4.0); 
 
 		Diffuse.xyz += BlockColor * HemiSpherical; 
 
-		Diffuse.xyz += DirectBasic(Position) * max(dot(OutNormal, LightDirection), 0.0) * SunColor * BlockColor * DirectMultiplier; 
+		Diffuse.xyz += DirectBasic(Position) * max(dot(OutNormal, LightDirection), 0.0) * SunColor * BlockColor * DirectMultiplier * DirectDensity; 
+
+
 
 		//Diffuse.xyz = OutNormal; 
 
@@ -985,6 +1008,11 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 		}
 		//Diffuse.xyz = vec3(0.0); 
 		//AO: 
+
+		vec4 Cloud = SampleCloud(Origin, Direction); 
+
+		Diffuse.xyz = mix(Cloud.xyz, Diffuse.xyz, Cloud.w); 
+
 		Diffuse.w = 1.0; 
 	}		
 
@@ -1076,9 +1104,16 @@ void main() {
 
 	Penum /= PenumWeight; 
 
+	float DirectDensity = SampleCloud(WorldPos.xyz, LightDirection).a; 
 
-	Direct = DirectHQ(WorldPos,max(Penum,0.007),vec2(Pixel) / 2); 
-	Direct *= ScreenSpaceTraceShadows(WorldPos + Normal.xyz * 0.01, normalize(LightDirection), 0.15,9); 
+	float SmoothNessFactor = clamp((1.0-DirectDensity) * 100.0, 0.0,8.0); 
+
+
+	DirectDensity = pow(DirectDensity, 4.0); 
+
+
+	Direct = DirectHQ(WorldPos,max(Penum * SmoothNessFactor,0.007),vec2(Pixel) / 2); 
+	Direct *= ScreenSpaceTraceShadows(WorldPos + Normal.xyz * 0.01, normalize(LightDirection), 0.15,9) * DirectDensity; 
 	//Direct = pow(texelFetch(Depth, Pixel, 0).x,3000.0); 
 	//	Direct = texture(BlockerData, TexCoord).x; 
 
