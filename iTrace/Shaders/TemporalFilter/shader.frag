@@ -97,6 +97,16 @@ void main() {
 		MixFactorClouds = 0.0; 
 	}
 
+	float SpecularTrustFactor = 0.9; 
+	
+	//We know that the more we've moved, the less we can trust the specular motion vectors! 
+
+	SpecularTrustFactor = mix(SpecularTrustFactor, 0.75, min(length(MotionVectors)*10000.0,1.0)); 
+
+
+
+
+
 	vec4 CurrentLightingSample = texture(UpscaledDiffuse, TexCoord); 
 	vec4 CurrentVolumetricSample = texture(UpscaledVolumetrics, TexCoord); 
 	vec4 CurrentSpecularSample = texture(UpscaledSpecular, TexCoord); 
@@ -105,7 +115,7 @@ void main() {
 
 	IndirectDiffuse = mix(CurrentLightingSample, GetClamped(UpscaledDiffuse,PreviousDiffuse, TexCoord + MotionVectors,0.05), MixFactor); 
 	Volumetrics = mix(CurrentVolumetricSample, GetClamped(UpscaledVolumetrics,PreviousVolumetrics, TexCoord + MotionVectors,0.05), MixFactorClouds);
-	IndirectSpecular = mix(CurrentSpecularSample, GetClamped(UpscaledSpecular, PreviousSpecular, TexCoord + MotionVectors, 0.05), min(MixFactor, 0.9)); 
+	IndirectSpecular = mix(CurrentSpecularSample, GetClamped(UpscaledSpecular, PreviousSpecular, TexCoord + MotionVectors, 0.05), min(MixFactor, SpecularTrustFactor)); 
 	Clouds = mix(CurrentClouds, texture(PreviousClouds, TexCoord + MotionVectors),MixFactorClouds);  
 	IndirectSpecular.w = CurrentSpecularSample.w; 
 

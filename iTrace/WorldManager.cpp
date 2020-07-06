@@ -1,5 +1,6 @@
 #include "WorldManager.h"
 #include <iostream>
+#include "SoundReflectivity.h"
 
 namespace iTrace {
 
@@ -24,55 +25,60 @@ namespace iTrace {
 		void WorldManager::PrepareWorldManger()
 		{
 
+			
+
+
+
 			Chunk::AddBlock(Chunk::BlockType()); 
-			Chunk::AddBlock(Chunk::BlockType("Stone", { 0,0,0,0,0,0 }, true, false, false)); //CC0, good
-			Chunk::AddBlock(Chunk::BlockType("Dirt", { 1,1,1,1,1,1 }, true, false, false));  //CC0, good
-			Chunk::AddBlock(Chunk::BlockType("Grass", { 3,3,3,3,2,1 }, true, false, false)); //CC0, good
-			Chunk::AddBlock(Chunk::BlockType("Glowstone", { 4 }, true, false, false, 30.0)); //CC0, okay
-			Chunk::AddBlock(Chunk::BlockType("Tiles", { 5 }, true, false, false)); //CC0, good.
-			Chunk::AddBlock(Chunk::BlockType("Planks", { 6 }, true, false, false));  //CC0, okay
-			Chunk::AddBlock(Chunk::BlockType("Leather", { 7 }, true, false, false)); //CC0, good
-			Chunk::AddBlock(Chunk::BlockType("Fabric", { 8 }, true, false, false));  //CC0, good
-			Chunk::AddBlock(Chunk::BlockType("Obsidian", { 9 }, true, false, false)); //CC0, good texture
-			Chunk::AddBlock(Chunk::BlockType("Concrete", { 10 }, true, false, false)); //CC0, good
-			Chunk::AddBlock(Chunk::BlockType("Green glowstone", { 11 }, true, false, false, 30.0)); //CC0, good
-			Chunk::AddBlock(Chunk::BlockType("Iron bars", { 12 }, true, false, false, 30.0)); //CC0, meh
-			Chunk::AddBlock(Chunk::BlockType("Lamp", { 13 }, true, false, false, 30.0)); //CC0 (and a bit self made) good texture
-			Chunk::AddBlock(Chunk::BlockType("Lantern", { 14 }, true, false, false, 180.0)); //CC0, good
-			Chunk::AddBlock(Chunk::BlockType("red tiles", { 15 }, true, false, false)); //CC0, and a bit self-made, good
-			Chunk::AddBlock(Chunk::BlockType("green tiles", { 16 }, true, false, false)); //CC0, and a bit self-made, good
-			Chunk::AddBlock(Chunk::BlockType("orange tiles", { 17 }, true, false, false)); //CC0, good texture
-			Chunk::AddBlock(Chunk::BlockType("iron block", { 18 }, true, false, false)); //CC0, good texture
-			Chunk::AddBlock(Chunk::BlockType("solar panel", { 19 }, true, false, false)); //CC0, good texture
-			Chunk::AddBlock(Chunk::BlockType("sand", { 20 }, true, false, false)); //CC0, good texture
-			Chunk::AddBlock(Chunk::BlockType("marble", { 21 }, true, false, false)); //CC0 (and a bit self made), semi good
-			Chunk::AddBlock(Chunk::BlockType("iron ore", { 22 }, true, false, false)); //CC0 (and a bit self made), good
-			Chunk::AddBlock(Chunk::BlockType("Farmland", { 34,34,34,34,23,34 }, true, false, false)); //CC0 (and a bit self made), good
-			Chunk::AddBlock(Chunk::BlockType("brick", { 24 }, true, false, false)); //CC0, meh
-			Chunk::AddBlock(Chunk::BlockType("forest ground", { 37,37,37,37,25,1 }, true, false, false)); //CC0, good
-			Chunk::AddBlock(Chunk::BlockType("nether bricks", { 26 }, true, false, false)); //non-CC0
-			Chunk::AddBlock(Chunk::BlockType("log", { 27,27,27,27,28,28 }, true, false, false)); //CC0 (and a bit self made), good
-			Chunk::AddBlock(Chunk::BlockType("wet farmland", { 34,34,34,34,29,34 }, true, false, false)); //CC0 (and a bit self made), good
-			Chunk::AddBlock(Chunk::BlockType("netherrack", { 30 }, true, false, false)); //CC0, okay+
-			Chunk::AddBlock(Chunk::BlockType("cobblestone", { 31 }, true, false, false)); //CC0, okay
-			Chunk::AddBlock(Chunk::BlockType("snow", { 33,33,33,33,32,1 }, true, false, false)); //CC0 (and a bit self made), good
-			Chunk::AddBlock(Chunk::BlockType("ice", { 35 }, true, false, false)); //CC0 (and a bit self made), semi good
-			Chunk::AddBlock(Chunk::BlockType("lava", { 36 }, true, false, false,30.0)); //CC0 (and a bit self made), semi good
-			Chunk::AddBlock(Chunk::BlockType("stone workbench", { 38,38,38,38,39,40 }, true, false, false)); //CC0 (and a bit self made), good
-			Chunk::AddBlock(Chunk::BlockType("forge", { 41,41,41,42,43,44 }, true, false, false)); //CC0 (and a bit self made), good
-			Chunk::AddBlock(Chunk::BlockType("coal block", { 45 }, true, false, false)); //CC0 (and a bit self made), good
-			Chunk::AddBlock(Chunk::BlockType("wet stones", { 46 }, true, false, false)); //CC0 (and a bit self made), good
-			Chunk::AddBlock(Chunk::BlockType("sandstone", { 47 }, true, false, false)); //CC0, good 
-			Chunk::AddBlock(Chunk::BlockType("gravel", { 48 }, true, false, false)); //CC0, good 
-			Chunk::AddBlock(Chunk::BlockType("polished wood", { 49 }, true, false, false)); //CC0, good 
-			Chunk::AddBlock(Chunk::BlockType("jungle ground", { 50 }, true, false, false)); //CC0, good 
-			Chunk::AddBlock(Chunk::BlockType("leaves", { 51 }, true, true, false, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT)); //CC0, good 
-			Chunk::AddBlock(Chunk::BlockType("Asphalt", { 52 }, true, false, false)); //CC0, good 
-			Chunk::AddBlock(Chunk::BlockType("melon", { 53 }, true, false, false)); //CC0, good 
-			Chunk::AddBlock(Chunk::BlockType("Jelly", { 54 }, true, false, false, 0.0, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE)); //CC0, good 
-			Chunk::AddBlock(Chunk::BlockType("Gold block", { 55 }, true, false, false)); //CC0, good 
-			Chunk::AddBlock(Chunk::BlockType("Hop", { 56 }, true, false, false)); //CC0, good 
-			Chunk::AddBlock(Chunk::BlockType("Diamond block", { 57 }, true, false, false)); //CC0, good 
+			Chunk::AddBlock(Chunk::BlockType("Stone", { 0,0,0,0,0,0 }, true, false, false, SoundType::STONE)); //CC0, good
+			Chunk::AddBlock(Chunk::BlockType("Dirt", { 1,1,1,1,1,1 }, true, false, false, SoundType::DIRT));  //CC0, good
+			Chunk::AddBlock(Chunk::BlockType("Grass", { 3,3,3,3,2,1 }, true, false, false, SoundType::GRASS)); //CC0, good
+			Chunk::AddBlock(Chunk::BlockType("Glowstone", { 4 }, true, false, false, SoundType::METAL, 30.0)); //CC0, okay
+			Chunk::AddBlock(Chunk::BlockType("Tiles", { 5 }, true, false, false, SoundType::STONE)); //CC0, good.
+			Chunk::AddBlock(Chunk::BlockType("Planks", { 6 }, true, false, false, SoundType::WOOD));  //CC0, okay
+			Chunk::AddBlock(Chunk::BlockType("Leather", { 7 }, true, false, false, SoundType::FABRIC)); //CC0, good
+			Chunk::AddBlock(Chunk::BlockType("Fabric", { 8 }, true, false, false, SoundType::METAL));  //CC0, good
+			Chunk::AddBlock(Chunk::BlockType("Obsidian", { 9 }, true, false, false, SoundType::STONE)); //CC0, good texture
+			Chunk::AddBlock(Chunk::BlockType("Concrete", { 10 }, true, false, false, SoundType::STONE)); //CC0, good
+			Chunk::AddBlock(Chunk::BlockType("Green glowstone", { 11 }, true, false, false, SoundType::METAL, 30.0)); //CC0, good
+			Chunk::AddBlock(Chunk::BlockType("Iron bars", { 12 }, true, false, false, SoundType::METAL, 30.0)); //CC0, meh
+			Chunk::AddBlock(Chunk::BlockType("Lamp", { 13 }, true, false, false, SoundType::METAL, 30.0)); //CC0 (and a bit self made) good texture
+			Chunk::AddBlock(Chunk::BlockType("Lantern", { 14 }, true, false, false, SoundType::METAL, 180.0)); //CC0, good
+			Chunk::AddBlock(Chunk::BlockType("red tiles", { 15 }, true, false, false, SoundType::STONE)); //CC0, and a bit self-made, good
+			Chunk::AddBlock(Chunk::BlockType("green tiles", { 16 }, true, false, false, SoundType::STONE)); //CC0, and a bit self-made, good
+			Chunk::AddBlock(Chunk::BlockType("orange tiles", { 17 }, true, false, false, SoundType::STONE)); //CC0, good texture
+			Chunk::AddBlock(Chunk::BlockType("iron block", { 18 }, true, false, false, SoundType::METAL)); //CC0, good texture
+			Chunk::AddBlock(Chunk::BlockType("solar panel", { 19 }, true, false, false, SoundType::METAL)); //CC0, good texture
+			Chunk::AddBlock(Chunk::BlockType("sand", { 20 }, true, false, false, SoundType::SAND)); //CC0, good texture
+			Chunk::AddBlock(Chunk::BlockType("marble", { 21 }, true, false, false, SoundType::STONE)); //CC0 (and a bit self made), semi good
+			Chunk::AddBlock(Chunk::BlockType("iron ore", { 22 }, true, false, false, SoundType::STONE)); //CC0 (and a bit self made), good
+			Chunk::AddBlock(Chunk::BlockType("Farmland", { 34,34,34,34,23,34 }, true, false, false, SoundType::DIRT)); //CC0 (and a bit self made), good
+			Chunk::AddBlock(Chunk::BlockType("brick", { 24 }, true, false, false, SoundType::STONE)); //CC0, meh
+			Chunk::AddBlock(Chunk::BlockType("forest ground", { 37,37,37,37,25,1 }, true, false, false, SoundType::DIRT)); //CC0, good
+			Chunk::AddBlock(Chunk::BlockType("nether bricks", { 26 }, true, false, false, SoundType::STONE)); //non-CC0
+			Chunk::AddBlock(Chunk::BlockType("log", { 27,27,27,27,28,28 }, true, false, false, SoundType::WOOD)); //CC0 (and a bit self made), good
+			Chunk::AddBlock(Chunk::BlockType("wet farmland", { 34,34,34,34,29,34 }, true, false, false, SoundType::DIRT)); //CC0 (and a bit self made), good
+			Chunk::AddBlock(Chunk::BlockType("netherrack", { 30 }, true, false, false, SoundType::STONE)); //CC0, okay+
+			Chunk::AddBlock(Chunk::BlockType("cobblestone", { 31 }, true, false, false, SoundType::STONE)); //CC0, okay
+			Chunk::AddBlock(Chunk::BlockType("snow", { 33,33,33,33,32,1 }, true, false, false, SoundType::SNOW)); //CC0 (and a bit self made), good
+			Chunk::AddBlock(Chunk::BlockType("ice", { 35 }, true, false, false, SoundType::STONE)); //CC0 (and a bit self made), semi good
+			Chunk::AddBlock(Chunk::BlockType("lava", { 36 }, true, false, false, SoundType::STONE,30.0)); //CC0 (and a bit self made), semi good
+			Chunk::AddBlock(Chunk::BlockType("stone workbench", { 38,38,38,38,39,40 }, true, false, false, SoundType::WOOD)); //CC0 (and a bit self made), good
+			Chunk::AddBlock(Chunk::BlockType("forge", { 41,41,41,42,43,44 }, true, false, false, SoundType::STONE)); //CC0 (and a bit self made), good
+			Chunk::AddBlock(Chunk::BlockType("coal block", { 45 }, true, false, false, SoundType::STONE)); //CC0 (and a bit self made), good
+			Chunk::AddBlock(Chunk::BlockType("wet stones", { 46 }, true, false, false, SoundType::STONE)); //CC0 (and a bit self made), good
+			Chunk::AddBlock(Chunk::BlockType("sandstone", { 47 }, true, false, false, SoundType::STONE)); //CC0, good 
+			Chunk::AddBlock(Chunk::BlockType("gravel", { 48 }, true, false, false, SoundType::STONE)); //CC0, good 
+			Chunk::AddBlock(Chunk::BlockType("polished wood", { 49 }, true, false, false, SoundType::STONE)); //CC0, good 
+			Chunk::AddBlock(Chunk::BlockType("jungle ground", { 50 }, true, false, false, SoundType::DIRT)); //CC0, good 
+			Chunk::AddBlock(Chunk::BlockType("leaves", { 51 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT)); //CC0, good 
+			Chunk::AddBlock(Chunk::BlockType("Asphalt", { 52 }, true, false, false, SoundType::STONE)); //CC0, good 
+			Chunk::AddBlock(Chunk::BlockType("melon", { 53 }, true, false, false, SoundType::STONE)); //CC0, good 
+			Chunk::AddBlock(Chunk::BlockType("Jelly", { 54 }, true, false, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE)); //CC0, good 
+			Chunk::AddBlock(Chunk::BlockType("Gold block", { 55 }, true, false, false, SoundType::STONE)); //CC0, good 
+			Chunk::AddBlock(Chunk::BlockType("Hop", { 56 }, true, false, false, SoundType::STONE)); //CC0, good 
+			Chunk::AddBlock(Chunk::BlockType("Diamond block", { 57 }, true, false, false, SoundType::STONE)); //CC0, good 
+			Chunk::AddBlock(Chunk::BlockType("Metal test", { 58 }, true, false, false, SoundType::METAL)); //CC0, good 
 
 			Chunk::AddTexture("stone",0.75); 
 			Chunk::AddTexture("Dirt", 0.4);
@@ -132,6 +138,7 @@ namespace iTrace {
 			Chunk::AddTexture("Gold block", 0.0625);
 			Chunk::AddTexture("Hop", 0.25);
 			Chunk::AddTexture("Diamond block MC", 0.25);
+			Chunk::AddTexture("Metal", 0.125);
 
 
 			Chunk::GetTextureArrayList(0); 
@@ -372,8 +379,6 @@ namespace iTrace {
 
 		}
 
-
-
 		void WorldManager::UpdateBlockThenLighting(Vector3i LocationBlock, int NewBlockType)
 		{
 
@@ -461,8 +466,6 @@ namespace iTrace {
 			}
 
 		}
-
-		
 
 		bool WorldManager::CastBlock(Camera Camera, Chunk::BLOCK_ACTION Action, unsigned short Distance, unsigned char Block)
 		{

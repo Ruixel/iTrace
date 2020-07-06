@@ -55,7 +55,7 @@ namespace iTrace {
 			}
 			else
 			{
-				//throw std::exception("EFX Extension not found on current device.");
+				throw std::exception("EFX Extension not found on current device.");
 			}
 
 
@@ -124,6 +124,7 @@ namespace iTrace {
 		}
 		void SoundHandler::SetEnvironment(int SourceID, float SendGain0, float SendGain1, float SendGain2, float SendGain3, float SendCutoff0, float SendCutoff1, float SendCutoff2, float SendCutoff3, float DirectCutoff, float DirectGain)
 		{
+			
 			alFilterf(Filters[0], AL_LOWPASS_GAIN, SendGain0);
 			checkErrorLog("Error whilst setting aiFilterF (AI_LOWPASS_GAIN,0) ");
 			alFilterf(Filters[0], AL_LOWPASS_GAINHF, SendCutoff0);
@@ -161,16 +162,10 @@ namespace iTrace {
 
 			alSource3i(SourceID, AL_AUXILIARY_SEND_FILTER, Slots[3], 3, Filters[3]);
 			checkErrorLog("Error whilst setting aiSource3i (AL_AUXILIARY_SEND_FILTER,3) (Slots:" + std::to_string(Slots[3]) + " Filters:" + std::to_string(Filters[3]) + ")");
-
-
-			alFilterf(DirectFilter, AL_LOWPASS_GAIN, DirectGain);
-			checkErrorLog("Error whilst setting aiFilterF (AI_LOWPASS_GAIN,direct) ");
-
-			alFilterf(DirectFilter, AL_LOWPASS_GAINHF, DirectCutoff);
-			checkErrorLog("Error whilst setting aiFilterF (AL_LOWPASS_GAINHF,direct) ");
-
-			alSourcei(SourceID, AL_DIRECT_FILTER, DirectFilter);
-			checkErrorLog("Error whilst setting aiSource3i (AL_DIRECT_FILTER,direct) ");
+			
+			
+			//alSourcei(SourceID, AL_DIRECT_FILTER, DirectFilter);
+			//checkErrorLog("Error whilst setting aiSource3i (AL_DIRECT_FILTER,direct) ");
 
 			alFilterf(DirectFilter, AL_LOWPASS_GAIN, DirectGain);
 			checkErrorLog("Error whilst setting aiFilterF (AI_LOWPASS_GAIN,direct) ");
@@ -186,12 +181,14 @@ namespace iTrace {
 		}
 		void SoundHandler::LoadSound(std::string SoundID, std::string FilePath)
 		{
-			Buffers[SoundID] = SoundBuffer(); 
-			Buffers[SoundID].loadFromFile(FilePath); 
+			unsigned int Buffer;
+			Buffer = alutCreateBufferFromFile(FilePath.c_str());
+			Buffers[SoundID] = Buffer;
 		}
 		void SoundHandler::AddSoundInstance(SoundInstance Instance, std::string ParentName, std::string SoundID)
 		{
 			
+
 
 			if (Buffers.find(SoundID) == Buffers.end())
 				return;
@@ -201,14 +198,14 @@ namespace iTrace {
 			unsigned int Source;
 
 			alGenSources(1, &Source);
-			alSourcei(Source, AL_BUFFER, Buffers[SoundID].GetBufferID());
+			alSourcei(Source, AL_BUFFER, Buffers[SoundID]);
 			alSource3f(Source, AL_POSITION, Instance.Origin.x, Instance.Origin.y, Instance.Origin.z);
 			alSource3f(Source, AL_VELOCITY, 0, 0, 0);
 			alSourcef(Source, AL_PITCH, 1);
 			alSourcef(Source, AL_GAIN, 100.0);
-			alSourcei(Source, AL_LOOPING, AL_TRUE);
 
-			alSourcePlay(Source);
+
+			std::cout << "Created instance of " << SoundID << " called: " << ParentName << '\n'; 
 
 			Instance.SourceID = Source;
 			Instances[ParentName] = Instance;
@@ -221,8 +218,410 @@ namespace iTrace {
 			Instances[Key].Origin = Origin;
 			alSource3f(Instances[Key].SourceID, AL_POSITION, Origin.x, Origin.y, Origin.z);
 		}
+		bool ActivateRT = false; 
 		void SoundHandler::Update(Camera& Camera, Window& Window, Rendering::WorldManager& World)
 		{
+
+			if (Instances.size() == 0)
+				return; 
+
+			int PlayingInstances = 0; 
+
+			for (auto& Instance : Instances) {
+				if (Instance.second.IsPlaying()) {
+					PlayingInstances++;
+				}
+			}
+
+			if (PlayingInstances == 0)
+				return; 
+
+			auto m = glm::value_ptr(Camera.View);
+
+			Vector3f position = Vector3f(m[12], m[13], m[14]);  // world space position
+			Vector3f up = Vector3f(m[4], m[5], m[6]);     // world space up vector
+			Vector3f front = Vector3f(-m[8], -m[9], -m[10]); // vector facing forward from camera/listener position
+
+			Vector3f UpVector = Vector3f(0.0, 1.0, 0.0) * Matrix3f(Camera.View);
+			Vector3f FrontVector = Vector3f(0.0, 0.0, -1.0) * Matrix3f(Camera.View);
+
+			ALfloat listenerOri[] = { FrontVector.x, FrontVector.y, FrontVector.z, UpVector.x, UpVector.y, UpVector.z };
+
+			alListener3f(AL_POSITION, Camera.Position.x, Camera.Position.y, Camera.Position.z);
+			alListener3f(AL_VELOCITY, 0, 0, 0);
+			alListenerfv(AL_ORIENTATION, listenerOri);
+
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::B))
+				ActivateRT = true;
+
+			if (!ActivateRT)
+				return;
+
+			//HW accelerated sound-tracing! 
+
+			float* DirectDataPixels = new float[MAX_OBJECTS * 4];
+			for (int i = 0; i < MAX_OBJECTS * 4; i++)
+				DirectDataPixels[i] = 0.0;
+
+			int ObjectID = 0;
+
+			for (auto& Instance : Instances) {
+
+				if (Instance.second.IsPlaying()) {
+
+					DirectDataPixels[ObjectID * 4] = Instance.second.Origin.x;
+					DirectDataPixels[ObjectID * 4 + 1] = Instance.second.Origin.y;
+					DirectDataPixels[ObjectID * 4 + 2] = Instance.second.Origin.z;
+
+					ObjectID++;
+
+				}
+
+			}
+
+			glBindTexture(GL_TEXTURE_2D, DirectData);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, MAX_OBJECTS, 1, 0, GL_RGBA, GL_FLOAT, DirectDataPixels);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glBindTexture(GL_TEXTURE_2D, 0);
+
+			float* GainsShared = new float[3 * NUM_RAYS * MAX_OBJECTS];
+			float* ReflectivityRatios = new float[3 * NUM_RAYS * MAX_OBJECTS];
+			float* TotalOcclusion = new float[MAX_OBJECTS];
+
+
+
+
+			SecondarySoundTracingBuffer.Bind();
+
+			SecondarySoundTracingShader.Bind();
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, DirectData);
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_3D, World.Chunk->ChunkTexID);
+
+			SecondarySoundTracingShader.SetUniform("PlayerPosition", Camera.Position);
+
+			Rendering::DrawPostProcessQuad();
+
+			SecondarySoundTracingShader.UnBind();
+
+			SecondarySoundTracingBuffer.UnBind(Window);
+
+			PrimarySoundTracingBuffer.Bind();
+
+			PrimarySoundTracingShader.Bind();
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, DirectData);
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_3D, World.Chunk->ChunkTexID);
+
+			PrimarySoundTracingShader.SetUniform("PlayerPosition", Camera.Position);
+
+			Rendering::DrawPostProcessQuad();
+
+			PrimarySoundTracingShader.UnBind();
+
+			PrimarySoundTracingBuffer.UnBind(Window);
+
+
+			glFinish();
+
+			glBindTexture(GL_TEXTURE_2D, SecondarySoundTracingBuffer.ColorBuffers[0]);
+			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, GainsShared);
+			glBindTexture(GL_TEXTURE_2D, SecondarySoundTracingBuffer.ColorBuffers[1]);
+			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, ReflectivityRatios);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glBindTexture(GL_TEXTURE_2D, PrimarySoundTracingBuffer.ColorBuffer);
+			glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, TotalOcclusion);
+			glBindTexture(GL_TEXTURE_2D, 0);
+
+			glFinish();
+
+			//TODO: Push to secondary sound thread! 
+
+			int x = 0;
+			for (auto& Instance : Instances) {
+
+				if (Instance.second.IsPlaying()) {
+
+					float SendGain0 = 0.0, SendGain1 = 0.0, SendGain2 = 0.0, SendGain3 = 0.0;
+					float BounceReflectivityRatios[4] = { 0.0,0.0,0.0,0.0 };
+					float SharedAirSpace = 0.0;
+					float OcclusionAccumulation = TotalOcclusion[x];
+					float rcpTotalRays = 1.0 / float(NUM_RAYS * MAX_BOUNCES);
+					float absorptionCoeff = 3.0f;
+
+					for (int y = 0; y < NUM_RAYS; y++) {
+
+						int BasePixel = (y * MAX_OBJECTS + x) * 3;
+
+						Vector3f VGainsShared = Vector3f(GainsShared[BasePixel], GainsShared[BasePixel + 1], GainsShared[BasePixel + 2]);
+						Vector3f VReflectivityRatios = Vector3f(ReflectivityRatios[BasePixel], ReflectivityRatios[BasePixel + 1], ReflectivityRatios[BasePixel + 2]);
+
+						Vector2f SendGain01 = glm::unpackHalf2x16(glm::floatBitsToUint(VGainsShared.x));
+						Vector2f SendGain23 = glm::unpackHalf2x16(glm::floatBitsToUint(VGainsShared.y));
+						Vector2f ReflRatios01 = glm::unpackHalf2x16(glm::floatBitsToUint(VReflectivityRatios.x));
+						Vector2f ReflRatios23 = glm::unpackHalf2x16(glm::floatBitsToUint(VReflectivityRatios.y));
+
+						SendGain0 += SendGain01.x;
+						SendGain1 += SendGain01.y;
+						SendGain2 += SendGain23.x;
+						SendGain3 += SendGain23.y;
+
+						//if(isnan(!VGainsShared.z))
+							SharedAirSpace += VGainsShared.z;
+						//std::cout << VGainsShared.z << '\n'; 
+
+
+						BounceReflectivityRatios[0] += ReflRatios01.x;
+						BounceReflectivityRatios[1] += ReflRatios01.y;
+						BounceReflectivityRatios[2] += ReflRatios23.x;
+						BounceReflectivityRatios[3] += ReflRatios23.y;
+
+					}
+
+					float directCutoff = (float)exp(-OcclusionAccumulation * absorptionCoeff);
+					float directGain = (float)pow(directCutoff, 0.1);
+
+
+					SharedAirSpace *= 64.0;
+					SharedAirSpace *= rcpTotalRays;
+
+
+					for (int i = 0; i < 4; i++)
+						BounceReflectivityRatios[i] = BounceReflectivityRatios[i] / float(NUM_RAYS);
+
+					float sharedAirspaceWeight0 = glm::clamp(SharedAirSpace / 20.0f, 0.0f, 1.0f);
+					float sharedAirspaceWeight1 = glm::clamp(SharedAirSpace / 15.0f, 0.0f, 1.0f);
+					float sharedAirspaceWeight2 = glm::clamp(SharedAirSpace / 10.0f, 0.0f, 1.0f);
+					float sharedAirspaceWeight3 = glm::clamp(SharedAirSpace / 10.0f, 0.0f, 1.0f);
+
+					float averageSharedAirspace = (sharedAirspaceWeight0 + sharedAirspaceWeight1 + sharedAirspaceWeight2 + sharedAirspaceWeight3) * 0.25f;
+
+					directCutoff = (float)glm::max((float)pow(averageSharedAirspace, 0.5) * 0.2f, directCutoff);
+
+					directGain = (float)pow(directCutoff, 0.1);
+
+
+					float sendCutoff0 = (float)exp(-OcclusionAccumulation * absorptionCoeff * 1.0f) * (1.0f - sharedAirspaceWeight0) + sharedAirspaceWeight0;
+					float sendCutoff1 = (float)exp(-OcclusionAccumulation * absorptionCoeff * 1.0f) * (1.0f - sharedAirspaceWeight1) + sharedAirspaceWeight1;
+					float sendCutoff2 = (float)exp(-OcclusionAccumulation * absorptionCoeff * 1.5f) * (1.0f - sharedAirspaceWeight2) + sharedAirspaceWeight2;
+					float sendCutoff3 = (float)exp(-OcclusionAccumulation * absorptionCoeff * 1.5f) * (1.0f - sharedAirspaceWeight3) + sharedAirspaceWeight3;
+
+
+
+					SendGain1 *= (float)pow(BounceReflectivityRatios[1], 1.0);
+					//sendGain1 += sendGain2 * (1.0f - (float)Math.pow(bounceReflectivityRatio[2], 3.0)) * 0.5f; 
+					//sendGain1 += sendGain3 * (1.0f - (float)Math.pow(bounceReflectivityRatio[3], 4.0)) * 0.5f;
+					SendGain2 *= (float)pow(BounceReflectivityRatios[2], 3.0);
+					SendGain3 *= (float)pow(BounceReflectivityRatios[3], 4.0);
+
+					SendGain0 = glm::clamp(SendGain0, 0.0f, 1.0f);
+					SendGain1 = glm::clamp(SendGain1, 0.0f, 1.0f);
+					SendGain2 = glm::clamp(SendGain2 * 1.05f - .05f, 0.0f, 1.0f);
+					SendGain3 = glm::clamp(SendGain3 * 1.05f - .05f, 0.0f, 1.0f);
+
+					SendGain0 *= (float)pow(sendCutoff0, 0.1);
+					SendGain1 *= (float)pow(sendCutoff1, 0.1);
+					SendGain2 *= (float)pow(sendCutoff2, 0.1);
+					SendGain3 *= (float)pow(sendCutoff3, 0.1);
+
+
+					//std::cout << "Occlusion: " << OcclusionAccumulation << '\n'; 
+
+					OcclusionAccumulation = OcclusionAccumulation * OcclusionAccumulation;
+					OcclusionAccumulation = OcclusionAccumulation * 4.0;
+					//directCutoff = (float)exp(-OcclusionAccumulation * absorptionCoeff);
+					//directGain = (float)pow(directCutoff, 0.1);
+
+					//std::cout << "Position: " << Instance.second.Origin.x << ' ' << Instance.second.Origin.y << ' ' << Instance.second.Origin.z << '\n'; 
+					//std::cout << "Shared airspace: " << SharedAirSpace << " \n Gain1: " << SendGain0 << " Gain2: " << SendGain1 << " Gain3: " << SendGain3 << " Gain4: " << SendGain3 << '\n'; 
+					
+					SetEnvironment(Instance.second.SourceID, SendGain0, SendGain1, SendGain2, SendGain3, sendCutoff0, sendCutoff1, sendCutoff2, sendCutoff3, directCutoff, directGain);
+
+
+
+					x++;
+
+				}
+			}
+
+			delete[] GainsShared;
+			delete[] ReflectivityRatios;
+			delete[] TotalOcclusion;
+
+
 		}
+		void SoundHandler::PrepareSoundBlockData()
+		{
+			PrimarySoundTracingBuffer = Rendering::FrameBufferObject(Vector2i(MAX_OBJECTS, 1), GL_R32F, false, false);
+			SecondarySoundTracingBuffer = Rendering::MultiPassFrameBufferObject(Vector2i(MAX_OBJECTS, NUM_RAYS), 2, { GL_RGB32F, GL_RGB32F }, false, false);
+			PrimarySoundTracingShader = Rendering::Shader("Shaders/PrimarySoundTracing");
+			SecondarySoundTracingShader = Rendering::Shader("Shaders/SecondarySoundTracing");
+
+
+			glGenTextures(1, &DirectData);
+
+			PrimarySoundTracingShader.Bind();
+
+			PrimarySoundTracingShader.SetUniform("SoundLocations", 0);
+			PrimarySoundTracingShader.SetUniform("VoxelData", 1);
+
+			PrimarySoundTracingShader.UnBind();
+
+
+			SecondarySoundTracingShader.Bind();
+
+			SecondarySoundTracingShader.SetUniform("NumRays", NUM_RAYS);
+			SecondarySoundTracingShader.SetUniform("SoundLocations", 0);
+			SecondarySoundTracingShader.SetUniform("VoxelData", 1);
+
+			SecondarySoundTracingShader.UnBind();
+
+
+
+
+			std::vector<float> BlockReflectivities; 
+
+			for (int i = 0; i < Rendering::Chunk::GetBlockSize(); i++) {
+
+				auto& Block = Rendering::Chunk::GetBlock(i); 
+
+				BlockReflectivities.push_back(SoundMaterialTypes[static_cast<int>(Block.SoundMaterialType)].Reflectivity); 
+
+			}
+
+			glGenTextures(1, &BlockDataImage); 
+
+			glBindTexture(GL_TEXTURE_1D, BlockDataImage); 
+			glTexImage1D(GL_TEXTURE_1D, 0, GL_R16F, BlockReflectivities.size(), 0, GL_RED, GL_FLOAT, BlockReflectivities.data()); 
+			glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
+			glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+			glBindTexture(GL_TEXTURE_1D, 0); 
+
+		}
+
+		void SoundHandler::ReloadSounds()
+		{
+
+			PrimarySoundTracingShader.Reload("Shaders/PrimarySoundTracing");
+			SecondarySoundTracingShader.Reload("Shaders/SecondarySoundTracing");
+
+			PrimarySoundTracingShader.Bind();
+
+			PrimarySoundTracingShader.SetUniform("SoundLocations", 0);
+			PrimarySoundTracingShader.SetUniform("VoxelData", 1);
+
+			PrimarySoundTracingShader.UnBind();
+
+
+			SecondarySoundTracingShader.Bind();
+
+			SecondarySoundTracingShader.SetUniform("NumRays", NUM_RAYS);
+			SecondarySoundTracingShader.SetUniform("SoundLocations", 0);
+			SecondarySoundTracingShader.SetUniform("VoxelData", 1);
+
+			SecondarySoundTracingShader.UnBind();
+		}
+
+		void SoundInstance::Play()
+		{
+
+			if (SourceID == -1)
+				return; 
+
+			if (IsPlaying())
+				return; 
+
+			alSourcePlay(SourceID); 
+
+		}
+
+		void SoundInstance::Stop()
+		{
+			if (SourceID == -1)
+				return;
+
+			if (!IsPlaying())
+				return; 
+
+			alSourceStop(SourceID); 
+
+		}
+
+		void SoundInstance::Pause()
+		{
+			if (SourceID == -1)
+				return;
+
+			if (!IsPlaying() || IsPaused())
+				return; 
+
+			alSourcePause(SourceID); 
+
+		}
+
+		void SoundInstance::SetLoop(bool Loop)
+		{
+			if (SourceID == -1)
+				return;
+			Looping = Loop; 
+			alSourcei(SourceID, AL_LOOPING, Loop ? AL_TRUE : AL_FALSE);
+
+		}
+
+		bool SoundInstance::IsLooped()
+		{
+			if (SourceID == -1)
+				return false;
+
+			return Looping;
+		}
+
+		bool SoundInstance::IsPlaying()
+		{
+			if (SourceID == -1)
+				return false;
+
+			int State; 
+
+			alGetSourcei(SourceID, AL_SOURCE_STATE, &State);
+
+			return State == AL_PLAYING; 
+		}
+
+		bool SoundInstance::IsPaused()
+		{
+			if (SourceID == -1)
+				return false;
+
+			int State;
+
+			alGetSourcei(SourceID, AL_SOURCE_STATE, &State);
+
+			return State == AL_PAUSED;
+
+		}
+
+		void SoundInstance::SetOrigin(Vector3f Origin)
+		{
+			if (SourceID == -1)
+				return;
+			this->Origin = Origin; 
+			alSource3f(SourceID, AL_POSITION, Origin.x, Origin.y, Origin.z);
+		}
+
+		void SoundInstance::SetPlayingOffset(float Time)
+		{
+			alSourcef(SourceID, AL_SEC_OFFSET, Time); 
+		}
+
 	}
 }

@@ -46,9 +46,9 @@ namespace iTrace {
 
 		//setblock >example
 		//prints an example for a setblock command 
-		
+
 		if (Input.size() == 0) {
-			return { "Setblock command failed, not enough data provided for command to execute" }; 
+			return { "Setblock command failed, not enough data provided for command to execute" };
 		}
 
 		if (Input[0] == ">help") {
@@ -60,7 +60,7 @@ namespace iTrace {
 				"Other uses: ",
 				"setblock >example",
 				"prints an example of a setblock command"
-			}; 
+			};
 
 		}
 		else if (Input[0] == ">example") {
@@ -69,7 +69,7 @@ namespace iTrace {
 				"setblock . . . grass",
 				"adds a grass block at the players position",
 				"(players position is based on their feet, not their head)"
-			}; 
+			};
 
 		}
 
@@ -77,30 +77,30 @@ namespace iTrace {
 			return { "Setblock command failed, not enough data provided for command to execute" };
 		}
 
-		Vector3i BlockCoordinate = Vector3i(0); 
-		bool Relative[3] = { false, false, false }; 
+		Vector3i BlockCoordinate = Vector3i(0);
+		bool Relative[3] = { false, false, false };
 
 
-		std::string CoordinateNames = "xyz"; 
+		std::string CoordinateNames = "xyz";
 
 		auto SafeParseInt = [](std::string Text, int Offset) {
 
-			std::string NewString; 
+			std::string NewString;
 			if (Offset == 0)
-				NewString = Text; 
+				NewString = Text;
 			else {
 				for (int x = Offset; x < Text.size(); x++) {
-					NewString += Text[x]; 
+					NewString += Text[x];
 
 				}
 			}
-			
-			bool IsNumber = true; 
+
+			bool IsNumber = true;
 
 			for (auto& Character : NewString) {
 				if (!std::isdigit(Character) && !(Character == '-' && NewString[0] == '-')) {
-					IsNumber = false; 
-					break; 
+					IsNumber = false;
+					break;
 				}
 			}
 
@@ -108,18 +108,18 @@ namespace iTrace {
 				return -2147483647;
 			}
 			else {
-				return std::stoi(NewString); 
+				return std::stoi(NewString);
 			}
 
 
-		}; 
+		};
 
-		Vector3i CameraPosition = Vector3i(std::any_cast<Vector3f>(GetGlobalCommandPusher().GivenConstantData["camera_pos"])); 
-		CameraPosition.y -= 2; 
+		Vector3i CameraPosition = Vector3i(std::any_cast<Vector3f>(GetGlobalCommandPusher().GivenConstantData["camera_pos"]));
+		CameraPosition.y -= 2;
 		for (int Coordinate = 0; Coordinate < 3; Coordinate++) {
 
 			if (Input[Coordinate][0] == '.') {
-				Relative[Coordinate] = true; 
+				Relative[Coordinate] = true;
 				if (Input[Coordinate].size() == 1)
 					BlockCoordinate[Coordinate] = CameraPosition[Coordinate];
 				else {
@@ -144,17 +144,17 @@ namespace iTrace {
 		if (BlockCoordinate.x >= 0 && BlockCoordinate.y >= 0 && BlockCoordinate.z >= 0 &&
 			BlockCoordinate.z < CHUNK_SIZE && BlockCoordinate.y < CHUNK_SIZE && BlockCoordinate.z < CHUNK_SIZE) {
 
-			int TypeIdx = -1; 
+			int TypeIdx = -1;
 
 			//find the appropriate type index! 
 
 			for (int i = 0; i < Chunk::GetBlockSize(); i++) {
 
-				auto& Block = Chunk::GetBlock(i); 
+				auto& Block = Chunk::GetBlock(i);
 
 				if (Block.Name == Input[3]) {
 
-					TypeIdx = i; 
+					TypeIdx = i;
 
 				}
 
@@ -166,16 +166,16 @@ namespace iTrace {
 
 
 			if (TypeIdx == -1) {
-				return { "Could not find block named: " + Input[3]," (use blocklist for a list of all block types" }; 
+				return { "Could not find block named: " + Input[3]," (use blocklist for a list of all block types" };
 			}
 
-			GetGlobalCommandPusher().AddCommand(CommandPush{ "set_block", {BlockCoordinate, TypeIdx} }); 
+			GetGlobalCommandPusher().AddCommand(CommandPush{ "set_block", {BlockCoordinate, TypeIdx} });
 
-			return { "Added block at: " + std::to_string(BlockCoordinate.x) + " " + std::to_string(BlockCoordinate.y) + " " + std::to_string(BlockCoordinate.z) }; 
+			return { "Added block at: " + std::to_string(BlockCoordinate.x) + " " + std::to_string(BlockCoordinate.y) + " " + std::to_string(BlockCoordinate.z) };
 
 		}
 		else {
-			return { "Cannot place block outside of world!" }; 
+			return { "Cannot place block outside of world!" };
 		}
 
 
@@ -347,14 +347,14 @@ namespace iTrace {
 
 
 		for (int s = 1; s < Chunk::GetBlockSize(); s++) {
-			Blocks.push_back(Chunk::GetBlock(s)); 
+			Blocks.push_back(Chunk::GetBlock(s));
 		}
 
 		std::sort(Blocks.begin(), Blocks.end(), [](const Chunk::BlockType& a, const Chunk::BlockType& b) {
 
-			return a.Name[0] < b.Name[0]; 
+			return a.Name[0] < b.Name[0];
 
-			}); 
+			});
 
 
 
@@ -375,11 +375,11 @@ namespace iTrace {
 
 
 		for (int i = 0; i < Blocks.size(); i += 8) {
-			OutPut.push_back(""); 
+			OutPut.push_back("");
 			for (int j = 0; j < 8; j++) {
 				if (i + j >= Blocks.size())
-					break; 
-				OutPut.back() += Blocks[i+j].Name + (i + j == Blocks.size()-1 ? "" : ", "); 
+					break;
+				OutPut.back() += Blocks[i + j].Name + (i + j == Blocks.size() - 1 ? "" : ", ");
 			}
 		}
 
@@ -391,6 +391,8 @@ namespace iTrace {
 
 	}
 
+	SoundType ActiveSoundtype = SoundType::NONE;
+
 	void Pipeline::PreparePipeline(Camera& Camera, Window& Window)
 	{
 
@@ -401,16 +403,16 @@ namespace iTrace {
 
 #endif
 
-		RequestBoolean("freefly", false); 
-		RequestBoolean("noclip", true); 
+		RequestBoolean("freefly", false);
+		RequestBoolean("noclip", true);
 		RequestBoolean("slowframes", false);
 		RequestBoolean("newfiltering", true);
 		RequestBoolean("bettershadows", true);
 		RequestBoolean("spatialupscale", true);
 
 		//GetGlobalCommandPusher().World = &World; 
-		
-		GetGlobalCommandPusher().GivenConstantData["camera_pos"] = Camera.Position; 
+
+		GetGlobalCommandPusher().GivenConstantData["camera_pos"] = Camera.Position;
 
 		glClearColor(0.0, 0.0, 0.0, 0.0);
 		Core::PrepareHaltonSequence();
@@ -430,17 +432,27 @@ namespace iTrace {
 		Commands.AddCommands(Command{ "blocklist", Blocklist });
 		Commands.AddCommands(Command{ "setblock", SetBlock });
 		Commands.AddCommands(Command{ "boolean", BooleanCommand });
-		Commands.AddCommands(Command{ "keyframe", KeyFrameCommand }); 
-		Commands.AddCommands(Command{ "animation", AnimationCommand }); 
+		Commands.AddCommands(Command{ "keyframe", KeyFrameCommand });
+		Commands.AddCommands(Command{ "animation", AnimationCommand });
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-		Core::PrepareHaltonSequence(); 
+		Core::PrepareHaltonSequence();
 
 
-		
 
-		Inventory.PrepareInventory(); 
+		Inventory.PrepareInventory();
+
+		Sounds.GenerateOpenALExtensions();
+		Sounds.SetupEFX();
+		Sounds.PrepareSoundBlockData();
+
+		Sounds.LoadSound("Footsteps", "Sound/Footsteps/Grass/Step.wav");
+		Sounds.LoadSound("Music", "Sound/Creeper.wav");
+
+		Sounds.AddSoundInstance(SoundInstance(), "CreeperInstance", "Footsteps");
+		FootSteps.PrepareFootStepManager(Sounds);
+		FootSteps.SetActiveMaterial(SoundType::STONE, Sounds);
 
 	}
 
@@ -524,8 +536,9 @@ namespace iTrace {
 								Indirect.ReloadIndirect(Window);
 								Deferred.ReloadDeferred(Window);
 								Combiner.ReloadLightCombiner(Window);
-								Sky.ReloadSky(); 
-								Glow.ReloadPostProcess(Window, Camera); 
+								Sky.ReloadSky();
+								Glow.ReloadPostProcess(Window, Camera);
+								Sounds.ReloadSounds();
 							}
 							break;
 						case sf::Keyboard::F1:
@@ -542,35 +555,41 @@ namespace iTrace {
 							}
 							break;
 
+						case sf::Keyboard::H:
+							Sounds.AddSoundInstance(SoundInstance(Camera.Position, 1.0), "MusicInstance", "Music");
+
+							break;
+
 						}
 					}
-					break; 
+					break;
 
 				case sf::Event::TextEntered:
-					Commands.PollCommands(Event); 
-					break; 
+					Commands.PollCommands(Event);
+					break;
 
 
 				}
 			}
 
-			bool UpdateWorld = false; 
+
+			bool UpdateWorld = false;
 
 			while (!GetGlobalCommandPusher().Commands.empty()) {
-				auto Command = GetGlobalCommandPusher().PopCommand(); 
+				auto Command = GetGlobalCommandPusher().PopCommand();
 
 				if (Command.CommandID == "set_block") {
-					Vector3i Location = std::any_cast<Vector3i>(Command.CommandData[0]); 
-					int TypeIdx = std::any_cast<int>(Command.CommandData[1]); 
+					Vector3i Location = std::any_cast<Vector3i>(Command.CommandData[0]);
+					int TypeIdx = std::any_cast<int>(Command.CommandData[1]);
 
-					World.Chunk->SetBlock(Location.x, Location.y, Location.z, TypeIdx); 
-					UpdateWorld = true; 
+					World.Chunk->SetBlock(Location.x, Location.y, Location.z, TypeIdx);
+					UpdateWorld = true;
 				}
 
 			}
 
 			if (UpdateWorld)
-				World.Chunk->UpdateMeshData({ nullptr,nullptr ,nullptr ,nullptr }); 
+				World.Chunk->UpdateMeshData({ nullptr,nullptr ,nullptr ,nullptr });
 
 
 			if (FrameRateCounter.getElapsedTime().asSeconds() >= 1.0) {
@@ -582,14 +601,6 @@ namespace iTrace {
 			}
 
 			//FOV management
-
-			
-
-
-
-
-
-
 
 			World.GenerateWorld(Camera);
 
@@ -634,7 +645,7 @@ namespace iTrace {
 			Window.SetTimeOpened(T);
 			Window.SetFrameCount(Frame);
 
-			if(!Commands.Active)
+			if (!Commands.Active)
 				Camera.HandleInput(Window, sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) ? 10.f : 4.0f, 0.15f, Active, Active);
 
 			GetGlobalCommandPusher().GivenConstantData["camera_pos"] = Camera.Position;
@@ -677,7 +688,7 @@ namespace iTrace {
 				//Text.DisplayText("Framerate: " + std::to_string(FramesPerSecond), Window, 0.005, Vector2f(-.97, .95), Vector3f(1.0));
 				//Text.DisplayText("X: " + std::to_string(Camera.Position.x) + " Y: " + std::to_string(Camera.Position.y) + " Z: " + std::to_string(Camera.Position.z), Window, 0.005, Vector2f(-.97, .9), Vector3f(1.0));
 				//Text.DisplayText("Type: " + Chunk::GetBlock(Block).Name, Window, 0.005, Vector2f(-.97, .85), Vector3f(1.0));
-				Commands.DrawCommandText(&Text, Window); 
+				Commands.DrawCommandText(&Text, Window);
 
 				Profiler::DrawProfiling(Window, Text);
 
@@ -690,14 +701,29 @@ namespace iTrace {
 			glFinish();
 
 			if (GetBoolean("slowframes")) {
-				Sleep(30); 
+				Sleep(30);
 			}
 
-			
+
+			Vector3i Pos = Camera.Position;
+			Pos.y -= 2;
+
+			auto BlockIdx = World.Chunk->GetBlock(Pos.x, Pos.y, Pos.z);
+			auto& Block = Chunk::GetBlock(BlockIdx);
+
+			bool Case = FootSteps.Poll(Camera, Sounds, Window);
+
+			if (Case && Block.SoundMaterialType != ActiveSoundtype && Block.SoundMaterialType != SoundType::NONE) {
+				FootSteps.SetActiveMaterial(Block.SoundMaterialType, Sounds);
+			}
 
 			Window.GetRawWindow()->display();
 
 			Camera.PrevProject = Camera.Project;
+			//Sounds.SetSoundInstanceOrigin("CreeperInstance", Camera.Position - Vector3f(0.0,1.0,0.0));
+			FootSteps.Step();
+
+			Sounds.Update(Camera, Window, World);
 
 		}
 

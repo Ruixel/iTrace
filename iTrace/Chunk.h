@@ -6,6 +6,7 @@
 #include "FrameBuffer.h"
 #include <stdint.h>
 #include <array>
+#include "SoundReflectivity.h"
 
 /*
 
@@ -82,8 +83,11 @@ namespace iTrace {
 				bool IsMetallic = false; 
 				float EmissiveStrength = 0.0; 
 				BLOCK_RENDER_TYPE RenderType; 
+
+				SoundType SoundMaterialType = SoundType::NONE; 
+
 				BlockType() {}
-				BlockType(std::string Name, std::vector<unsigned char> TexIds, bool IsSolid, bool IsEmpty, bool IsNone, float EmissiveStrength=0.0, BLOCK_RENDER_TYPE RenderType = BLOCK_RENDER_TYPE::OPAQUE) : 
+				BlockType(std::string Name, std::vector<unsigned char> TexIds, bool IsSolid, bool IsEmpty, bool IsNone, SoundType SoundMaterialType, float EmissiveStrength=0.0, BLOCK_RENDER_TYPE RenderType = BLOCK_RENDER_TYPE::OPAQUE) : 
 					Name(Name),
 					
 					IsSolid(IsSolid),
@@ -91,7 +95,8 @@ namespace iTrace {
 					IsNone(IsNone),
 					EmissiveStrength(EmissiveStrength),
 					IsEmissive(EmissiveStrength>0.1),
-					RenderType(RenderType)
+					RenderType(RenderType),
+					SoundMaterialType(SoundMaterialType)
 				{
 					for (int i = 0; i < 6; i++) {
 						this->TexIds[i] = TexIds[glm::min(i, (int)(TexIds.size() - 1))]; 

@@ -5,11 +5,12 @@
 #include "CommandManager.h"
 #include "CommandPusher.h"
 #include "Inventory.h"
+#include "FootstepManager.h"
 
 namespace iTrace {
 
 	using namespace Rendering; 
-
+	using namespace Sound; 
 	struct Pipeline {
 
 		WorldManager World; 
@@ -22,6 +23,9 @@ namespace iTrace {
 		TextSystem Text; 
 		CommandManager Commands; 
 		Inventory Inventory; 
+		SoundHandler Sounds; 
+		SoundInstance TestSound; 
+		FootStepManager FootSteps; 
 
 		void PreparePipeline(Camera& Camera, Window& Window);
 		void RunPipeline(Camera& Camera, Window& Window);

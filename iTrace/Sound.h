@@ -1,10 +1,14 @@
 #pragma once
 
-#include <SFML/Audio.hpp>
 #include <iostream>
 #include <SFML/al.h>
 #include <SFML/efx.h>
+#include <SFML/alut.h>
 #include "WorldManager.h"
+
+#define MAX_OBJECTS 25 //max ray-traced sound instances
+#define NUM_RAYS 75 //number of rays thrown per sound instance (- the primary rays) 
+#define MAX_BOUNCES 4 //number of bounces per sound instance 
 
 namespace iTrace {
 
@@ -104,35 +108,50 @@ namespace iTrace {
 		};
 
 
-		struct SoundBuffer : sf::SoundBuffer {
-			unsigned int GetBufferID() {
-				return m_buffer; 
-			}
-		};
+		
 
 		struct SoundInstance {
 
 			Vector3f Origin;
 			float Volume;
-			int SourceID;
-
+			int SourceID = -1;
+			
 			SoundInstance(Vector3f Origin, float Volume) : Origin(Origin), Volume(Volume), SourceID(0) {}
 			SoundInstance() : Origin(Vector3f(0.0, 0.0, 0.0)), Volume(0.0), SourceID(0) {}
-	
+
+			void Play(); 
+			void Stop(); 
+			void Pause(); 
+			void SetLoop(bool Loop); 
+			bool IsLooped(); 
+			bool IsPlaying(); 
+			bool IsPaused(); 
+			void SetOrigin(Vector3f Origin); 
+			void SetPlayingOffset(float Time); 
+
+		protected: 
+
+			bool Looping = false;
+
 		};
 
 		struct SoundHandler {
 
+			Rendering::FrameBufferObject PrimarySoundTracingBuffer;
+			Rendering::MultiPassFrameBufferObject SecondarySoundTracingBuffer;
+			Rendering::Shader PrimarySoundTracingShader;
+			Rendering::Shader SecondarySoundTracingShader;
+
 			//OpenAL extensions: 
 
-			std::map<std::string, SoundBuffer> Buffers;
+			std::map<std::string, int> Buffers;
 			std::map<std::string, SoundInstance> Instances;
 
 
 			unsigned int Slots[4], Reverbs[4], Filters[4];
 			unsigned int DirectFilter;
 			unsigned int DirectData; //does the direct data things 
-
+			unsigned int BlockDataImage; 
 
 
 			ALCdevice* Device;
@@ -154,7 +173,10 @@ namespace iTrace {
 			void LoadSound(std::string SoundID, std::string FilePath);
 			void AddSoundInstance(SoundInstance Instance, std::string ParentName, std::string SoundID);
 			void SetSoundInstanceOrigin(std::string Key, Vector3f Origin);
+
 			void Update(Camera& Camera, Window& Window, Rendering::WorldManager & World);
+			void PrepareSoundBlockData(); 
+			void ReloadSounds(); 
 		};
 		
 

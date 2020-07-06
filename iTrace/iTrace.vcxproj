@@ -140,7 +140,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>sfml-window-s.lib;sfml-graphics-s.lib;sfml-system-s.lib;sfml-audio-s.lib;sfml-main.lib;jpeg.lib;glu32.lib;gdi32.lib;winmm.lib;opengl32.lib;OpenAL32.lib;flac.lib;ogg.lib;vorbis.lib;vorbisenc.lib;vorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>sfml-window-s.lib;sfml-graphics-s.lib;sfml-system-s.lib;sfml-audio-s.lib;sfml-main.lib;alut.lib;jpeg.lib;glu32.lib;gdi32.lib;winmm.lib;opengl32.lib;OpenAL32.lib;flac.lib;ogg.lib;vorbis.lib;vorbisenc.lib;vorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -155,6 +155,7 @@
     <ClInclude Include="DeferredDrawer.h" />
     <ClInclude Include="DependenciesMath.h" />
     <ClInclude Include="DependenciesRendering.h" />
+    <ClInclude Include="FootstepManager.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="Glow.h" />
     <ClInclude Include="GUI.h" />
@@ -168,6 +169,7 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="SkyRenderer.h" />
     <ClInclude Include="Sound.h" />
+    <ClInclude Include="SoundReflectivity.h" />
     <ClInclude Include="text.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Window.h" />
@@ -183,6 +185,7 @@
     <ClCompile Include="Compositor.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="DeferredDrawer.cpp" />
+    <ClCompile Include="FootstepManager.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="Glow.cpp" />
     <ClCompile Include="include\GL\glad.c" />
@@ -249,10 +252,14 @@
     <None Include="Shaders\PlayerModelShader\shader.vert" />
     <None Include="Shaders\PrepShader\shader.frag" />
     <None Include="Shaders\PrepShader\shader.vert" />
+    <None Include="Shaders\PrimarySoundTracing\shader.frag" />
+    <None Include="Shaders\PrimarySoundTracing\shader.vert" />
     <None Include="Shaders\RawPathTracing\shader.frag" />
     <None Include="Shaders\RawPathTracing\shader.vert" />
     <None Include="Shaders\RTMotionVectors\shader.frag" />
     <None Include="Shaders\RTMotionVectors\shader.vert" />
+    <None Include="Shaders\SecondarySoundTracing\shader.frag" />
+    <None Include="Shaders\SecondarySoundTracing\shader.vert" />
     <None Include="Shaders\ShadowDeferred\shader.frag" />
     <None Include="Shaders\ShadowDeferred\shader.vert" />
     <None Include="Shaders\SkyCubeShader\shader.frag" />

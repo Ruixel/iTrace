@@ -169,6 +169,18 @@
     <Filter Include="Shaders\CloudProjection">
       <UniqueIdentifier>{80a9711f-3217-4d94-8266-88e6873c218c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\PrimarySoundTracing">
+      <UniqueIdentifier>{8bc137a2-6652-4684-a14e-eb3922abaa29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\SecondarySoundTracing">
+      <UniqueIdentifier>{369c0eec-b92f-42dd-b202-f9a44bc5329e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Sound">
+      <UniqueIdentifier>{f9493ac2-0aa1-4e3f-b9c2-3a739fa9eed2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Sound">
+      <UniqueIdentifier>{b13c49a8-8c84-47bb-a213-214a99205344}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -252,8 +264,14 @@
     <ClInclude Include="Inventory.h">
       <Filter>Header Files\UI</Filter>
     </ClInclude>
+    <ClInclude Include="SoundReflectivity.h">
+      <Filter>Header Files\Sound</Filter>
+    </ClInclude>
     <ClInclude Include="Sound.h">
-      <Filter>Header Files\Engine Core</Filter>
+      <Filter>Header Files\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="FootstepManager.h">
+      <Filter>Header Files\Sound</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -336,7 +354,10 @@
       <Filter>Source Files\UI</Filter>
     </ClCompile>
     <ClCompile Include="Sound.cpp">
-      <Filter>Source Files\Engine Core</Filter>
+      <Filter>Source Files\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="FootstepManager.cpp">
+      <Filter>Source Files\Sound</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -555,6 +576,18 @@
     </None>
     <None Include="Shaders\CloudProjection\shader.vert">
       <Filter>Shaders\CloudProjection</Filter>
+    </None>
+    <None Include="Shaders\PrimarySoundTracing\shader.frag">
+      <Filter>Shaders\PrimarySoundTracing</Filter>
+    </None>
+    <None Include="Shaders\PrimarySoundTracing\shader.vert">
+      <Filter>Shaders\PrimarySoundTracing</Filter>
+    </None>
+    <None Include="Shaders\SecondarySoundTracing\shader.frag">
+      <Filter>Shaders\SecondarySoundTracing</Filter>
+    </None>
+    <None Include="Shaders\SecondarySoundTracing\shader.vert">
+      <Filter>Shaders\SecondarySoundTracing</Filter>
     </None>
   </ItemGroup>
 </Project>

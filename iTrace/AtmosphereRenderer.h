@@ -131,7 +131,7 @@ namespace iTrace {
 
 				// Calculate and return the final color.
 
-				Result.WithMie = iSun * (pRlh * kRlh * totalRlh + pMie * kMie * totalMie);
+				Result.WithMie = iSun * (pRlh * kRlh * totalRlh + 3.0f * mix(vec3(1, 0.721568627, 0.0745098039),vec3(1),0.6f) * pow(pMie / 3.0f, 1.0f) * 3.0f * kMie * totalMie);
 				Result.WithoutMie = iSun * (pRlh * kRlh * totalRlh);
 
 				return Result;
@@ -148,7 +148,7 @@ namespace iTrace {
 					100.0,                           // intensity of the sun
 					6371e3,                         // radius of the planet in meters
 					6471e3,                         // radius of the atmosphere in meters
-					vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
+					vec3(5.5e-6, 13.0e-6, 22.4e-6) * vec3(0.5, 0.5, 1.0), // Rayleigh scattering coefficient
 					21e-6,                          // Mie scattering coefficient
 					8e3,                            // Rayleigh scale height
 					1.2e3,                          // Mie scale height

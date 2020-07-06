@@ -281,8 +281,6 @@ vec3 DepthOfFieldNew(float Radius, vec2 Hash, float CenterDepth) {
 }
 
 
-
-
 void main() {
 
 	seed = (TexCoord.x * TexCoord.y) * 500.0 * 20.0;
@@ -297,7 +295,7 @@ void main() {
 
  
 	//float Radius = mix(0.,20.0,clamp(FocusPercentage,0.0,1.0)); 
-
+	
 	float Radius = GetDofRadius(BaseDepth, FocusPoint); 
 
 //	float HashSample = Hash(TexCoord); 

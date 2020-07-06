@@ -34,8 +34,8 @@ const float Epsilon = 1e-6;
 
 //Cloud properties 
 
-const float SigmaS = 0.2 * 300; 
-const float SigmaA = 0.2 * 300; 
+const float SigmaS = 0.2 * 500; 
+const float SigmaA = 0.2 * 500; 
 const vec3 CloudColor = vec3(1.0); //<- is this really physically plausible? 
 
 vec2 hash2() {
@@ -200,7 +200,7 @@ void main() {
 		PreviousTraversal = Traversal; 
 
 	}
-
+	Clouds.a *= Clouds.a; 
 	float MixFactor = min(float(Frame) / float(Frame+1), 0.975); 
 
 	Clouds = mix(Clouds, texture(PreviousCloudResult, TexCoord), MixFactor); 

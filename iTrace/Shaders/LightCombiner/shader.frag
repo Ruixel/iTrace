@@ -196,4 +196,5 @@ void main() {
 	vec4 Volumetrics = texture(Volumetrics, TexCoord); 
 
 	Lighting.xyz =   mix(Lighting.xyz, Volumetrics.xyz,1.0-Volumetrics.w);
+
 }
