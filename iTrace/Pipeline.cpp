@@ -3,7 +3,7 @@
 #include "BooleanCommands.h"
 #include "CinematicCamera.h"
 #include <iostream>
-
+#include "Weather.h"
 
 #ifdef _WIN32 or _WIN64
 
@@ -403,6 +403,8 @@ namespace iTrace {
 
 #endif
 
+		GetGlobalWeatherManager().PrepareWeather(); 
+
 		RequestBoolean("freefly", false);
 		RequestBoolean("noclip", true);
 		RequestBoolean("slowframes", false);
@@ -454,10 +456,12 @@ namespace iTrace {
 		FootSteps.PrepareFootStepManager(Sounds);
 		FootSteps.SetActiveMaterial(SoundType::STONE, Sounds);
 
-		SoundEffect Effect = SoundEffect("Rain", "Ambience", Vector3f(0.0), SoundEffectType::LOOP, true, true); 
+		SoundEffect ForestEffect = SoundEffect("Forest", "Ambience", Vector3f(0.0), SoundEffectType::LOOP, true, true); 
+		SoundEffect RainEffect = SoundEffect("Rain", "Ambience", Vector3f(0.0), SoundEffectType::LOOP, true, true);
 		SoundEffect ThunderEffect = SoundEffect("Thunder", "Ambience", Vector3f(0.0), SoundEffectType::SPLIT, true, true, 6, 15.0);
 
-		SoundEffects.AddSoundEffect(Effect, Sounds); 
+		SoundEffects.AddSoundEffect(ForestEffect, Sounds);
+		SoundEffects.AddSoundEffect(RainEffect, Sounds);
 		SoundEffects.AddSoundEffect(ThunderEffect, Sounds);
 
 		//SoundEffects.GetSoundEffect("Forest").SetVolume(100.0); 
@@ -646,6 +650,7 @@ namespace iTrace {
 
 			Frames++;
 			Window.SetFrameTime(GameClock.getElapsedTime().asSeconds());
+			GetGlobalWeatherManager().PollWeather(Window.GetTimeOpened()); 
 			GameClock.restart();
 			T += Window.GetFrameTime();
 			Frame++;
@@ -724,11 +729,22 @@ namespace iTrace {
 				FootSteps.SetActiveMaterial(Block.SoundMaterialType, Sounds);
 			}
 
+
+
 			Window.GetRawWindow()->display();
 
 			Camera.PrevProject = Camera.Project;
 			//Sounds.SetSoundInstanceOrigin("CreeperInstance", Camera.Position - Vector3f(0.0,1.0,0.0));
 			FootSteps.Step();
+
+			auto Weather = GetGlobalWeatherManager().GetWeather(); 
+
+			SoundEffects.GetSoundEffect("Rain").SetVolume(Weather.RainyAmbienceSoundGain); 
+			SoundEffects.GetSoundEffect("Forest").SetVolume(Weather.StandardAmbienceSoundGain); 
+			SoundEffects.GetSoundEffect("Thunder").SetVolume(Weather.ThunderStormGain); 
+			if(Weather.ThunderStormGain > 0.05)
+				SoundEffects.GetSoundEffect("Thunder").Play(rand() % 6); 
+
 			SoundEffects.PollSoundEffects(Sounds, Window, Camera); 
 			Sounds.Update(Camera, Window, World);
 

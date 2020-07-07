@@ -53,6 +53,12 @@ vec2 hash2() {
 	return clamp(texelFetch(BasicBlueNoise, ivec2(Pixel + ivec2((State++) * 217))%256, 0).xy,0.0,0.99); 
 }
 
+uniform float ScatteringMultiplier; 
+uniform float AbsorptionMultiplier; 
+
+uniform float GlobalPower; 
+uniform float DetailPower; 
+uniform float NoisePower; 
 
 //Gets the density at a single point
 
@@ -67,7 +73,7 @@ float GetDensity(vec3 P, float T, float Height) {
 
 
 
-	return 1 * pow(DensityGrab.x * DensityGrab.x * DensityGrab.x  * DensityGrab.x  * DensityGrab.x  * DensityGrab.x * DensityGrab.y *  DensityGrab.y *  DensityGrab.y * DensityGrab.y  * DensityGrab.z * DensityGrab.z * DensityGrab.w *  DensityGrab.w *  DensityGrab.w * DensityGrab.w * DensityGrab.w,7.0) * pow(WeatherMap.x,5.0) * pow(abs((WeatherMap.x*0.5+0.3)-Height/Size),8.0); 
+	return 1 * pow(DensityGrab.x * DensityGrab.x * DensityGrab.x  * DensityGrab.x  * DensityGrab.x  * DensityGrab.x * DensityGrab.y *  DensityGrab.y *  DensityGrab.y * DensityGrab.y  * DensityGrab.z * DensityGrab.z * DensityGrab.w *  DensityGrab.w *  DensityGrab.w * DensityGrab.w * DensityGrab.w,NoisePower) * pow(WeatherMap.x,DetailPower) * pow(abs((WeatherMap.x*0.5+0.3)-Height/Size),GlobalPower); 
 }
 
 vec4 SampleCloud(vec3 Origin, vec3 Direction) {
@@ -136,7 +142,9 @@ float GetSunShading(vec3 Point, float SigmaA, vec3 Direction, float Dither) {
 
 void main() {
 	
-	float SigmaE = SigmaS + SigmaA; 
+
+
+	float SigmaE = SigmaS * ScatteringMultiplier + SigmaA * AbsorptionMultiplier; 
 
 	vec2 TexelSize = 1 / vec2(TextureSize); 
 
@@ -208,7 +216,7 @@ void main() {
 			
 			float Mix = Height / Size; 
 
-			float SampleSigmaS = SigmaS * Density; 
+			float SampleSigmaS = SigmaS * Density * ScatteringMultiplier; 
 			float SampleSigmaE = SigmaE * Density; 
 
 			vec3 BottomColor = mix(AmbientColor,vec3(2.0),0.25) * 0.5 * min((1.0-Density)*0.8+1.2,2.0); 
@@ -216,7 +224,7 @@ void main() {
 
 			vec3 AmbientColor = mix(TopColor,BottomColor, pow((1-Mix),3.0)); 
 
-			vec3 LightingData =  CloudColor * AmbientColor * 2.0 + SunColor * 0.25 * GetSunShading(Position, (SigmaS  + SigmaA) * 0.0625, LightDirection, hash.y); //<- todo: add internal sun tracing  
+			vec3 LightingData =  CloudColor * AmbientColor * 2.0 + SunColor * 0.25 * GetSunShading(Position, (SigmaS * ScatteringMultiplier + SigmaA * AbsorptionMultiplier) * 0.0625, LightDirection, hash.y); //<- todo: add internal sun tracing  
 			//Ambient color should probably be height based! 
 
 			vec3 S = LightingData * SampleSigmaS; //<- for now, exclude the phase function 
@@ -235,7 +243,7 @@ void main() {
 
 	}
 
-//	Clouds = SampleCloud(Origin, Direction); 
+	//Clouds = SampleCloud(Origin, Direction); 
 
 	Depth = mix(Depth / max(DepthWeight,1e-4),End,pow(Clouds.a,12.0)); 
 

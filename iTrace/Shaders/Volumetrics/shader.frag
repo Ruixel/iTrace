@@ -25,6 +25,8 @@ uniform mat4 IncidentMatrix;
 uniform float Time; 
 uniform bool DoVolumetrics; 
 
+uniform float ScatteringMultiplier; 
+uniform float AbsorptionMultiplier; 
 
 uniform sampler2DShadow DirectionalCascades[4]; 
 uniform mat4 DirectionMatrices[4]; 
@@ -119,8 +121,8 @@ void main() {
 		return; 
 	}
 
-	float SigmaS = 0.2 * 0.25; 
-	float SigmaA = 0.1 * 0.25; 
+	float SigmaS = 0.2 * 0.0625 * ScatteringMultiplier; 
+	float SigmaA = 0.2 * 0.0625 * AbsorptionMultiplier; 
 	float SigmaE = SigmaS + SigmaA; 
 
 	Volumetrics = vec4(0.0,0.0,0.0,1.0); 
@@ -168,8 +170,13 @@ void main() {
 
 	vec3 Position = CameraPosition + Vector * Traversal; 
 
+	int t = 0; 
+
 	while(Traversal < ActualDistance) {
 	
+		if(t++ > VOLUMETRIC_STEPS)
+			break; 
+
 		float Density = GetDensity(Position); 
 
 		if(Density > 0.0001) {

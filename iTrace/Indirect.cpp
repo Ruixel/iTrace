@@ -2,6 +2,7 @@
 #include "External/BlueNoiseData.h"
 #include "BooleanCommands.h"
 #include "ParallaxBaker.h"
+#include "Weather.h"
 
 namespace iTrace {
 
@@ -403,6 +404,8 @@ namespace iTrace {
 		void LightManager::DoVolumetricLighting(Window& Window, Camera& Camera, DeferredRenderer& Deferred, WorldManager& World, SkyRendering& Sky)
 		{
 
+			auto Weather = GetGlobalWeatherManager().GetWeather();
+
 			Volumetrics.Bind(); 
 
 			VolumetricFBO[Window.GetFrameCount() % 4].Bind(); 
@@ -455,6 +458,9 @@ namespace iTrace {
 
 			Volumetrics.SetUniform("LightDirection", Sky.Orientation);
 			Volumetrics.SetUniform("SunColor", Sky.SunColor);
+
+			Volumetrics.SetUniform("ScatteringMultiplier", Weather.VolumetricsScatteringMultiplier);
+			Volumetrics.SetUniform("AbsorptionMultiplier", Weather.VolumetricsAbsorptionMultiplier);
 
 			DrawPostProcessQuad(); 
 
@@ -511,6 +517,7 @@ namespace iTrace {
 		void LightManager::RenderClouds(Window& Window, Camera& Camera, DeferredRenderer& Deferred, SkyRendering& Sky)
 		{
 		
+			auto Weather = GetGlobalWeatherManager().GetWeather();
 
 
 
@@ -528,6 +535,13 @@ namespace iTrace {
 			CloudProjection.SetUniform("Time", Window.GetTimeOpened());
 			CloudProjection.SetUniform("SubFrame", Window.GetFrameCount() % 4);
 			CloudProjection.SetUniform("Frame", Window.GetFrameCount());
+
+			CloudProjection.SetUniform("ScatteringMultiplier", Weather.CloudScatteringMultiplier); 
+			CloudProjection.SetUniform("AbsorptionMultiplier", Weather.CloudAbsorbtionMultiplier);
+
+			CloudProjection.SetUniform("GlobalPower", Weather.CloudGlobalPower); 
+			CloudProjection.SetUniform("DetailPower", Weather.CloudDetailPower);
+			CloudProjection.SetUniform("NoisePower", Weather.CloudNoisePower);
 
 			SimplifiedBlueNoise.Bind(2);
 
@@ -568,6 +582,13 @@ namespace iTrace {
 			CloudRenderer.SetUniform("Frame", Window.GetFrameCount());
 			CloudRenderer.SetUniform("TextureSize", Window.GetResolution()/2);
 			CloudRenderer.SetUniform("CameraPosition", Camera.Position);
+
+			CloudRenderer.SetUniform("ScatteringMultiplier", Weather.CloudScatteringMultiplier);
+			CloudRenderer.SetUniform("AbsorptionMultiplier", Weather.CloudAbsorbtionMultiplier);
+
+			CloudRenderer.SetUniform("GlobalPower", Weather.CloudGlobalPower);
+			CloudRenderer.SetUniform("DetailPower", Weather.CloudDetailPower);
+			CloudRenderer.SetUniform("NoisePower", Weather.CloudNoisePower);
 
 			DrawPostProcessQuad(); 
 

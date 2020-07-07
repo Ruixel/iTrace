@@ -668,7 +668,7 @@ namespace iTrace {
 
 			this->Volume = Volume;
 
-			std::cout << "set volumne to: " << Volume << '\n';
+			//std::cout << "set volumne to: " << Volume << '\n';
 
 			alSourcef(SourceID, AL_GAIN, Volume);
 
