@@ -454,9 +454,12 @@ namespace iTrace {
 		FootSteps.PrepareFootStepManager(Sounds);
 		FootSteps.SetActiveMaterial(SoundType::STONE, Sounds);
 
-		SoundEffect Effect = SoundEffect("Forest", "Ambience", Vector3f(0.0), SoundEffectType::LOOP, true, true); 
+		SoundEffect Effect = SoundEffect("Rain", "Ambience", Vector3f(0.0), SoundEffectType::LOOP, true, true); 
+		SoundEffect ThunderEffect = SoundEffect("Thunder", "Ambience", Vector3f(0.0), SoundEffectType::SPLIT, true, true, 6, 15.0);
 
 		SoundEffects.AddSoundEffect(Effect, Sounds); 
+		SoundEffects.AddSoundEffect(ThunderEffect, Sounds);
+
 		//SoundEffects.GetSoundEffect("Forest").SetVolume(100.0); 
 	}
 
@@ -560,8 +563,8 @@ namespace iTrace {
 							break;
 
 						case sf::Keyboard::H:
-							Sounds.AddSoundInstance(SoundInstance(Camera.Position, 1.0), "MusicInstance", "Music");
-
+							//Sounds.AddSoundInstance(SoundInstance(Camera.Position, 1.0), "MusicInstance", "Music");
+							SoundEffects.GetSoundEffect("Thunder").Play(rand()%6); 
 							break;
 
 						}

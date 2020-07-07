@@ -116,8 +116,6 @@ void main(void) {
 
 	vec3 RayOrigin = SoundLocation; 
 
-
-
 	int NumberOcclusionHits = 0; 
 	bool FirstHit = true; 
 	bool ThisHitSolid = false; 

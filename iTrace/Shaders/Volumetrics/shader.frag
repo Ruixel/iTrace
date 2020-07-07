@@ -37,7 +37,7 @@ uniform int Frame;
 //the max distance for the volumetrics (useful for the sky!) 
 const float VOLUMETRIC_MAX_DISTANCE = 200.0; 
 //the steps used for the volumetrics 
-const int VOLUMETRIC_STEPS = 8;
+const int VOLUMETRIC_STEPS = 16;
 //should step count or step size be constant 
 const bool CONSTANT_STEP_SIZE = false;
 //use blue-noise based dithering 

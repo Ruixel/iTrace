@@ -43,7 +43,7 @@ namespace iTrace {
 
 			if (EffectType == SoundEffectType::SPLIT && InstancePtr->IsPlaying()) {
 
-				CurrentSplitDuration += Window.GetTimeOpened(); 
+				CurrentSplitDuration += Window.GetFrameTime(); 
 
 				if (CurrentSplitDuration > SplitLength) {
 					CurrentSplitDuration = 0.0; 

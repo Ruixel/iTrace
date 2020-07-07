@@ -142,9 +142,6 @@
     <Filter Include="Shaders\PlayerModelShader">
       <UniqueIdentifier>{3f6cf519-1fdb-48c1-8ece-890361881ca7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\InventoryUIShader">
-      <UniqueIdentifier>{8db8d9a1-b53d-4e23-9c45-bc0de25b1096}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shaders\DoF">
       <UniqueIdentifier>{c00a981f-6f18-40e0-99f5-c2dde28ffbb4}</UniqueIdentifier>
     </Filter>
@@ -180,6 +177,9 @@
     </Filter>
     <Filter Include="Source Files\Sound">
       <UniqueIdentifier>{b13c49a8-8c84-47bb-a213-214a99205344}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\InventoryUIShader">
+      <UniqueIdentifier>{8db8d9a1-b53d-4e23-9c45-bc0de25b1096}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -276,6 +276,9 @@
     <ClInclude Include="SoundEffectManager.h">
       <Filter>Header Files\Sound</Filter>
     </ClInclude>
+    <ClInclude Include="Weather.h">
+      <Filter>Header Files\World</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">
@@ -364,6 +367,9 @@
     </ClCompile>
     <ClCompile Include="SoundEffectManager.cpp">
       <Filter>Source Files\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Weather.cpp">
+      <Filter>Source Files\World</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

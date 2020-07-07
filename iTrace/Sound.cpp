@@ -139,7 +139,7 @@ namespace iTrace {
 		}
 		void SoundHandler::SetEnvironment(int SourceID, float SendGain0, float SendGain1, float SendGain2, float SendGain3, float SendCutoff0, float SendCutoff1, float SendCutoff2, float SendCutoff3, float DirectCutoff, float DirectGain)
 		{
-			
+
 			alFilterf(Filters[0], AL_LOWPASS_GAIN, SendGain0);
 			checkErrorLog("Error whilst setting aiFilterF (AI_LOWPASS_GAIN,0) ");
 			alFilterf(Filters[0], AL_LOWPASS_GAINHF, SendCutoff0);
@@ -177,8 +177,8 @@ namespace iTrace {
 
 			alSource3i(SourceID, AL_AUXILIARY_SEND_FILTER, Slots[3], 3, Filters[3]);
 			checkErrorLog("Error whilst setting aiSource3i (AL_AUXILIARY_SEND_FILTER,3) (Slots:" + std::to_string(Slots[3]) + " Filters:" + std::to_string(Filters[3]) + ")");
-			
-			
+
+
 			//alSourcei(SourceID, AL_DIRECT_FILTER, DirectFilter);
 			//checkErrorLog("Error whilst setting aiSource3i (AL_DIRECT_FILTER,direct) ");
 
@@ -197,10 +197,10 @@ namespace iTrace {
 		void SoundHandler::LoadSound(std::string SoundID, std::string FilePath)
 		{
 
-			std::ifstream f(FilePath); 
+			std::ifstream f(FilePath);
 
 			if (!f.good())
-				std::cout << "File: " << FilePath << " not found!\n"; 
+				std::cout << "File: " << FilePath << " not found!\n";
 
 
 			unsigned int Buffer;
@@ -209,13 +209,13 @@ namespace iTrace {
 		}
 		void SoundHandler::AddSoundInstance(SoundInstance Instance, std::string ParentName, std::string SoundID)
 		{
-			
+
 
 
 			if (Buffers.find(SoundID) == Buffers.end())
 				return;
 
-			auto Buffer = Buffers[SoundID]; 
+			auto Buffer = Buffers[SoundID];
 
 			unsigned int Source;
 
@@ -237,14 +237,14 @@ namespace iTrace {
 			Instances[Key].Origin = Origin;
 			alSource3f(Instances[Key].SourceID, AL_POSITION, Origin.x, Origin.y, Origin.z);
 		}
-		bool ActivateRT = false; 
+		bool ActivateRT = false;
 		void SoundHandler::Update(Camera& Camera, Window& Window, Rendering::WorldManager& World)
 		{
 
 			if (Instances.size() == 0)
-				return; 
+				return;
 
-			int PlayingInstances = 0; 
+			int PlayingInstances = 0;
 
 			for (auto& Instance : Instances) {
 				if (Instance.second.IsPlaying() && Instance.second.GetVolume() > 0.0) {
@@ -253,7 +253,7 @@ namespace iTrace {
 			}
 
 			if (PlayingInstances == 0)
-				return; 
+				return;
 
 			auto m = glm::value_ptr(Camera.View);
 
@@ -306,8 +306,8 @@ namespace iTrace {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glBindTexture(GL_TEXTURE_2D, 0);
 
-			float* GainsShared = new float[3 * NUM_RAYS * (MAX_OBJECTS+1)];
-			float* ReflectivityRatios = new float[3 * NUM_RAYS * (MAX_OBJECTS+1)];
+			float* GainsShared = new float[3 * NUM_RAYS * (MAX_OBJECTS + 1)];
+			float* ReflectivityRatios = new float[3 * NUM_RAYS * (MAX_OBJECTS + 1)];
 			float* TotalOcclusion = new float[MAX_OBJECTS];
 
 
@@ -366,6 +366,9 @@ namespace iTrace {
 			//TODO: Push to secondary sound thread! 
 
 			int x = 0;
+
+			float PrecomputedHemisphericalGain = -1.0f, PrecomputedHemisphericalCutoff = -1.0f;
+
 			for (auto& Instance : Instances) {
 
 				if (Instance.second.IsPlaying() && Instance.second.GetVolume() > 0.0 && !Instance.second.Ambience) {
@@ -379,7 +382,7 @@ namespace iTrace {
 
 					for (int y = 0; y < NUM_RAYS; y++) {
 
-						int BasePixel = (y * (MAX_OBJECTS+1) + x) * 3;
+						int BasePixel = (y * (MAX_OBJECTS + 1) + x) * 3;
 
 						Vector3f VGainsShared = Vector3f(GainsShared[BasePixel], GainsShared[BasePixel + 1], GainsShared[BasePixel + 2]);
 						Vector3f VReflectivityRatios = Vector3f(ReflectivityRatios[BasePixel], ReflectivityRatios[BasePixel + 1], ReflectivityRatios[BasePixel + 2]);
@@ -394,10 +397,7 @@ namespace iTrace {
 						SendGain2 += SendGain23.x;
 						SendGain3 += SendGain23.y;
 
-						//if(isnan(!VGainsShared.z))
-							SharedAirSpace += VGainsShared.z;
-						//std::cout << VGainsShared.z << '\n'; 
-
+						SharedAirSpace += VGainsShared.z;
 
 						BounceReflectivityRatios[0] += ReflRatios01.x;
 						BounceReflectivityRatios[1] += ReflRatios01.y;
@@ -409,10 +409,8 @@ namespace iTrace {
 					float directCutoff = (float)exp(-OcclusionAccumulation * absorptionCoeff);
 					float directGain = (float)pow(directCutoff, 0.1);
 
-
 					SharedAirSpace *= 64.0;
 					SharedAirSpace *= rcpTotalRays;
-
 
 					for (int i = 0; i < 4; i++)
 						BounceReflectivityRatios[i] = BounceReflectivityRatios[i] / float(NUM_RAYS);
@@ -452,59 +450,44 @@ namespace iTrace {
 					SendGain2 *= (float)pow(sendCutoff2, 0.1);
 					SendGain3 *= (float)pow(sendCutoff3, 0.1);
 
-
-					//std::cout << "Occlusion: " << OcclusionAccumulation << '\n'; 
-
 					OcclusionAccumulation = OcclusionAccumulation * OcclusionAccumulation;
 					OcclusionAccumulation = OcclusionAccumulation * 4.0;
-					//directCutoff = (float)exp(-OcclusionAccumulation * absorptionCoeff);
-					//directGain = (float)pow(directCutoff, 0.1);
-
-					//std::cout << "Shared airspace" << SharedAirSpace << '\n'; 
-
-					//std::cout << "Position: " << Instance.second.Origin.x << ' ' << Instance.second.Origin.y << ' ' << Instance.second.Origin.z << '\n'; 
-					//std::cout << "Shared airspace: " << SharedAirSpace << " \n Gain1: " << SendGain0 << " Gain2: " << SendGain1 << " Gain3: " << SendGain3 << " Gain4: " << SendGain3 << '\n'; 
 					
 					SetEnvironment(Instance.second.SourceID, SendGain0, SendGain1, SendGain2, SendGain3, sendCutoff0, sendCutoff1, sendCutoff2, sendCutoff3, directCutoff, directGain);
-
-
-
 					x++;
 
 				}
-				else if(Instance.second.Ambience && Instance.second.IsPlaying() && Instance.second.GetVolume() > 0.0){
+				else if (Instance.second.Ambience && Instance.second.IsPlaying() && Instance.second.GetVolume() > 0.0) {
 
-				float OcclusionAccumulation = 0.0;
-				float rcpTotalRays = 1.0 / float(NUM_RAYS);
-				float absorptionCoeff = 3.0f;
+					if (PrecomputedHemisphericalGain < -.1) {
 
-				for (int y = 0; y < NUM_RAYS; y++) {
+						float OcclusionAccumulation = 0.0;
+						float rcpTotalRays = 1.0 / float(NUM_RAYS);
+						float absorptionCoeff = 3.0f;
 
-					int BasePixel = (y * (MAX_OBJECTS+1) + (MAX_OBJECTS)) * 3;
+						for (int y = 0; y < NUM_RAYS; y++) {
 
-					Vector3f VGainsShared = Vector3f(GainsShared[BasePixel], GainsShared[BasePixel + 1], GainsShared[BasePixel + 2]);
-					
+							int BasePixel = (y * (MAX_OBJECTS + 1) + (MAX_OBJECTS)) * 3;
 
-					//if(isnan(!VGainsShared.z))
-					OcclusionAccumulation += VGainsShared.z;
-					
+							Vector3f VGainsShared = Vector3f(GainsShared[BasePixel], GainsShared[BasePixel + 1], GainsShared[BasePixel + 2]);
 
-				}
+							OcclusionAccumulation += VGainsShared.z;
 
-				//std::cout << "Occlusion: " << OcclusionAccumulation * rcpTotalRays << '\n'; 
+						}
 
+						PrecomputedHemisphericalCutoff = (float)exp(-OcclusionAccumulation * absorptionCoeff * rcpTotalRays);
+						PrecomputedHemisphericalGain = (float)pow(PrecomputedHemisphericalCutoff, 0.1);
 
-				float directCutoff = (float)exp(-OcclusionAccumulation * absorptionCoeff * rcpTotalRays);
-				float directGain = (float)pow(directCutoff, 0.1);
-						
-				SetEnvironmentAmbience(Instance.second.SourceID, directCutoff, directGain); 
-					
+					}
+
+					SetEnvironmentAmbience(Instance.second.SourceID, PrecomputedHemisphericalCutoff, PrecomputedHemisphericalGain);
+
 				}
 			}
 
-			//delete[] GainsShared;
-		//	delete[] ReflectivityRatios;
-			//delete[] TotalOcclusion;
+			delete[] GainsShared;
+			delete[] ReflectivityRatios;
+			delete[] TotalOcclusion;
 
 
 		}
@@ -538,23 +521,23 @@ namespace iTrace {
 
 
 
-			std::vector<float> BlockReflectivities; 
+			std::vector<float> BlockReflectivities;
 
 			for (int i = 0; i < Rendering::Chunk::GetBlockSize(); i++) {
 
-				auto& Block = Rendering::Chunk::GetBlock(i); 
+				auto& Block = Rendering::Chunk::GetBlock(i);
 
-				BlockReflectivities.push_back(SoundMaterialTypes[static_cast<int>(Block.SoundMaterialType)].Reflectivity); 
+				BlockReflectivities.push_back(SoundMaterialTypes[static_cast<int>(Block.SoundMaterialType)].Reflectivity);
 
 			}
 
-			glGenTextures(1, &BlockDataImage); 
+			glGenTextures(1, &BlockDataImage);
 
-			glBindTexture(GL_TEXTURE_1D, BlockDataImage); 
-			glTexImage1D(GL_TEXTURE_1D, 0, GL_R16F, BlockReflectivities.size(), 0, GL_RED, GL_FLOAT, BlockReflectivities.data()); 
-			glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
-			glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
-			glBindTexture(GL_TEXTURE_1D, 0); 
+			glBindTexture(GL_TEXTURE_1D, BlockDataImage);
+			glTexImage1D(GL_TEXTURE_1D, 0, GL_R16F, BlockReflectivities.size(), 0, GL_RED, GL_FLOAT, BlockReflectivities.data());
+			glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glBindTexture(GL_TEXTURE_1D, 0);
 
 		}
 
@@ -586,14 +569,14 @@ namespace iTrace {
 		{
 
 			if (SourceID == -1)
-				return; 
+				return;
 
 			if (IsPlaying())
-				return; 
+				return;
 
 			//std::cout << "Plays the sound!\n"; 
 
-			alSourcePlay(SourceID); 
+			alSourcePlay(SourceID);
 
 		}
 
@@ -603,9 +586,9 @@ namespace iTrace {
 				return;
 
 			if (!IsPlaying())
-				return; 
+				return;
 
-			alSourceStop(SourceID); 
+			alSourceStop(SourceID);
 
 		}
 
@@ -615,9 +598,9 @@ namespace iTrace {
 				return;
 
 			if (!IsPlaying() || IsPaused())
-				return; 
+				return;
 
-			alSourcePause(SourceID); 
+			alSourcePause(SourceID);
 
 		}
 
@@ -625,7 +608,7 @@ namespace iTrace {
 		{
 			if (SourceID == -1)
 				return;
-			Looping = Loop; 
+			Looping = Loop;
 			alSourcei(SourceID, AL_LOOPING, Loop ? AL_TRUE : AL_FALSE);
 			//std::cout << "Setting loop data\n"; 
 		}
@@ -643,11 +626,11 @@ namespace iTrace {
 			if (SourceID == -1)
 				return false;
 
-			int State; 
+			int State;
 
 			alGetSourcei(SourceID, AL_SOURCE_STATE, &State);
 
-			return State == AL_PLAYING; 
+			return State == AL_PLAYING;
 		}
 
 		bool SoundInstance::IsPaused()
@@ -667,7 +650,7 @@ namespace iTrace {
 		{
 			if (SourceID == -1)
 				return;
-			this->Origin = Origin; 
+			this->Origin = Origin;
 			alSource3f(SourceID, AL_POSITION, Origin.x, Origin.y, Origin.z);
 		}
 
@@ -675,7 +658,7 @@ namespace iTrace {
 		{
 			if (SourceID == -1)
 				return;
-			alSourcef(SourceID, AL_SEC_OFFSET, Time); 
+			alSourcef(SourceID, AL_SEC_OFFSET, Time);
 		}
 
 		void SoundInstance::SetVolume(float Volume)
@@ -683,22 +666,22 @@ namespace iTrace {
 			if (SourceID == -1)
 				return;
 
-			this->Volume = Volume; 
+			this->Volume = Volume;
 
-			std::cout << "set volumne to: " << Volume << '\n'; 
+			std::cout << "set volumne to: " << Volume << '\n';
 
-			alSourcef(SourceID, AL_GAIN, Volume); 
+			alSourcef(SourceID, AL_GAIN, Volume);
 
 		}
 
 		float SoundInstance::GetVolume()
 		{
 			if (SourceID == -1)
-				return 0.f; 
+				return 0.f;
 
-			float vol; 
+			float vol;
 
-			alGetSourcef(SourceID, AL_GAIN, &vol); 
+			alGetSourcef(SourceID, AL_GAIN, &vol);
 
 			return vol;
 		}
