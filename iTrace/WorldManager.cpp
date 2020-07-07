@@ -25,10 +25,6 @@ namespace iTrace {
 		void WorldManager::PrepareWorldManger()
 		{
 
-			
-
-
-
 			Chunk::AddBlock(Chunk::BlockType()); 
 			Chunk::AddBlock(Chunk::BlockType("Stone", { 0,0,0,0,0,0 }, true, false, false, SoundType::STONE)); //CC0, good
 			Chunk::AddBlock(Chunk::BlockType("Dirt", { 1,1,1,1,1,1 }, true, false, false, SoundType::DIRT));  //CC0, good

@@ -169,6 +169,7 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="SkyRenderer.h" />
     <ClInclude Include="Sound.h" />
+    <ClInclude Include="SoundEffectManager.h" />
     <ClInclude Include="SoundReflectivity.h" />
     <ClInclude Include="text.h" />
     <ClInclude Include="Texture.h" />
@@ -200,6 +201,7 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="SkyRenderer.cpp" />
     <ClCompile Include="Sound.cpp" />
+    <ClCompile Include="SoundEffectManager.cpp" />
     <ClCompile Include="text.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Window.cpp" />

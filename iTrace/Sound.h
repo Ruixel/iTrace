@@ -113,11 +113,10 @@ namespace iTrace {
 		struct SoundInstance {
 
 			Vector3f Origin;
-			float Volume;
 			int SourceID = -1;
 			
-			SoundInstance(Vector3f Origin, float Volume) : Origin(Origin), Volume(Volume), SourceID(0) {}
-			SoundInstance() : Origin(Vector3f(0.0, 0.0, 0.0)), Volume(0.0), SourceID(0) {}
+			SoundInstance(Vector3f Origin, float Volume, bool Ambience = false) : Origin(Origin), Volume(Volume), SourceID(-1), Ambience(Ambience) {}
+			SoundInstance() : Origin(Vector3f(0.0, 0.0, 0.0)), Volume(0.0), SourceID(-1) {}
 
 			void Play(); 
 			void Stop(); 
@@ -128,9 +127,13 @@ namespace iTrace {
 			bool IsPaused(); 
 			void SetOrigin(Vector3f Origin); 
 			void SetPlayingOffset(float Time); 
+			void SetVolume(float Volume); 
+			float GetVolume(); 
+			bool Ambience = false;
 
 		protected: 
 
+			float Volume = 0.0;
 			bool Looping = false;
 
 		};
@@ -169,6 +172,7 @@ namespace iTrace {
 			void GenerateOpenALExtensions();
 			void SetupEFX();
 			void SetReverbParameters(ReverbParameters r, int AuxFXSlot, int ReverbSlot);
+			void SetEnvironmentAmbience(int SourceID, float DirectCutoff, float DirectGain); 
 			void SetEnvironment(int SourceID, float SendGain0, float SendGain1, float SendGain2, float SendGain3, float SendCutoff0, float SendCutoff1, float SendCutoff2, float SendCutoff3, float DirectCutoff, float DirectGain);
 			void LoadSound(std::string SoundID, std::string FilePath);
 			void AddSoundInstance(SoundInstance Instance, std::string ParentName, std::string SoundID);

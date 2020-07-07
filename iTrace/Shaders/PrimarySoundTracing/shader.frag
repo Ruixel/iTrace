@@ -102,6 +102,7 @@ bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, i
 	return false;
 }
 
+
 void main(void) {
 
 	int CurrentRay = int(gl_FragCoord.x); 

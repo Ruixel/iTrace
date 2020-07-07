@@ -273,6 +273,9 @@
     <ClInclude Include="FootstepManager.h">
       <Filter>Header Files\Sound</Filter>
     </ClInclude>
+    <ClInclude Include="SoundEffectManager.h">
+      <Filter>Header Files\Sound</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">
@@ -357,6 +360,9 @@
       <Filter>Source Files\Sound</Filter>
     </ClCompile>
     <ClCompile Include="FootstepManager.cpp">
+      <Filter>Source Files\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="SoundEffectManager.cpp">
       <Filter>Source Files\Sound</Filter>
     </ClCompile>
   </ItemGroup>

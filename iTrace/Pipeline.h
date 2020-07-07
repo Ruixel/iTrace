@@ -6,6 +6,7 @@
 #include "CommandPusher.h"
 #include "Inventory.h"
 #include "FootstepManager.h"
+#include "SoundEffectManager.h"
 
 namespace iTrace {
 
@@ -26,6 +27,7 @@ namespace iTrace {
 		SoundHandler Sounds; 
 		SoundInstance TestSound; 
 		FootStepManager FootSteps; 
+		SoundEffectManager SoundEffects; 
 
 		void PreparePipeline(Camera& Camera, Window& Window);
 		void RunPipeline(Camera& Camera, Window& Window);

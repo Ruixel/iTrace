@@ -5,7 +5,8 @@ layout(location = 0) out vec3 GainsShared;
 layout(location = 1) out vec3 ReflectivityRatios; 
 
 uniform sampler2D SoundLocations; 
-uniform vec3 PlayerPosition; 
+uniform vec3 PlayerPosition;
+uniform int MaxSounds; 
 const int Bounces = 4; 
 uniform int NumRays; 
 
@@ -190,7 +191,7 @@ vec3(0.239697,0.215331,0.946667),
 vec3(-0.0222833,-0.22831,0.973333)
 );
 
-void main(void) {
+void MainPositional() {
 	int CurrentRay = int(gl_FragCoord.x); 
 	int CurrentSubray = int(gl_FragCoord.y); 
 
@@ -331,5 +332,56 @@ void main(void) {
 	for(int i = 0; i < Bounces/2;i++) 
 		ReflectivityRatios[i] = uintBitsToFloat(packHalf2x16(vec2(BounceReflectivityRatios[i*2], BounceReflectivityRatios[i*2+1]))); 
 
+}
 
+void MainAmbience() {
+	
+
+
+	GainsShared = vec3(0.0); 
+	ReflectivityRatios = vec3(0.0); 
+
+	int CurrentSubray = int(gl_FragCoord.y); 
+
+	vec3 RayDirection = rays[CurrentSubray]; 
+
+	//make sure its always pointing upwards! 
+
+	RayDirection.y = abs(RayDirection.y); 
+
+	GainsShared.z = 0.0; 
+
+	vec3 Origin = PlayerPosition; 
+
+	for(int i = 0; i < 10; i++) {
+		
+		bool Hit; 
+		vec3 HitPosition, Normal; 
+		int Block, Face; 
+
+		Hit = RawTrace(RayDirection, Origin, Block, Face, Normal, HitPosition, 256, 10000.0); 
+
+		if(Hit) {
+			
+			GainsShared.z += 0.5 * RayDirection.y; 
+			Origin = HitPosition + RayDirection * 0.1; 
+
+		}
+		else {
+			break; 
+		}
+
+	}
+
+
+}
+
+
+void main(void) {
+	int CurrentRay = int(gl_FragCoord.x); 
+	
+	if(CurrentRay >= MaxSounds) 
+		MainAmbience(); 
+	else 
+		MainPositional(); 
 }

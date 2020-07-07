@@ -16,7 +16,7 @@ namespace iTrace {
 
 				SoundManager.LoadSound(Instance.ExtensionName + "_step", Path); 
 				SoundManager.AddSoundInstance(SoundInstance(), Instance.ExtensionName + "_step_instance", Instance.ExtensionName + "_step"); 
-
+				SoundManager.Instances[Instance.ExtensionName + "_step_instance"].SetVolume(0.2); 
 			}
 			
 		}

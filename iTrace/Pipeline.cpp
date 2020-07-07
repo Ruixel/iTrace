@@ -448,12 +448,16 @@ namespace iTrace {
 		Sounds.PrepareSoundBlockData();
 
 		Sounds.LoadSound("Footsteps", "Sound/Footsteps/Grass/Step.wav");
-		Sounds.LoadSound("Music", "Sound/Creeper.wav");
+		//Sounds.LoadSound("Music", "Sound/Creeper.wav");
 
-		Sounds.AddSoundInstance(SoundInstance(), "CreeperInstance", "Footsteps");
+		//Sounds.AddSoundInstance(SoundInstance(), "CreeperInstance", "Footsteps");
 		FootSteps.PrepareFootStepManager(Sounds);
 		FootSteps.SetActiveMaterial(SoundType::STONE, Sounds);
 
+		SoundEffect Effect = SoundEffect("Forest", "Ambience", Vector3f(0.0), SoundEffectType::LOOP, true, true); 
+
+		SoundEffects.AddSoundEffect(Effect, Sounds); 
+		//SoundEffects.GetSoundEffect("Forest").SetVolume(100.0); 
 	}
 
 	void Pipeline::RunPipeline(Camera& Camera, Window& Window)
@@ -722,7 +726,7 @@ namespace iTrace {
 			Camera.PrevProject = Camera.Project;
 			//Sounds.SetSoundInstanceOrigin("CreeperInstance", Camera.Position - Vector3f(0.0,1.0,0.0));
 			FootSteps.Step();
-
+			SoundEffects.PollSoundEffects(Sounds, Window, Camera); 
 			Sounds.Update(Camera, Window, World);
 
 		}
