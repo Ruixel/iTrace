@@ -188,6 +188,8 @@ void main() {
 		//Lighting.xyz =  DiffuseColor * ((IndirectDiffuse.xyz + Direct) * IndirectDiffuse.www ); 
 		Glow.xyz = DirectSpecular * pow(1.0-Roughness,5.0) ; 
 		//Lighting.xyz = DirectSpecular; 
+
+		//Lighting.xyz = AlbedoFetch.www; 
 	}
 	else {
 		vec4 CloudSample = texture(Clouds, TexCoord); 

@@ -166,6 +166,7 @@
     <ClInclude Include="ParallaxBaker.h" />
     <ClInclude Include="Pipeline.h" />
     <ClInclude Include="Profiler.h" />
+    <ClInclude Include="RainDropBaker.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="SkyRenderer.h" />
     <ClInclude Include="Sound.h" />
@@ -199,6 +200,7 @@
     <ClCompile Include="ParallaxBaker.cpp" />
     <ClCompile Include="Pipeline.cpp" />
     <ClCompile Include="Profiler.cpp" />
+    <ClCompile Include="RainDropBaker.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="SkyRenderer.cpp" />
     <ClCompile Include="Sound.cpp" />
@@ -258,6 +260,8 @@
     <None Include="Shaders\PrepShader\shader.vert" />
     <None Include="Shaders\PrimarySoundTracing\shader.frag" />
     <None Include="Shaders\PrimarySoundTracing\shader.vert" />
+    <None Include="Shaders\RainBaker\shader.frag" />
+    <None Include="Shaders\RainBaker\shader.vert" />
     <None Include="Shaders\RawPathTracing\shader.frag" />
     <None Include="Shaders\RawPathTracing\shader.vert" />
     <None Include="Shaders\RTMotionVectors\shader.frag" />

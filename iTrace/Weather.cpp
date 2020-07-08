@@ -68,12 +68,8 @@ namespace iTrace {
 	}
 	void WeatherManager::PollWeather(float t)
 	{
+		CurrentWeatherFactor = glm::simplex(Vector2f(t * 0.005, 1238)) * 2 + 2; 
 
-		CurrentWeatherFactor = glm::simplex(Vector2f(t * 0.05 - 0.5, 0.0)) * 2 + 2; 
-
-		std::cout << CurrentWeatherFactor << '\n'; 
-
-		//CurrentWeatherFactor = 0.0; 
 		int MixUnder = floor(CurrentWeatherFactor); 
 		int MixOver = MixUnder + 1; 
 
@@ -107,9 +103,6 @@ namespace iTrace {
 	{
 		return CurrentWeather;
 	}
-
-	
-
 	WeatherManager& GetGlobalWeatherManager()
 	{
 		return GlobalWeatherManager; 

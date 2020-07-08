@@ -55,6 +55,7 @@ uniform sampler2DArray DisplacementTextures;
 uniform sampler2DArray NormalTextures; 
 uniform sampler2DArray RoughnessTextures; 
 uniform sampler2DArray MetalnessTextures; 
+uniform sampler2DArray RainDrop; 
 
 
 uniform sampler1D TextureData; 
@@ -65,8 +66,12 @@ uniform sampler3D LightData;
 
 uniform sampler2D InTexCoord; 
 uniform sampler2D InDepth; 
+uniform sampler2D Noise; 
+uniform sampler2DShadow ShadowMap; 
+uniform int RainFrames; 
+uniform mat4 RainMatrix; 
 
-uniform sampler2D ParallaxMap; 
+uniform float WetNess; 
 
 uniform vec3 SkyColor; 
 
@@ -138,6 +143,54 @@ float GetTraversal(vec2 TC, vec3 Direction, uint Side, mat3 TBN, uint Type, inou
 	return SampleParallaxMap(vec3(TC.x, (Angle-1.57079633) / 6.28318531,TC.y), Type, Lod) * 0.5; //temporary! 
 }
 
+void HandleWeather(mat3 TBN, vec3 LowFrequencyNormal, vec3 WorldPos, vec3 NiceWorldPos, inout vec3 Normal, inout float Roughness, inout float Metalness, inout vec3 Albedo) {
+
+	if(WetNess <= 1e-4) 
+		return; //not wet enough to matter! 
+
+
+
+
+
+	float NoiseFetch = texture(Noise, WorldPos.xz / 16.0).x; 
+	float NoiseFetch2 = pow(texture(Noise, WorldPos.zx / 32.0).x,2.0); 
+
+	float Time = fract(Time * 2.0 + NoiseFetch) * RainFrames; 
+	
+	int Lower = int(Time); 
+	int Upper = (Lower + 1) % RainFrames; 
+
+	vec2 TC = WorldPos.xz * 16.0; 
+
+	vec4 RainDropFetch = mix(texture(RainDrop, vec3(TC, Lower)), texture(RainDrop, vec3(TC, Upper)), fract(Time)); 
+
+	vec3 RainDropNormal = TBN * (RainDropFetch.xyz * 2.0 - 1.0); 
+	
+	vec4 ClipSpace = RainMatrix * vec4(NiceWorldPos, 1.0); 
+	vec3 NDCSpace = ClipSpace.xyz /= ClipSpace.w; 
+	NDCSpace.xyz = NDCSpace.xyz * 0.5 + 0.5; 
+	NDCSpace.z -= 0.0001; 
+
+
+	float Facing = max(LowFrequencyNormal.y,0.0) * NoiseFetch2 * texture(ShadowMap, NDCSpace.xyz); 
+
+	Metalness = mix(0.25*Facing*WetNess+Metalness, 1.0, RainDropFetch.w * Facing); //<- not physically correct, but weather is not noticeable enough without it
+	Metalness = clamp(Metalness, 0.0, 1.0); 
+	Roughness = mix(Roughness, 0.0, min(RainDropFetch.w+WetNess,1.0) * Facing); 
+
+	Normal = mix(mix(Normal,LowFrequencyNormal,WetNess*0.25), RainDropNormal, sqrt(RainDropNormal.y * Facing)); 
+
+	Normal.xyz = normalize(Normal.xyz); 
+	//Metalness = texelFetch(ShadowMap, ivec2(NDCSpace.xy * 2048), 0).x;
+	
+	//Metalness = Metalness < (NDCSpace.z-0.0000001) ? 0.0 : 1.0; 
+
+	Albedo.xyz = mix(Albedo.xyz, min(2.0 * Albedo.xyz * vec3(0.3,0.6,1.0),vec3(0.3,0.6,1.0)), Facing * RainDropFetch.w * 0.5); 
+
+}
+
+
+
 void main() {	
 	DirectMultiplier = 1.0; 
 	ParallaxData = vec4(-1.0); 
@@ -183,6 +236,8 @@ void main() {
 		//TC.y = 1.0 - TC.y; 
 	//} 
 	
+	vec3 BetterWorldPos = WorldPos; 
+
 	if(TextureExData.x != 0 && DoParallax)  {
 
 		float lod = textureQueryLod(DiffuseTextures, TC.xy).x; 
@@ -203,6 +258,8 @@ void main() {
 
 
 		TC = (TC.xy + IncidentProjected.xy * Traversal).xy; 
+
+		BetterWorldPos = BetterWorldPos + Incident * Traversal; 
 
 		Albedo.xyz = pow(texture(DiffuseTextures, vec3(TC,TextureIdx)).xyz,vec3(2.2));
 
@@ -227,7 +284,7 @@ void main() {
 	else {
 		Albedo.xyz = pow(texture(DiffuseTextures, vec3(TC.xy, TextureIdx)).xyz,vec3(2.2));
 	}
-	Albedo.w = 0.0; 
+	//Albedo.w = 0.0; 
 
 	HighFreqNormal.xyz = Normal.xyz; 
 
@@ -237,7 +294,7 @@ void main() {
 	}
 
 	if(TextureExData.z != 0) {
-		Albedo.w = textureLod(MetalnessTextures, vec3(TC.xy, TextureExData.z-1),0.0).x; 
+	//	Albedo.w = textureLod(MetalnessTextures, vec3(TC.xy, TextureExData.z-1),0.0).x; 
 	}
 
 	HighFreqNormal.w = 0.5; 
@@ -251,4 +308,10 @@ void main() {
 
 	_TC.xy = fract(TC);
 	_TC.z = TextureIdx; 
+
+
+	HandleWeather(TBN, Normal.xyz, BetterWorldPos.xyz, WorldPos.xyz, HighFreqNormal.xyz, HighFreqNormal.w, Albedo.w, Albedo.xyz); 
+
+	//Albedo.w = pow(texelFetch(ShadowMap, ivec2(gl_FragCoord),0).x,1024); 
+
 }

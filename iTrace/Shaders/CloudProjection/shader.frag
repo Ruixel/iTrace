@@ -19,7 +19,6 @@ uniform float Time;
 uniform int SubFrame; 
 uniform int Frame; 
 
-
 int State = 0;
 
 ivec2 Pixel; 

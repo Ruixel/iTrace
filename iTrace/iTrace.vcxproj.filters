@@ -181,6 +181,9 @@
     <Filter Include="Shaders\InventoryUIShader">
       <UniqueIdentifier>{8db8d9a1-b53d-4e23-9c45-bc0de25b1096}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\RainBaker">
+      <UniqueIdentifier>{d8764e3a-014c-43e3-a565-5497e20830ee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -279,6 +282,9 @@
     <ClInclude Include="Weather.h">
       <Filter>Header Files\World</Filter>
     </ClInclude>
+    <ClInclude Include="RainDropBaker.h">
+      <Filter>Header Files\Baker</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">
@@ -370,6 +376,9 @@
     </ClCompile>
     <ClCompile Include="Weather.cpp">
       <Filter>Source Files\World</Filter>
+    </ClCompile>
+    <ClCompile Include="RainDropBaker.cpp">
+      <Filter>Source Files\Baker</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -600,6 +609,12 @@
     </None>
     <None Include="Shaders\SecondarySoundTracing\shader.vert">
       <Filter>Shaders\SecondarySoundTracing</Filter>
+    </None>
+    <None Include="Shaders\RainBaker\shader.vert">
+      <Filter>Shaders\RainBaker</Filter>
+    </None>
+    <None Include="Shaders\RainBaker\shader.frag">
+      <Filter>Shaders\RainBaker</Filter>
     </None>
   </ItemGroup>
 </Project>

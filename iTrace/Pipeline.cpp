@@ -4,6 +4,7 @@
 #include "CinematicCamera.h"
 #include <iostream>
 #include "Weather.h"
+#include "RainDropBaker.h"
 
 #ifdef _WIN32 or _WIN64
 
@@ -420,6 +421,7 @@ namespace iTrace {
 		Core::PrepareHaltonSequence();
 		PreparePostProcess();
 
+
 		World.PrepareWorldManger();
 		RenderItemRequests();
 		Deferred.PrepareDeferredRenderer(Window);
@@ -465,6 +467,11 @@ namespace iTrace {
 		SoundEffects.AddSoundEffect(ThunderEffect, Sounds);
 
 		//SoundEffects.GetSoundEffect("Forest").SetVolume(100.0); 
+
+
+		RainBaker Baker;
+		Baker.BakeRain();
+
 	}
 
 	void Pipeline::RunPipeline(Camera& Camera, Window& Window)
@@ -684,7 +691,7 @@ namespace iTrace {
 			glEnable(GL_DEPTH_TEST);
 
 
-			Deferred.RenderDeferred(Window, Camera, World, Sky.Orientation);
+			Deferred.RenderDeferred(Sky,Window, Camera, World, Sky.Orientation);
 			Indirect.RenderIndirectLighting(Window, Camera, Deferred, World, Sky);
 			Combiner.CombineLighting(Window, Camera, Indirect, Deferred, Sky);
 			Glow.RenderPostProcess(Window, Sky, Indirect, Deferred, Combiner);

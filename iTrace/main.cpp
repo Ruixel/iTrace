@@ -49,7 +49,7 @@ int main(int *argc, char*argv[]) {
 	alutInit(argc, argv); 
 
 	//ComputeDofKernels(.1, 5.0); 
-	Window Screen = Window(Vector2i(1920, 1080), false); 
+	Window Screen = Window(Vector2i(1920, 1080), true); 
 
 	Camera Camera = iTrace::Camera(90.0, 0.01, 250., Vector3f(64.,128.0,64.0), Vector3f(0.), Screen); 
 

@@ -27,7 +27,7 @@ namespace iTrace {
 
 			//HemisphericalShadowMapCopy = Shader("Shaders/HemisphericalShadowMapCopy"); 
 			
-			for (int i = 0; i < 4; i++) {
+			for (int i = 0; i < 5; i++) {
 				ShadowMaps[i] = FrameBufferObject(Vector2i(SHADOWMAP_RES) * 2,GL_R32F);
 				ProjectionMatrices[i] = Core::ShadowOrthoMatrix(Ranges[i], 100.f, 2500.f);
 				ProjectionMatricesRaw[i] = ProjectionMatrices[i]; 
@@ -212,9 +212,15 @@ namespace iTrace {
 
 			iTrace::Camera ShadowCamera; 
 
-			int ToUpdate = UpdateQueue[Window.GetFrameCount() % 12];
+			int ToUpdate = UpdateQueue[Window.GetFrameCount() % 13];
+			
+			if (ToUpdate != 4)
+				ViewMatrices[ToUpdate] = Core::ViewMatrix(Camera.Position + Orientation * 500.0f, Vector3f(Direction.x, Direction.y, 0.));
+			else
+				ViewMatrices[ToUpdate] = Core::ViewMatrix(Camera.Position + Vector3f(0.0, 500.0, 0.0), Vector3f(90.0, 0.0, 0.0)); 
 
-			ViewMatrices[ToUpdate] = Core::ViewMatrix(Camera.Position + Orientation * 500.0f, Vector3f(Direction.x, Direction.y, 0.));
+
+
 			ProjectionMatrices[ToUpdate] = ProjectionMatricesRaw[ToUpdate];
 
 			ShadowCamera.Project = ProjectionMatrices[ToUpdate]; 

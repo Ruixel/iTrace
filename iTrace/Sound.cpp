@@ -450,9 +450,6 @@ namespace iTrace {
 					SendGain2 *= (float)pow(sendCutoff2, 0.1);
 					SendGain3 *= (float)pow(sendCutoff3, 0.1);
 
-					OcclusionAccumulation = OcclusionAccumulation * OcclusionAccumulation;
-					OcclusionAccumulation = OcclusionAccumulation * 4.0;
-					
 					SetEnvironment(Instance.second.SourceID, SendGain0, SendGain1, SendGain2, SendGain3, sendCutoff0, sendCutoff1, sendCutoff2, sendCutoff3, directCutoff, directGain);
 					x++;
 

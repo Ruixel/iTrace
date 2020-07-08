@@ -3,6 +3,7 @@
 #include "WorldManager.h"
 #include "Profiler.h"
 #include "Texture.h"
+#include "SkyRenderer.h"
 
 namespace iTrace {
 
@@ -13,10 +14,11 @@ namespace iTrace {
 			Shader DeferredManager, TransparentDeferredManager, DeferredUnwrapper;
 			FrameBufferObject RawDeferred; 
 			MultiPassFrameBufferObjectPreviousData Deferred; 
-			TextureGL ParallaxMap; 
+			TextureGL Noise;
+			unsigned int RainDrop; 
 
 			void PrepareDeferredRenderer(Window& Window); 
-			void RenderDeferred(Window& Window, Camera& Camera, WorldManager & World, Vector3f & SunDirection); 
+			void RenderDeferred(SkyRendering & Sky, Window& Window, Camera& Camera, WorldManager & World, Vector3f & SunDirection); 
 			void SetUniforms(Window& Window); 
 			void ReloadDeferred(Window& Window);
 		};
