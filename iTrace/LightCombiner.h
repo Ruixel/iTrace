@@ -2,6 +2,8 @@
 
 #include "Indirect.h"
 #include "SkyRenderer.h"
+#include "Particles.h"
+
 
 namespace iTrace {
 
@@ -14,7 +16,7 @@ namespace iTrace {
 			MultiPassFrameBufferObject CombinedLighting; 
 
 			void PrepareLightCombiner(Window& Window); 
-			void CombineLighting(Window& Window, Camera & Camera, LightManager& Indirect, DeferredRenderer& Deferred, SkyRendering& Sky); 
+			void CombineLighting(Window& Window, Camera & Camera, LightManager& Indirect, DeferredRenderer& Deferred, SkyRendering& Sky, ParticleSystem & Particles); 
 			void SetUniforms(Window& Window); 
 			void ReloadLightCombiner(Window& Window); 
 

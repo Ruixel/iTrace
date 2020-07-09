@@ -412,6 +412,7 @@ namespace iTrace {
 		RequestBoolean("newfiltering", true);
 		RequestBoolean("bettershadows", true);
 		RequestBoolean("spatialupscale", true);
+		RequestBoolean("freezetime", false);
 
 		//GetGlobalCommandPusher().World = &World; 
 
@@ -430,6 +431,8 @@ namespace iTrace {
 		Glow.PreparePostProcess(Window, Camera);
 		Sky.PrepareSkyRenderer(Window);
 		Combiner.PrepareLightCombiner(Window);
+		Particles.PrepareParticleSystem(Window); 
+
 		Text = TextSystem("Textures/Font.png");
 
 		Commands.AddCommands(Command{ "echo", Echo });
@@ -575,7 +578,10 @@ namespace iTrace {
 
 						case sf::Keyboard::H:
 							//Sounds.AddSoundInstance(SoundInstance(Camera.Position, 1.0), "MusicInstance", "Music");
-							SoundEffects.GetSoundEffect("Thunder").Play(rand()%6); 
+							//SoundEffects.GetSoundEffect("Thunder").Play(rand()%6); 
+
+							
+
 							break;
 
 						}
@@ -589,6 +595,8 @@ namespace iTrace {
 
 				}
 			}
+
+			
 
 
 			bool UpdateWorld = false;
@@ -664,6 +672,34 @@ namespace iTrace {
 			Window.SetTimeOpened(T);
 			Window.SetFrameCount(Frame);
 
+			if(!GetBoolean("freezetime")){
+
+				auto Weather = GetGlobalWeatherManager().GetWeather();
+
+				int Particles = glm::mix(0, int(ceil(2300.0 * Window.GetFrameTime())), sqrt(Weather.Wetness)); 
+
+				for (int Particle = 0; Particle < Particles; Particle++) {
+
+					float RandomAngle = (float(rand()) / float(RAND_MAX)) * 6.28;
+					float RandomRadius = 30.0 * glm::pow(float(rand()) / float(RAND_MAX),1.5) + 1.5; 
+
+					Vector3f Position = Vector3f(Camera.Position.x, 0.0, Camera.Position.z) + Vector3f(cos(RandomAngle) * RandomRadius, Camera.Position.y + 20.0, sin(RandomAngle) * RandomRadius); 
+
+				//	std::cout << "Add particle\n";
+
+					this->Particles.AddParticle(Rendering::Particle{ Position, 0.035 }); 
+
+
+				}
+
+
+
+			}
+
+
+
+
+
 			if (!Commands.Active)
 				Camera.HandleInput(Window, sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) ? 10.f : 4.0f, 0.15f, Active, Active);
 
@@ -686,14 +722,16 @@ namespace iTrace {
 			Camera.View = Core::ViewMatrix(Camera.Position, Camera.Rotation);
 			//Camera.Project = Camera.RawProject;
 
+			Particles.PollParticles(Window, World); 
+
 			Sky.RenderSky(Window, Camera, World);
 
 			glEnable(GL_DEPTH_TEST);
 
-
+			Particles.DrawParticles(Window, Camera); 
 			Deferred.RenderDeferred(Sky,Window, Camera, World, Sky.Orientation);
 			Indirect.RenderIndirectLighting(Window, Camera, Deferred, World, Sky);
-			Combiner.CombineLighting(Window, Camera, Indirect, Deferred, Sky);
+			Combiner.CombineLighting(Window, Camera, Indirect, Deferred, Sky, Particles);
 			Glow.RenderPostProcess(Window, Sky, Indirect, Deferred, Combiner);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, NULL);

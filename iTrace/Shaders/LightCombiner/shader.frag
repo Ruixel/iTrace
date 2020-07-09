@@ -2,7 +2,7 @@
 #extension GL_ARB_bindless_texture : enable
 #extension GL_ARB_gpu_shader_fp64 : enable
 
-in vec2 TexCoord; 
+in vec2 InTexCoord; 
 layout(location = 0) out vec4 Lighting;
 layout(location = 1) out vec3 Glow; 
 
@@ -23,6 +23,9 @@ uniform sampler2D Volumetrics;
 uniform sampler2D DirectMultiplier; 
 uniform sampler2D SimpleLight; 
 uniform sampler2D Clouds; 
+uniform sampler2D Particles; 
+uniform sampler2D ParticleDepth; 
+uniform sampler2D Depth; 
 
 uniform bool NoAlbedo; 
 
@@ -136,13 +139,35 @@ void ManageDirect(vec3 WorldPos, vec3 BasicNormal, vec3 Normal, float Roughness,
 
 void main() {
 
-	vec4 NormalFetch = texture(Normal, TexCoord); 
+	vec3 Multiplier = vec3(1.0); 
+
+	float DepthSample = texelFetch(Depth, ivec2(gl_FragCoord), 0).x; 
+	float ParticleDepthSample = texelFetch(ParticleDepth, ivec2(gl_FragCoord), 0).x; 
+
+	vec2 TexCoord = InTexCoord; 
+	
+	if(DepthSample > ParticleDepthSample) {
+		
+		vec4 ParticleSample = texelFetch(Particles, ivec2(gl_FragCoord), 0); 
+		ParticleSample.w = pow(ParticleSample.w,0.25); 
+		TexCoord += ParticleSample.xy * mix(0.0,0.05,ParticleSample.w); 
+		Multiplier = mix(vec3(1.0),vec3(0.8,0.9,1.0),ParticleSample.w); 
+
+
+	}
+	
+
+
+
+
+
+	vec4 NormalFetch = textureLod(Normal, TexCoord,0.0); 
 
 	float L = length(NormalFetch.xyz); 
 
 
 
-	if(L > 0.75 && L < 1.25) {
+	if(L > 0.3 && L < 1.7) {
 
 		vec4 HighfreqNormalSample = texture(HighfreqNormal, TexCoord); 
 
@@ -188,6 +213,8 @@ void main() {
 		//Lighting.xyz =  DiffuseColor * ((IndirectDiffuse.xyz + Direct) * IndirectDiffuse.www ); 
 		Glow.xyz = DirectSpecular * pow(1.0-Roughness,5.0) ; 
 		//Lighting.xyz = DirectSpecular; 
+		
+
 
 		//Lighting.xyz = AlbedoFetch.www; 
 	}
@@ -198,5 +225,7 @@ void main() {
 	vec4 Volumetrics = texture(Volumetrics, TexCoord); 
 
 	Lighting.xyz =   mix(Lighting.xyz, Volumetrics.xyz,1.0-Volumetrics.w);
+
+	Lighting.xyz *= Multiplier; 
 
 }

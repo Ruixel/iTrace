@@ -365,6 +365,9 @@ namespace iTrace {
 
 			//TODO: Push to secondary sound thread! 
 
+
+
+
 			int x = 0;
 
 			float PrecomputedHemisphericalGain = -1.0f, PrecomputedHemisphericalCutoff = -1.0f;
@@ -480,6 +483,8 @@ namespace iTrace {
 					SetEnvironmentAmbience(Instance.second.SourceID, PrecomputedHemisphericalCutoff, PrecomputedHemisphericalGain);
 
 				}
+				
+
 			}
 
 			delete[] GainsShared;

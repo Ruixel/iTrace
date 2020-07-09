@@ -184,6 +184,9 @@
     <Filter Include="Shaders\RainBaker">
       <UniqueIdentifier>{d8764e3a-014c-43e3-a565-5497e20830ee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\ParticleShader">
+      <UniqueIdentifier>{260db287-e8d8-4fa4-8f0d-81b8d17cae26}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -285,6 +288,9 @@
     <ClInclude Include="RainDropBaker.h">
       <Filter>Header Files\Baker</Filter>
     </ClInclude>
+    <ClInclude Include="Particles.h">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">
@@ -379,6 +385,9 @@
     </ClCompile>
     <ClCompile Include="RainDropBaker.cpp">
       <Filter>Source Files\Baker</Filter>
+    </ClCompile>
+    <ClCompile Include="Particles.cpp">
+      <Filter>Source Files\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -615,6 +624,12 @@
     </None>
     <None Include="Shaders\RainBaker\shader.frag">
       <Filter>Shaders\RainBaker</Filter>
+    </None>
+    <None Include="Shaders\ParticleShader\shader.frag">
+      <Filter>Shaders\ParticleShader</Filter>
+    </None>
+    <None Include="Shaders\ParticleShader\shader.vert">
+      <Filter>Shaders\ParticleShader</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -204,6 +204,11 @@ namespace iTrace {
 
 				void SetBlock(unsigned char x, unsigned char y, unsigned char z, unsigned char type); 
 				unsigned char GetBlock(unsigned char x, unsigned char y, unsigned char z) {
+
+					if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE || z >= CHUNK_SIZE)
+						return 0; 
+
+
 					return Blocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z]; 
 				}
 				unsigned char GetTallestBlock(unsigned char x, unsigned char z) {

@@ -69,7 +69,7 @@ namespace iTrace {
 	void WeatherManager::PollWeather(float t)
 	{
 		CurrentWeatherFactor = glm::simplex(Vector2f(t * 0.005, 1238)) * 2 + 2; 
-
+		CurrentWeatherFactor = 4.0; 
 		int MixUnder = floor(CurrentWeatherFactor); 
 		int MixOver = MixUnder + 1; 
 

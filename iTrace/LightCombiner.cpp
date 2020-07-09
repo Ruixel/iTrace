@@ -20,7 +20,7 @@ namespace iTrace {
 		}
 
 
-		void LightCombiner::CombineLighting(Window& Window, Camera & Camera, LightManager& Indirect, DeferredRenderer& Deferred, SkyRendering& Sky)
+		void LightCombiner::CombineLighting(Window& Window, Camera & Camera, LightManager& Indirect, DeferredRenderer& Deferred, SkyRendering& Sky, ParticleSystem& Particles)
 		{
 
 			CombinedLighting.Bind(); 
@@ -54,6 +54,12 @@ namespace iTrace {
 			Deferred.Deferred.BindImage(7, 14);
 			Indirect.TemporallyFiltered.BindImage(3, 15);
 			//Indirect.ProjectedClouds.BindImage(15); 
+
+			Particles.ParticleSystemFBO.BindImage(16); 
+			Particles.ParticleSystemFBO.BindDepthImage(17); 
+			Deferred.RawDeferred.BindDepthImage(18); 
+
+
 
 			LightCombinerShader.SetUniform("LightDirection", Sky.Orientation);
 			LightCombinerShader.SetUniform("SunColor", Sky.SunColor);
@@ -92,6 +98,9 @@ namespace iTrace {
 			LightCombinerShader.SetUniform("SimpleLight", 14);
 			LightCombinerShader.SetUniform("Clouds", 15);
 
+			LightCombinerShader.SetUniform("Particles", 16);
+			LightCombinerShader.SetUniform("ParticleDepth", 17);
+			LightCombinerShader.SetUniform("Depth", 18);
 
 			LightCombinerShader.UnBind();
 		}

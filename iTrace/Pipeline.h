@@ -28,6 +28,7 @@ namespace iTrace {
 		SoundInstance TestSound; 
 		FootStepManager FootSteps; 
 		SoundEffectManager SoundEffects; 
+		ParticleSystem Particles; 
 
 		void PreparePipeline(Camera& Camera, Window& Window);
 		void RunPipeline(Camera& Camera, Window& Window);
