@@ -1,10 +1,16 @@
 #include "Weather.h"
 #include "glm-master/glm/gtc/noise.hpp"
 #include <iostream>
+#include <Core.h>
+
 
 namespace iTrace {
 
 	WeatherManager GlobalWeatherManager; 
+
+
+
+
 
 	void WeatherManager::PrepareWeather()
 	{
@@ -66,10 +72,19 @@ namespace iTrace {
 		); 
 
 	}
-	void WeatherManager::PollWeather(float t)
+	void WeatherManager::PollWeather(float t, float ft)
 	{
-		CurrentWeatherFactor = glm::simplex(Vector2f(t * 0.005, 1238)) * 2 + 2; 
-		CurrentWeatherFactor = 4.0; 
+
+		float Scale = 0.005; 
+
+		float Derivative = (glm::simplex(Vector2f(t * 0.02 + Scale * 0.5, 1238)) - glm::simplex(Vector2f(t * 0.02 - Scale * 0.5, 1238))) / Scale; 
+		Derivative *= 0.01;
+		Derivative = glm::sign(Derivative) * glm::clamp(glm::abs(Derivative) - 0.00625f, 0.0f, 1.0f); 
+		Derivative *= 3.0;
+
+		CurrentWeatherFactor += Derivative * ft;
+		CurrentWeatherFactor = glm::clamp(CurrentWeatherFactor, 0.0f, 4.0f); 
+
 		int MixUnder = floor(CurrentWeatherFactor); 
 		int MixOver = MixUnder + 1; 
 
@@ -102,6 +117,26 @@ namespace iTrace {
 	WeatherData WeatherManager::GetWeather()
 	{
 		return CurrentWeather;
+	}
+	std::vector<std::string> Weather(std::vector<std::string> Input)
+	{
+		
+		if (Input.size() == 0)
+			return { "Not enough data provided for weather command" }; 
+
+		if (Input[0] == ">help") {
+			return { "Sets the current weather, 0.0 for clear and 4.0 for thunderstorm." }; 
+		}
+		
+		float F = 0.0;
+
+		if (Core::SafeParseFloat(Input[0], F)) {
+			GlobalWeatherManager.CurrentWeatherFactor = F; 
+			return { "Set weather to: " + Input[0] }; 
+		}
+		
+		return { "Could not parse: " + Input[0] + " are you sure it is a number?" }; 
+
 	}
 	WeatherManager& GetGlobalWeatherManager()
 	{

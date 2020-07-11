@@ -71,7 +71,7 @@ namespace iTrace {
 
 			int x = 0; 
 			for (auto& P : Particles)
-				ParticleData[x++] = { P.Position, P.Size };
+				ParticleData[x++] = { P.Position, 0.07 };
 
 
 			glBindTexture(GL_TEXTURE_2D, ParticleContainer); 

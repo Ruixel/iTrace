@@ -441,6 +441,7 @@ namespace iTrace {
 		Commands.AddCommands(Command{ "boolean", BooleanCommand });
 		Commands.AddCommands(Command{ "keyframe", KeyFrameCommand });
 		Commands.AddCommands(Command{ "animation", AnimationCommand });
+		Commands.AddCommands(Command{ "weather", Weather });
 
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
@@ -665,7 +666,7 @@ namespace iTrace {
 
 			Frames++;
 			Window.SetFrameTime(GameClock.getElapsedTime().asSeconds());
-			GetGlobalWeatherManager().PollWeather(Window.GetTimeOpened()); 
+			GetGlobalWeatherManager().PollWeather(Window.GetTimeOpened(), Window.GetFrameTime()); 
 			GameClock.restart();
 			T += Window.GetFrameTime();
 			Frame++;
@@ -687,7 +688,7 @@ namespace iTrace {
 
 				//	std::cout << "Add particle\n";
 
-					this->Particles.AddParticle(Rendering::Particle{ Position, 0.035 }); 
+					this->Particles.AddParticle(Rendering::Particle{ Position, Vector2f(0.0175,0.07) });
 
 
 				}

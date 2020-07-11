@@ -32,6 +32,9 @@ void main(void) {
 
 	mat4 Matrix = ModelMatrixFromPosition(Data.xyz); 
 
+
+	vec2 Size = vec2(0.0175,0.07); 
+
 	TexCoord = Texc; 
-	gl_Position = IdentityMatrix * Matrix * vec4(Vert.xy * Data.w,0.f,1.0); 
+	gl_Position = IdentityMatrix * Matrix * vec4(Vert.xy * Size,0.f,1.0); 
 }

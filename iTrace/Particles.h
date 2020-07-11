@@ -10,7 +10,7 @@ namespace iTrace {
 			//for now, just have a position and size  
 
 			Vector3f Position; 
-			float Size; 
+			Vector2f Size; 
 
 		};
 

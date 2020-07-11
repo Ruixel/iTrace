@@ -9,7 +9,7 @@ void main() {
 		
 	vec4 NormalFetch = texture(RainNormalMap, TexCoord); 
 
-	if(NormalFetch.a < 0.95)
+	if(NormalFetch.a < 0.5)
 		discard; 
 
 	

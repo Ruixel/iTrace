@@ -2,8 +2,14 @@
 
 #include <array>
 #include "DependenciesMath.h"
+#include <vector>
+#include <string>
 
 namespace iTrace {
+
+
+	std::vector<std::string> Weather(std::vector<std::string> Input); 
+
 
 	const enum class Weather { CLEAR, CLOUDY, OVERCAST, RAINY, THUNDERSTORM, SIZE };
 
@@ -44,10 +50,10 @@ namespace iTrace {
 
 		std::array<WeatherData, static_cast<int>(Weather::SIZE)> Weathers; 
 
-		float CurrentWeatherFactor = 4.0; //0.0 = clear, 4.0 = Thunderstorm. Controlled based on a noise factor 
+		float CurrentWeatherFactor = 2.0; //0.0 = clear, 4.0 = Thunderstorm. Controlled based on a noise factor 
 
 		void PrepareWeather(); 
-		void PollWeather(float t); 
+		void PollWeather(float t, float ft); 
 		WeatherData GetWeather(); 
 
 		WeatherManager() : 

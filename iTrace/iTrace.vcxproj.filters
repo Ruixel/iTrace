@@ -291,6 +291,9 @@
     <ClInclude Include="Particles.h">
       <Filter>Header Files\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderBuffer.h">
+      <Filter>Header Files\Engine Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">

@@ -5,6 +5,7 @@
 #include <SFML/efx.h>
 #include <SFML/alut.h>
 #include "WorldManager.h"
+#include "ShaderBuffer.h"
 
 #define MAX_OBJECTS 25 //max ray-traced sound instances
 #define NUM_RAYS 75 //number of rays thrown per sound instance (- the primary rays) 
@@ -13,6 +14,22 @@
 namespace iTrace {
 
 	namespace Sound {
+
+		struct s_vec3 {
+			float data[3]; 
+			s_vec3() : data {0.0,0.0,0.0} {}
+			Vector3f ToVector3f() {
+				return Vector3f(data[0], data[1], data[2]); 
+			}
+		};
+
+		struct s_vec4 {
+			float data[4];
+			s_vec4() : data{ 0.0,0.0,0.0,0.0 } {}
+			Vector3f ToVector4f() {
+				return Vector4f(data[0], data[1], data[2], data[3]);
+			}
+		};
 
 		struct ReverbParameters {
 
@@ -108,8 +125,6 @@ namespace iTrace {
 		};
 
 
-		
-
 		struct SoundInstance {
 
 			Vector3f Origin;
@@ -144,6 +159,7 @@ namespace iTrace {
 			Rendering::MultiPassFrameBufferObject SecondarySoundTracingBuffer;
 			Rendering::Shader PrimarySoundTracingShader;
 			Rendering::Shader SecondarySoundTracingShader;
+			Rendering::ShaderBuffer<s_vec4> ReflectivityRatiosBuffer,SharedGainsBuffer, TotalOcclusionBuffer;
 
 			//OpenAL extensions: 
 

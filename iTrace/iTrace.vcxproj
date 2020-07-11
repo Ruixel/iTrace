@@ -169,6 +169,7 @@
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="RainDropBaker.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="ShaderBuffer.h" />
     <ClInclude Include="SkyRenderer.h" />
     <ClInclude Include="Sound.h" />
     <ClInclude Include="SoundEffectManager.h" />

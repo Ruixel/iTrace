@@ -305,11 +305,11 @@ namespace iTrace {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glBindTexture(GL_TEXTURE_2D, 0);
-
+			/*
 			float* GainsShared = new float[3 * NUM_RAYS * (MAX_OBJECTS + 1)];
 			float* ReflectivityRatios = new float[3 * NUM_RAYS * (MAX_OBJECTS + 1)];
 			float* TotalOcclusion = new float[MAX_OBJECTS];
-
+			*/
 
 
 
@@ -322,6 +322,9 @@ namespace iTrace {
 
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_3D, World.Chunk->ChunkTexID);
+
+			SharedGainsBuffer.Bind(0); 
+			ReflectivityRatiosBuffer.Bind(1); 
 
 			SecondarySoundTracingShader.SetUniform("PlayerPosition", Camera.Position);
 
@@ -341,6 +344,8 @@ namespace iTrace {
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_3D, World.Chunk->ChunkTexID);
 
+			TotalOcclusionBuffer.Bind(0); 
+
 			PrimarySoundTracingShader.SetUniform("PlayerPosition", Camera.Position);
 
 			Rendering::DrawPostProcessQuad();
@@ -349,19 +354,46 @@ namespace iTrace {
 
 			PrimarySoundTracingBuffer.UnBind(Window);
 
+			while(glGetError()) {}
 
+
+
+			auto ReflectivityRatios = ReflectivityRatiosBuffer.GetData(); 
+			auto GainsShared = SharedGainsBuffer.GetData(); 
+			auto TotalOcclusion = TotalOcclusionBuffer.GetData(); 
+
+			/*
 			glFinish();
 
+
+
 			glBindTexture(GL_TEXTURE_2D, SecondarySoundTracingBuffer.ColorBuffers[0]);
-			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, GainsShared);
+
+			glGetTextureSubImage(SecondarySoundTracingBuffer.ColorBuffers[0], 0, 0, 0, 0, MAX_OBJECTS + 1, NUM_RAYS, 1, GL_RGB, GL_FLOAT, 3 * NUM_RAYS * (MAX_OBJECTS + 1) * sizeof(float), GainsShared);
+
+		//	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, GainsShared);
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glFinish();
+
+			std::cout << "first: " << glGetError() << ' ' << SecondarySoundTracingBuffer.ColorBuffers[0] << '\n'; 
+
 			glBindTexture(GL_TEXTURE_2D, SecondarySoundTracingBuffer.ColorBuffers[1]);
 			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, ReflectivityRatios);
 			glBindTexture(GL_TEXTURE_2D, 0);
+			glFinish();
+
+			std::cout << "second: " << glGetError() << ' ' << SecondarySoundTracingBuffer.ColorBuffers[1] << '\n';
+
+
 			glBindTexture(GL_TEXTURE_2D, PrimarySoundTracingBuffer.ColorBuffer);
 			glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, TotalOcclusion);
 			glBindTexture(GL_TEXTURE_2D, 0);
-
 			glFinish();
+
+			std::cout << "third: " << glGetError() << ' ' << PrimarySoundTracingBuffer.ColorBuffer << '\n';
+			*/
+
 
 			//TODO: Push to secondary sound thread! 
 
@@ -379,16 +411,18 @@ namespace iTrace {
 					float SendGain0 = 0.0, SendGain1 = 0.0, SendGain2 = 0.0, SendGain3 = 0.0;
 					float BounceReflectivityRatios[4] = { 0.0,0.0,0.0,0.0 };
 					float SharedAirSpace = 0.0;
-					float OcclusionAccumulation = TotalOcclusion[x];
+					float OcclusionAccumulation = TotalOcclusion[x].data[0];
 					float rcpTotalRays = 1.0 / float(NUM_RAYS * MAX_BOUNCES);
 					float absorptionCoeff = 3.0f;
 
 					for (int y = 0; y < NUM_RAYS; y++) {
 
-						int BasePixel = (y * (MAX_OBJECTS + 1) + x) * 3;
+						int BasePixel = (x * NUM_RAYS + y);
 
-						Vector3f VGainsShared = Vector3f(GainsShared[BasePixel], GainsShared[BasePixel + 1], GainsShared[BasePixel + 2]);
-						Vector3f VReflectivityRatios = Vector3f(ReflectivityRatios[BasePixel], ReflectivityRatios[BasePixel + 1], ReflectivityRatios[BasePixel + 2]);
+						Vector3f VGainsShared = GainsShared[BasePixel].ToVector4f();
+
+
+						Vector3f VReflectivityRatios = ReflectivityRatios[BasePixel].ToVector4f();
 
 						Vector2f SendGain01 = glm::unpackHalf2x16(glm::floatBitsToUint(VGainsShared.x));
 						Vector2f SendGain23 = glm::unpackHalf2x16(glm::floatBitsToUint(VGainsShared.y));
@@ -453,6 +487,8 @@ namespace iTrace {
 					SendGain2 *= (float)pow(sendCutoff2, 0.1);
 					SendGain3 *= (float)pow(sendCutoff3, 0.1);
 
+					//std::cout << SharedAirSpace << '\n';
+
 					SetEnvironment(Instance.second.SourceID, SendGain0, SendGain1, SendGain2, SendGain3, sendCutoff0, sendCutoff1, sendCutoff2, sendCutoff3, directCutoff, directGain);
 					x++;
 
@@ -467,15 +503,17 @@ namespace iTrace {
 
 						for (int y = 0; y < NUM_RAYS; y++) {
 
-							int BasePixel = (y * (MAX_OBJECTS + 1) + (MAX_OBJECTS)) * 3;
-
-							Vector3f VGainsShared = Vector3f(GainsShared[BasePixel], GainsShared[BasePixel + 1], GainsShared[BasePixel + 2]);
+							int BasePixel = (x * NUM_RAYS + y);
+							Vector3f VGainsShared = GainsShared[BasePixel].ToVector4f(); 
 
 							OcclusionAccumulation += VGainsShared.z;
 
+
 						}
 
-						PrecomputedHemisphericalCutoff = (float)exp(-OcclusionAccumulation * absorptionCoeff * rcpTotalRays);
+
+
+						PrecomputedHemisphericalCutoff = (float)exp(-OcclusionAccumulation * absorptionCoeff * rcpTotalRays * 0.25f);
 						PrecomputedHemisphericalGain = (float)pow(PrecomputedHemisphericalCutoff, 0.1);
 
 					}
@@ -487,10 +525,15 @@ namespace iTrace {
 
 			}
 
-			delete[] GainsShared;
+
+			SharedGainsBuffer.UnMap(); 
+			ReflectivityRatiosBuffer.UnMap(); 
+			TotalOcclusionBuffer.UnMap(); 
+
+		/*	delete[] GainsShared;
 			delete[] ReflectivityRatios;
 			delete[] TotalOcclusion;
-
+			*/
 
 		}
 		void SoundHandler::PrepareSoundBlockData()
@@ -500,6 +543,10 @@ namespace iTrace {
 			PrimarySoundTracingShader = Rendering::Shader("Shaders/PrimarySoundTracing");
 			SecondarySoundTracingShader = Rendering::Shader("Shaders/SecondarySoundTracing");
 
+
+			ReflectivityRatiosBuffer = Rendering::ShaderBuffer<s_vec4>::Create((MAX_OBJECTS + 1) * NUM_RAYS); 
+			SharedGainsBuffer = Rendering::ShaderBuffer<s_vec4>::Create((MAX_OBJECTS + 1) * NUM_RAYS);
+			TotalOcclusionBuffer = Rendering::ShaderBuffer<s_vec4>::Create(MAX_OBJECTS);
 
 			glGenTextures(1, &DirectData);
 

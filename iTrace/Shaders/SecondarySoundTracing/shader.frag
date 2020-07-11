@@ -1,8 +1,17 @@
-#version 420
+#version 430 core
 #extension GL_ARB_bindless_texture : enable
 
 layout(location = 0) out vec3 GainsShared;
 layout(location = 1) out vec3 ReflectivityRatios; 
+
+layout(binding = 0, std140) buffer GainSharedBuffer {
+	vec4 GainsSharedData[]; 
+};
+
+layout(binding = 1, std140) buffer ReflectivityRatiosBuffer {
+	vec4 ReflectivityRatiosData[]; 
+};
+
 
 uniform sampler2D SoundLocations; 
 uniform vec3 PlayerPosition;
@@ -21,6 +30,8 @@ vec3 BlockNormals[6] = vec3[](
 	vec3(0.0, 0.0, 1.0),
 	vec3(0.0, 0.0, -1.0)
 	);
+
+
 
 bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, inout vec3 Normal, inout vec3 Position, int Steps, float MaxLength) {
 
@@ -196,6 +207,9 @@ void MainPositional() {
 	int CurrentSubray = int(gl_FragCoord.y); 
 
 	vec3 SoundLocation = texelFetch(SoundLocations, ivec2(CurrentRay, 0), 0).xyz; 
+
+	int Index = CurrentRay * NumRays + CurrentSubray; 
+
 
 	GainsShared = vec3(0.); 
 	ReflectivityRatios = vec3(0.); 
@@ -379,9 +393,15 @@ void MainAmbience() {
 
 void main(void) {
 	int CurrentRay = int(gl_FragCoord.x); 
+	int CurrentSubray = int(gl_FragCoord.y); 
+
+	int Index = CurrentRay * NumRays + CurrentSubray; 
 	
 	if(CurrentRay >= MaxSounds) 
 		MainAmbience(); 
 	else 
 		MainPositional(); 
+
+	ReflectivityRatiosData[Index].xyz = ReflectivityRatios; 
+	GainsSharedData[Index].xyz = GainsShared; 
 }

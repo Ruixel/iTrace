@@ -29,7 +29,6 @@ uniform sampler2D Depth;
 
 uniform bool NoAlbedo; 
 
-
 uniform mat4 ShadowMatrices[5]; 
 uniform vec3 LightDirection; 
 uniform vec3 SunColor; 
@@ -180,7 +179,6 @@ void main() {
 		vec4 IndirectDiffuse = texture(Indirect, TexCoord); 
 		vec4 IndirectSpecular = texture(IndirectSpecular, TexCoord); 
 
-
 		float Roughness = HighfreqNormalSample.w; 
 
 
@@ -211,10 +209,8 @@ void main() {
 
 		Lighting.xyz = DiffuseColor * ((IndirectDiffuse.xyz * Kd + Direct) * IndirectDiffuse.www) + SpecularColor * (IndirectSpecular.xyz) + DirectSpecular + AlbedoFetch.xyz * NormalFetch.www;
 		//Lighting.xyz =  DiffuseColor * ((IndirectDiffuse.xyz + Direct) * IndirectDiffuse.www ); 
-		Glow.xyz = DirectSpecular * pow(1.0-Roughness,5.0) ; 
+		Glow.xyz = DirectSpecular * pow(1.0-Roughness,5.0) + AlbedoFetch.xyz * NormalFetch.www; 
 		//Lighting.xyz = DirectSpecular; 
-		
-
 
 		//Lighting.xyz = AlbedoFetch.www; 
 	}

@@ -1,7 +1,11 @@
-#version 420
+#version 430 
 #extension GL_ARB_bindless_texture : enable
 
 layout(location = 0) out float TotalOcclusion;
+
+layout(binding = 0, std140) buffer TotalOcclusionBuffer {
+	vec4 TotalOcclusionData[]; 
+};
 
 uniform sampler2D SoundLocations; 
 uniform vec3 PlayerPosition; 
@@ -140,5 +144,5 @@ void main(void) {
 		}
 
 	}
-
+	TotalOcclusionData[CurrentRay] = vec4(TotalOcclusion); 
 }
