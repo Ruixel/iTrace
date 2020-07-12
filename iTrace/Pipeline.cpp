@@ -406,7 +406,7 @@ namespace iTrace {
 
 		GetGlobalWeatherManager().PrepareWeather(); 
 
-		RequestBoolean("freefly", false);
+		RequestBoolean("freefly", true);
 		RequestBoolean("noclip", true);
 		RequestBoolean("slowframes", false);
 		RequestBoolean("newfiltering", true);
@@ -545,7 +545,7 @@ namespace iTrace {
 					if (!Commands.PollCommands(Event)) {
 						switch (Event.key.code) {
 						case sf::Keyboard::Escape:
-							World.Chunk->DumpToFile();
+							//World.Chunk->DumpToFile();
 							return;
 							break;
 
@@ -702,7 +702,7 @@ namespace iTrace {
 
 
 			if (!Commands.Active)
-				Camera.HandleInput(Window, sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) ? 10.f : 4.0f, 0.15f, Active, Active);
+				Camera.HandleInput(Window, sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) ? 100.f : 20.0f, 0.15f, Active, Active);
 
 			GetGlobalCommandPusher().GivenConstantData["camera_pos"] = Camera.Position;
 			GetGlobalCommandPusher().GivenConstantData["camera_rot"] = Camera.Rotation;
@@ -723,22 +723,37 @@ namespace iTrace {
 			Camera.View = Core::ViewMatrix(Camera.Position, Camera.Rotation);
 			//Camera.Project = Camera.RawProject;
 
-			Particles.PollParticles(Window, World); 
+			//Particles.PollParticles(Window, World); 
+
+			Profiler::SetPerformance("Pre-render step");
+
 
 			Sky.RenderSky(Window, Camera, World);
 
+			Profiler::SetPerformance("Sky render step");
+
+
 			glEnable(GL_DEPTH_TEST);
 
-			Particles.DrawParticles(Window, Camera); 
+			//Particles.DrawParticles(Window, Camera); 
 			Deferred.RenderDeferred(Sky,Window, Camera, World, Sky.Orientation);
 			Indirect.RenderIndirectLighting(Window, Camera, Deferred, World, Sky);
 			Combiner.CombineLighting(Window, Camera, Indirect, Deferred, Sky, Particles);
+
+			Profiler::SetPerformance("Combination step");
+
 			Glow.RenderPostProcess(Window, Sky, Indirect, Deferred, Combiner);
+
+			Profiler::SetPerformance("Post process");
+
 
 			glBindFramebuffer(GL_FRAMEBUFFER, NULL);
 
 			glViewport(0, 0, Window.GetResolution().x, Window.GetResolution().y);
 			Compositor.DoCompositing(Camera, Deferred, Combiner, Glow);
+			Profiler::SetPerformance("Composite");
+
+			
 
 			if (ShowGUI) {
 
@@ -762,7 +777,7 @@ namespace iTrace {
 				Sleep(30);
 			}
 
-
+			/*
 			Vector3i Pos = Camera.Position;
 			Pos.y -= 2;
 
@@ -774,14 +789,14 @@ namespace iTrace {
 			if (Case && Block.SoundMaterialType != ActiveSoundtype && Block.SoundMaterialType != SoundType::NONE) {
 				FootSteps.SetActiveMaterial(Block.SoundMaterialType, Sounds);
 			}
-
+			*/
 
 
 			Window.GetRawWindow()->display();
 
 			Camera.PrevProject = Camera.Project;
 			//Sounds.SetSoundInstanceOrigin("CreeperInstance", Camera.Position - Vector3f(0.0,1.0,0.0));
-			FootSteps.Step();
+			//FootSteps.Step();
 
 			auto Weather = GetGlobalWeatherManager().GetWeather(); 
 
@@ -792,7 +807,8 @@ namespace iTrace {
 				SoundEffects.GetSoundEffect("Thunder").Play(rand() % 6); 
 
 			SoundEffects.PollSoundEffects(Sounds, Window, Camera); 
-			Sounds.Update(Camera, Window, World);
+			//Sounds.Update(Camera, Window, World);
+			Profiler::SetPerformance("The rest");
 
 		}
 

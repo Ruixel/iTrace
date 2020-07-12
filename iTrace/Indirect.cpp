@@ -13,7 +13,7 @@ namespace iTrace {
 		void LightManager::PrepareIndirectLightingHandler(Window& Window)
 		{
 			RequestBoolean("raytracing", true); 
-			RequestBoolean("volumetrics", true);
+			RequestBoolean("volumetrics", false);
 			RequestBoolean("spatial", true);
 			RequestBoolean("temporal", true);
 
@@ -34,7 +34,7 @@ namespace iTrace {
 			PackedSpatialData = FrameBufferObject(Window.GetResolution() / 2, GL_RGBA16F, false);
 			TemporallyFiltered = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 2, 4, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 			SpatialyUpscaled = MultiPassFrameBufferObject(Window.GetResolution(), 2, { GL_RGBA16F,GL_RGBA16F }, false);
-			ProjectedClouds = FrameBufferObjectPreviousData(Vector2i(512), GL_RGBA16F, false); 
+			ProjectedClouds = FrameBufferObjectPreviousData(Vector2i(256), GL_RGBA16F, false); 
 
 			IndirectLightShader = Shader("Shaders/RawPathTracing");
 			TemporalUpscaler = Shader("Shaders/TemporalUpscaler");
@@ -167,7 +167,7 @@ namespace iTrace {
 			Deferred.RawDeferred.BindDepthImage(18);
 
 			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_3D, World.Chunk->ChunkTexID);
+			glBindTexture(GL_TEXTURE_3D, World.ChunkContainer);
 
 			glActiveTexture(GL_TEXTURE3);
 			glBindTexture(GL_TEXTURE_2D, SobolTexture);
@@ -188,7 +188,7 @@ namespace iTrace {
 			glBindTexture(GL_TEXTURE_CUBE_MAP, Sky.SkyCube.Texture[0]);
 
 			glActiveTexture(GL_TEXTURE14);
-			glBindTexture(GL_TEXTURE_3D, World.Chunk->ChunkLightTexID);
+			glBindTexture(GL_TEXTURE_3D, World.Chunks[0][0]->ChunkLightTexID);
 			
 			glActiveTexture(GL_TEXTURE15);
 			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(4));
@@ -422,7 +422,7 @@ namespace iTrace {
 			WindNoise.Bind(1); 
 
 			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_3D, World.Chunk->ChunkLightTexID);
+			glBindTexture(GL_TEXTURE_3D, World.Chunks[0][0]->ChunkLightTexID);
 
 			SimplifiedBlueNoise.Bind(3); 
 

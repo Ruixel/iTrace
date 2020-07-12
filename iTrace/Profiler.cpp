@@ -1,6 +1,8 @@
 #include "Profiler.h"
 #include <map>
 
+//#undef DISABLE_PROFILING 
+
 struct PerformanceData {
 	float Time; 
 	bool Exclusive; 
@@ -21,7 +23,7 @@ void iTrace::Profiler::SetPerformance(const std::string& Name, float ElapsedTime
 	}
 	else {
 
-		Performance[Name].Time = glm::mix(Performance[Name].Time, ElapsedTime, 0.005); 
+		Performance[Name].Time = glm::mix(Performance[Name].Time, ElapsedTime, 0.05); 
 		Performance[Name].Exclusive = Exclusive; 
 
 	}

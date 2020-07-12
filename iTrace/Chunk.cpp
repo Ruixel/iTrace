@@ -867,7 +867,7 @@ namespace iTrace {
 				return NewData;
 			}
 
-			void Chunk::Draw(Camera& Camera)
+			void Chunk::Draw(Shader& RenderToShader, Camera& Camera)
 			{
 				/*
 				glBindVertexArray(ChunkVAOID);
@@ -884,6 +884,8 @@ namespace iTrace {
 				glBindVertexArray(0);
 				*/
 
+				RenderToShader.SetUniform("IdentityMatrix", Camera.Project * Camera.View * ModelMatrix);
+
 				for (int x = 0; x < 4; x++) {
 					for (int y = 0; y < 4; y++) {
 						MeshDataOpaque.Draw(x, y); 
@@ -893,8 +895,9 @@ namespace iTrace {
 
 			}
 
-			void Chunk::DrawTransparent(Camera& Camera)
+			void Chunk::DrawTransparent(Shader& RenderToShader, Camera& Camera)
 			{
+				RenderToShader.SetUniform("IdentityMatrix", Camera.Project * Camera.View * ModelMatrix);
 				for (int x = 0; x < 4; x++) {
 					for (int y = 0; y < 4; y++) {
 						MeshDataTransparent.Draw(x, y);
@@ -950,7 +953,7 @@ namespace iTrace {
 					int Dist = Height - MyY;
 
 					if (Dist == 1)
-						return (Height > 100 ? 31 : Height > 60 ? 3 : 20); //snow
+						return (Height > 100 ? 3 : Height > 60 ? 3 : 3); //snow
 					else if (Dist < 4)
 						return 2; //dirt
 					return 1; //stone 
@@ -1022,7 +1025,7 @@ namespace iTrace {
 				for (int x = 0; x < CHUNK_SIZE; x++) {
 
 					for (int z = 0; z < CHUNK_SIZE; z++) {
-						HeightMap[x*CHUNK_SIZE+z] = (fractalnoise(x / 4096., z / 4096., -1238, 3) * 0.5 + 0.5) * 80 + 40;
+						HeightMap[x*CHUNK_SIZE+z] = (fractalnoise((x + X * CHUNK_SIZE) / 512., (z + Y * CHUNK_SIZE) / 512., -1238, 3) * 0.5 + 0.5) * 20 + 30;
 					}
 
 				}
@@ -1059,12 +1062,12 @@ namespace iTrace {
 
 									int HeightDiff = y - HeightBaseTree;
 
-									if (RelativeX == 2 && RelativeZ == 2 && HeightDiff <= 3)
-										BlockType = 27; 
+									//if (RelativeX == 2 && RelativeZ == 2 && HeightDiff <= 3)
+									//	BlockType = 27; 
 
 									for (int TreeH = 0; TreeH < 3; TreeH++) {
 										if ((((RelativeX == TreeH || RelativeX == 4-TreeH) && (RelativeZ >= TreeH && RelativeZ <= 4-TreeH)) || ((RelativeZ == TreeH || RelativeZ == 4 - TreeH) && (RelativeX >= TreeH && RelativeX <= 4 - TreeH))) && HeightDiff == 2+TreeH) {
-											BlockType = 42; 
+											//BlockType = 42; 
 										}
 									}
 
@@ -1101,7 +1104,7 @@ namespace iTrace {
 
 				LoadFromFile(); 
 
-				UpdateMeshData(NeighbooringChunks);
+				//UpdateMeshData(NeighbooringChunks);
 
 
 			}
@@ -1348,7 +1351,7 @@ namespace iTrace {
 				//for (auto& El : Mask) El = BlockMask();
 
 				auto VisibleFaces = std::vector<BlockMask>(32 * CHUNK_SIZE * 32, BlockMask());
-				auto VisibleDiscardedFaces = VisibleFaces;
+				auto VisibleDiscardedFaces = std::vector<BlockMask>(32 * CHUNK_SIZE * 32, BlockMask());
 
 
 				int Indicie = 0;
@@ -1370,6 +1373,12 @@ namespace iTrace {
 				};
 
 				auto GetIndex = [](Vector3i Position) {
+
+					if (Position.x >= 32 || Position.z >= 32) {
+						std::cout << "Warning!\nAccessing data outside of subchunk\n";
+						std::cout << Position.x << ' ' << Position.z << '\n'; 
+						std::cin.get(); 
+					}
 
 					return Position.x * 32 * CHUNK_SIZE + Position.y * 32 + Position.z;
 
@@ -1438,6 +1447,11 @@ namespace iTrace {
 					}
 				}
 
+				//^ assume this one works 
+
+
+
+
 				for (unsigned short x = StartX; x < StartX+32; x++) {
 					for (unsigned short y = 0; y < CHUNK_SIZE; y++) {
 						for (unsigned short z = StartZ; z < StartZ+32; z++) {
@@ -1478,7 +1492,7 @@ namespace iTrace {
 												int CurrentGridX = NewCoordinate.x / 32; 
 												int CurrentGridY = NewCoordinate.y / 32; 
 
-												if (CurrentGridX != SubX || CurrentGridY != SubY)
+												if (CurrentGridX != SubX || CurrentGridY != SubY || NewCoordinateSub.x >= 32 || NewCoordinateSub.z >= 32)
 													break; 
 
 
@@ -1600,7 +1614,24 @@ namespace iTrace {
 
 			void Chunk::UpdateMeshDataSpecificBlock(std::vector<Chunk*> NeighbooringChunks, Vector3i BlockPos, BLOCK_RENDER_TYPE RenderType)
 			{
-				UpdateMeshData(NeighbooringChunks, BlockPos.x / 32, BlockPos.z / 32, RenderType); 
+				int FractX = BlockPos.x & 31; 
+				int FractZ = BlockPos.z & 31; 
+
+				int SubX = BlockPos.x / 32; 
+				int SubZ = BlockPos.z / 32; 
+
+				UpdateMeshData(NeighbooringChunks, SubX, SubZ, RenderType);
+
+				if(FractX == 0 && SubX != 0)
+					UpdateMeshData(NeighbooringChunks, SubX - 1, SubZ, RenderType);
+				else if(FractX == 31 && SubX != 3)
+					UpdateMeshData(NeighbooringChunks, SubX + 1, SubZ, RenderType);
+				
+				if(FractZ == 0 && SubZ != 0) 
+					UpdateMeshData(NeighbooringChunks, SubX, SubZ - 1, RenderType);
+				else if(FractZ == 31 && SubZ != 3)
+					UpdateMeshData(NeighbooringChunks, SubX, SubZ + 1, RenderType);
+
 				UpdateTextureData(); 
 			}
 
@@ -1667,6 +1698,9 @@ namespace iTrace {
 				MeshDataOpaque.Create(); 
 				MeshDataTransparent.Create(); 
 				MeshDataRefractive.Create(); 
+
+				ModelMatrix = Core::ModelMatrix(Vector3f(-X, 0, -Y) * Vector3f(CHUNK_SIZE), Vector3f(0.0), Vector3f(1.0)); 
+
 
 			}
 

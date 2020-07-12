@@ -1,6 +1,7 @@
 #include "SkyRenderer.h"
 #include "AtmosphereRenderer.h"
 #include <iostream>
+#include "Profiler.h"
 
 namespace iTrace {
 
@@ -14,8 +15,8 @@ namespace iTrace {
 
 		void SkyRendering::PrepareSkyRenderer(Window& Window)
 		{
-			SkyIncident = MultiPassFrameBufferObject(Window.GetResolution() / 4, 2, { GL_RGB16F, GL_RGB16F }, false, false);
-			SkyCube = CubeMultiPassFrameBufferObject(Vector2i(32), 2, { GL_RGB16F, GL_RGB16F }, false, { false, true });
+			SkyIncident = MultiPassFrameBufferObject(Window.GetResolution() / 16, 2, { GL_RGB16F, GL_RGB16F }, false, false);
+			SkyCube = CubeMultiPassFrameBufferObject(Vector2i(16), 2, { GL_RGB16F, GL_RGB16F }, false, { false, true });
 
 
 
@@ -103,12 +104,19 @@ namespace iTrace {
 		void SkyRendering::RenderSky(Window& Window, Camera& Camera, WorldManager& World)
 		{
 
+		
+
 			glEnable(GL_DEPTH_TEST); 
 
-			UpdateHemisphericalShadowMap(Window, Camera, World); 
-			UpdateShadowMap(Window, Camera, World);
+			if(Window.GetFrameCount()%2)
+				UpdateHemisphericalShadowMap(Window, Camera, World); 
+			else 
+				UpdateShadowMap(Window, Camera, World);
 
 			glDisable(GL_DEPTH_TEST); 
+
+			Profiler::SetPerformance("Shadow map updates"); 
+
 
 			SkyCube.Bind();
 
@@ -116,7 +124,7 @@ namespace iTrace {
 
 			SkyCubeShader.SetUniform("SunDirection", Orientation);
 
-			for (int i = 0; i < 6; i++) {
+			for (int i = Window.GetFrameCount()%6; i < (Window.GetFrameCount() % 6)+1; i++) {
 
 
 				SkyCubeShader.SetUniform("ViewMatrix", CubeProjection * CubeViews[i]);
@@ -149,6 +157,7 @@ namespace iTrace {
 
 			SkyIncidentShader.UnBind();
 
+			Profiler::SetPerformance("Sky updates");
 
 
 		}
@@ -212,7 +221,7 @@ namespace iTrace {
 
 			iTrace::Camera ShadowCamera; 
 
-			int ToUpdate = UpdateQueue[Window.GetFrameCount() % 13];
+			int ToUpdate = UpdateQueue[(Window.GetFrameCount()/2) % 13];
 			
 			if (ToUpdate != 4)
 				ViewMatrices[ToUpdate] = Core::ViewMatrix(Camera.Position + Orientation * 500.0f, Vector3f(Direction.x, Direction.y, 0.));
@@ -268,7 +277,7 @@ namespace iTrace {
 		}
 		void SkyRendering::UpdateHemisphericalShadowMap(Window& Window, Camera& Camera, WorldManager& World)
 		{
-			int ToUpdate = Window.GetFrameCount() % TotalSplits;
+			int ToUpdate = (Window.GetFrameCount()/2) % TotalSplits;
 
 			glEnable(GL_DEPTH_TEST);
 

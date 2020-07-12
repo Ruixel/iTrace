@@ -313,9 +313,9 @@ bool RawTraceOld(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face
 
 		//	std::cout << CoordInt.x << ' ' << CoordInt.y << ' ' << CoordInt.z << '\n'; 
 
-		if (CoordInt.x > -1 && CoordInt.x < 128 &&
+		if (CoordInt.x > -1 && CoordInt.x < 384 &&
 			CoordInt.y > -1 && CoordInt.y < 128 &&
-			CoordInt.z > -1 && CoordInt.z < 128) {
+			CoordInt.z > -1 && CoordInt.z < 384) {
 
 			vec3 UVWP = Position - floor(Position);
 
@@ -345,7 +345,7 @@ bool RawTraceOld(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face
 
 			Normal = BlockNormals[Side];
 
-			Block = int(floor(textureLod(Voxels, TexelCoord.zyx / vec3(128.0),0.0) * 255.0 + .9));
+			Block = int(floor(texelFetch(Voxels, ivec3(TexelCoord.zyx),0) * 255.0 + .9));
 			Face = Side;
 
 
@@ -519,9 +519,9 @@ bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, i
 
 		
 
-		if (CoordInt.x > -1 && CoordInt.x < 64 &&
+		if (CoordInt.x > -1 && CoordInt.x < 64*3 &&
 			CoordInt.y > -1 && CoordInt.y < 64 &&
-			CoordInt.z > -1 && CoordInt.z < 64) {
+			CoordInt.z > -1 && CoordInt.z < 64*3) {
 
 			Block = int(floor(texelFetch(Voxels, CoordInt.zyx,1) * 255.0 + .9));
 			//Face = Side;
@@ -546,7 +546,7 @@ bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, i
 
 					Normal = BlockNormals[Side]; 
 
-					Block = int(floor(textureLod(Voxels, (Position.zyx-Normal.zyx*.5) / vec3(128.0),0.0) * 255.0 + .9));;
+					Block = int(floor(texelFetch(Voxels, ivec3(Position.zyx-Normal.zyx*.5),0) * 255.0 + .9));;
 					
 					Face = Side; 
 
@@ -808,6 +808,7 @@ vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4 ParallaxData, vec3 TC, vec3 LowFrequencyNormal) {
 
 
+
 	if(!DoRayTracing) {
 		
 		vec3 Diffuse = GetHemisphericalShadowMaphit(Origin, Normal, 0, 1); 
@@ -835,7 +836,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 	vec3 DirectionProjected; 
 
-
+	
 	float TraversalDirection = GetTraversal((TC.xy), Direction, uint(ParallaxData.x+.1), uint(ParallaxData.y+.1)-1u,DirectionProjected,ParallaxData.z); 
 
 
@@ -875,10 +876,10 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 	bool ParallaxHit = Hit; 
 
 	if(!Hit)
-		Hit = RawTraceOld(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 4);
+		Hit = RawTraceOld(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, Specular ? 128 : 64);
 
 	if(!Hit) {
-		Hit = RawTrace(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 256);
+		//Hit = RawTrace(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 256);
 	}
 
 

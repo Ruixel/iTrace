@@ -44,6 +44,10 @@ void ComputeDofKernels(float RAD_SCALE, float MAX_BLUR_SIZE) {
 
 
 int main(int *argc, char*argv[]) {
+
+	ComputeDofKernels(0.125, 4.0); 
+
+
 	alutInit(argc, argv); 
 
 	Window Screen = Window(Vector2i(1920, 1080), true); 

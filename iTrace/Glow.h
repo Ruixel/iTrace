@@ -18,7 +18,7 @@ so it is very very cheap.
 
 namespace iTrace {
 
-	const int Divisors[3] = { 8,4,2 }; 
+	const int Divisors[3] = { 16,8,4 }; 
 
 	namespace Rendering {
 

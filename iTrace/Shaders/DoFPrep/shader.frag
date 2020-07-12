@@ -51,7 +51,7 @@ float GetDofRadius(float CurrentDepth, float FocusDepth) {
 
 void main() {
 
-	ivec2 HighResPixel = ivec2(gl_FragCoord * 2); 
+	ivec2 HighResPixel = ivec2(gl_FragCoord * 4); 
 
 
 	LightingDoF.w = LinearDepth(texelFetch(Depth, HighResPixel,0).x); 

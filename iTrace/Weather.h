@@ -48,7 +48,7 @@ namespace iTrace {
 
 		std::array<WeatherData, static_cast<int>(Weather::SIZE)> Weathers; 
 
-		float CurrentWeatherFactor = 1.0; //0.0 = clear, 4.0 = Thunderstorm. Controlled based on a noise factor 
+		float CurrentWeatherFactor = 1.75; //0.0 = clear, 4.0 = Thunderstorm. Controlled based on a noise factor 
 
 		void PrepareWeather(); 
 		void PollWeather(float t, float ft); 

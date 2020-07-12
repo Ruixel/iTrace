@@ -13,6 +13,10 @@ namespace iTrace {
 		
 			Chunk::Chunk * Chunk = nullptr; //will be replaced with some kind of container when more chunks are allowed 
 
+			Chunk::Chunk* Chunks[3][3]; 
+
+			uint64_t CenterX, CenterY; 
+
 			unsigned int ChunkContainer; 
 
 			void PrepareWorldManger(); 
@@ -29,6 +33,11 @@ namespace iTrace {
 
 
 			bool CastBlock(Camera Camera, Chunk::BLOCK_ACTION Action, unsigned short Distance, unsigned char Block);
+
+
+			//probably one of the hardest functions I'm every going to write
+			void UpdateChunkTexture(Vector3i Min, Vector3i Max); 
+
 
 
 		};

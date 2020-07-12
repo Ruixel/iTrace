@@ -11,8 +11,8 @@ namespace iTrace {
 		void PostProcess::PreparePostProcess(Window& Window, Camera& Camera)
 		{
 
-			PrepBuffer = MultiPassFrameBufferObject(Window.GetResolution() / 2, 1, { GL_RGB16F }, false, true); 
-			DoFPrepBuffer = MultiPassFrameBufferObject(Window.GetResolution() / 2, 1, { GL_RGBA16F }, false, true);
+			PrepBuffer = MultiPassFrameBufferObject(Window.GetResolution() / 4, 1, { GL_RGB16F }, false, true); 
+			DoFPrepBuffer = MultiPassFrameBufferObject(Window.GetResolution() / 4, 1, { GL_RGBA16F }, false, true);
 
 			for (int i = 0; i < 2; i++) {
 				for(int j = 0; j < 3; j++)
@@ -119,7 +119,9 @@ namespace iTrace {
 
 			}
 
-			
+			Profiler::SetPerformance("Glow"); 
+
+
 			DoFPrepBuffer.Bind(); 
 
 			DoFPrepShader.Bind(); 
@@ -156,7 +158,8 @@ namespace iTrace {
 
 			DoFBuffer.UnBind();
 
-			
+			Profiler::SetPerformance("DoF");
+
 			
 
 		}

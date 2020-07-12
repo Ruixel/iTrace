@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <array>
 #include "SoundReflectivity.h"
-
+#include <iostream>
 /*
 
 */
@@ -22,7 +22,7 @@ namespace iTrace {
 #define CHUNK_SIZE 128
 #define TEXTURE_RES 512
 #define LONGESTLIGHT 10
-#define MAX_GREEDY 32
+#define MAX_GREEDY 16
 
 			const Vector3f BlockNormals[6] = {
 				Vector3f(1.0, 0.0, 0.0),
@@ -179,6 +179,8 @@ namespace iTrace {
 
 			struct Chunk {
 
+				Matrix4f ModelMatrix; 
+
 				std::vector<unsigned char> Blocks; //size is CHUNK_SIZE^3
 				std::vector<Vector4f> BlockLighting; 
 				
@@ -193,8 +195,8 @@ namespace iTrace {
 				unsigned int Vertices = 0; 
 				
 				std::vector<unsigned char> ConstructMip(std::vector<unsigned char> Data, unsigned char Res); 
-				void Draw(Camera& Camera); //draws chunk data to  
-				void DrawTransparent(Camera& Camera); 
+				void Draw(Shader & RenderToShader, Camera& Camera); //draws chunk data to  
+				void DrawTransparent(Shader& RenderToShader, Camera& Camera);
 				void Generate(std::vector<Chunk*> NeighbooringChunks);
 				void UpdateMeshData(std::vector<Chunk*> NeighbooringChunks); 
 				void UpdateMeshData(std::vector<Chunk*> NeighbooringChunks,int SubX, int SubY, BLOCK_RENDER_TYPE RenderType);
@@ -205,8 +207,15 @@ namespace iTrace {
 				void SetBlock(unsigned char x, unsigned char y, unsigned char z, unsigned char type); 
 				unsigned char GetBlock(unsigned char x, unsigned char y, unsigned char z) {
 
-					if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE || z >= CHUNK_SIZE)
-						return 0; 
+					if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE || z >= CHUNK_SIZE) {
+
+						std::cout << "Warning!\nAccessing block outside of chunk!\n"; 
+						std::cin.get(); 
+
+
+						return 0;
+
+					}
 
 
 					return Blocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z]; 

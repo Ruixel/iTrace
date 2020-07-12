@@ -24,7 +24,7 @@ namespace iTrace {
 
 			Noise = LoadTextureGL("Textures/Noise.png",GL_RED); 
 
-			RequestBoolean("parallax", true); 
+			RequestBoolean("parallax", false); 
 
 			SetUniforms(Window); 
 
@@ -107,7 +107,7 @@ namespace iTrace {
 			glBindTexture(GL_TEXTURE_1D, Chunk::GetTextureExtensionData());
 
 			glActiveTexture(GL_TEXTURE4);
-			glBindTexture(GL_TEXTURE_3D, World.Chunk->ChunkLightTexID);
+			glBindTexture(GL_TEXTURE_3D, World.Chunks[0][0]->ChunkLightTexID);
 
 			glActiveTexture(GL_TEXTURE7);
 			glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockExtraDataTexture());
