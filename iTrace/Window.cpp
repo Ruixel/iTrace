@@ -180,15 +180,15 @@ Window::Window(Vector2i Resolution, bool Fullscreen)
 	settings.majorVersion = 3;
 	settings.minorVersion = 3;
 
-	RawWindow = new sf::RenderWindow(sf::VideoMode(Resolution.x, Resolution.y), "iTrace - internal development build", Fullscreen ? sf::Style::Fullscreen : sf::Style::Titlebar, settings);
+	RawWindow = new sf::RenderWindow(sf::VideoMode(Resolution.x, Resolution.y), "iTrace - internal development build", Fullscreen ? sf::Style::Fullscreen : sf::Style::None, settings);
 
 	gladLoadGL(); //prepare glad (needs to be AFTER window creation) 
-	
+	/*
 #ifndef NDEBUG
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 #endif//NDEBUG
-	glDebugMessageCallback(MessageCallback, NULL);
+	glDebugMessageCallback(MessageCallback, NULL);*/
 }
 
 Window::~Window()

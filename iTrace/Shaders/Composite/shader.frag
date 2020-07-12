@@ -107,7 +107,6 @@ void main() {
 	Lighting.xyz = mix(Lighting.xyz,DofFetch.xyz,min(DofFetch.w/2.0,1.0)); 
 
 
-
     Lighting.xyz = ACESFitted(Lighting.xyz, 1.0); 
 
     int DitherAddon = (int(gl_FragCoord.x)%2) * 2 + (int(gl_FragCoord.y)%2); 

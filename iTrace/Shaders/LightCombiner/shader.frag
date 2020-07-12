@@ -34,6 +34,8 @@ uniform vec3 LightDirection;
 uniform vec3 SunColor; 
 uniform vec3 CameraPosition; 
 
+uniform samplerCube SkyCube; 
+
 int FetchFromTexture(sampler2D Texture, int Index) {
 	
 	int Width = 256; 
@@ -216,12 +218,16 @@ void main() {
 	}
 	else {
 		vec4 CloudSample = texture(Clouds, TexCoord); 
-		Lighting = mix(CloudSample,texture(Sky, TexCoord),pow(CloudSample.w,1.0)); 
+		Lighting = mix(CloudSample,texture(Sky, TexCoord),CloudSample.w); 
 	}
 	vec4 Volumetrics = texture(Volumetrics, TexCoord); 
 
-	Lighting.xyz =   mix(Lighting.xyz, Volumetrics.xyz,1.0-Volumetrics.w);
+	Lighting.xyz = mix(Lighting.xyz, Volumetrics.xyz,1.0-Volumetrics.w);
 
 	Lighting.xyz *= Multiplier; 
+
+
+
+
 
 }

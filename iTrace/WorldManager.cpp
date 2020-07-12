@@ -78,7 +78,7 @@ namespace iTrace {
 
 			Chunk::AddTexture("stone",0.75); 
 			Chunk::AddTexture("Dirt", 0.4);
-			Chunk::AddTexture("Grass",0.4f);
+			Chunk::AddTexture("Grass",0.1f);
 			Chunk::AddTexture("Grass_Side",0.4);
 			Chunk::AddTexture("glowstone", 0.4f);
 			Chunk::AddTexture("Tiles", 0.2f);

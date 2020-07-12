@@ -1,8 +1,6 @@
 #include "Profiler.h"
 #include <map>
 
-#undef DISABLE_PROFILING
-
 struct PerformanceData {
 	float Time; 
 	bool Exclusive; 

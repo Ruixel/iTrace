@@ -1022,7 +1022,7 @@ namespace iTrace {
 				for (int x = 0; x < CHUNK_SIZE; x++) {
 
 					for (int z = 0; z < CHUNK_SIZE; z++) {
-						HeightMap[x*CHUNK_SIZE+z] = (fractalnoise(x / 1024., z / 1024., -1238, 3) * 0.5 + 0.5) * 80 + 40;
+						HeightMap[x*CHUNK_SIZE+z] = (fractalnoise(x / 4096., z / 4096., -1238, 3) * 0.5 + 0.5) * 80 + 40;
 					}
 
 				}

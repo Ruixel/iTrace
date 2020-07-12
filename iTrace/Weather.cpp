@@ -22,8 +22,6 @@ namespace iTrace {
 			0.333, 0.333 //<- in order to not overpower, the volumetrics intensity is reduced 
 			//... everything else stays the same ... 
 
-
-
 		);
 
 		//Weather::CLOUDY is skipped because it uses the default params ... 
@@ -77,10 +75,10 @@ namespace iTrace {
 
 		float Scale = 0.005; 
 
-		float Derivative = (glm::simplex(Vector2f(t * 0.02 + Scale * 0.5, 1238)) - glm::simplex(Vector2f(t * 0.02 - Scale * 0.5, 1238))) / Scale; 
+		float Derivative = (glm::simplex(Vector2f(t * 0.005 + Scale * 0.5, 1238)) - glm::simplex(Vector2f(t * 0.005 - Scale * 0.5, 1238))) / Scale; 
 		Derivative *= 0.01;
 		Derivative = glm::sign(Derivative) * glm::clamp(glm::abs(Derivative) - 0.00625f, 0.0f, 1.0f); 
-		Derivative *= 3.0;
+		Derivative *= 1.5;
 
 		CurrentWeatherFactor += Derivative * ft;
 		CurrentWeatherFactor = glm::clamp(CurrentWeatherFactor, 0.0f, 4.0f); 

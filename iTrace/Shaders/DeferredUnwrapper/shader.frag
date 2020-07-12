@@ -301,6 +301,7 @@ void main() {
 	HighFreqNormal.xyz = normalize(TBN * (normalize(texture(NormalTextures, vec3(TC.xy, TextureIdx)).xyz * 2.0 - 1.0)));
 	HighFreqNormal.w = texture(RoughnessTextures, vec3(TC, TextureIdx)).x;	
 	//HighFreqNormal.w = 0.0; 
+
 	//HighFreqNormal.xyz = normalize(mix(HighFreqNormal.xyz,Normal.xyz,0.9)); 
 
 	SimpleLighting = texture(LightData,(WorldPos.xyz + Normal.xyz * .5).zyx/128.0).xyz; 
@@ -309,9 +310,6 @@ void main() {
 	_TC.xy = fract(TC);
 	_TC.z = TextureIdx; 
 
-
 	HandleWeather(TBN, Normal.xyz, BetterWorldPos.xyz, WorldPos.xyz, HighFreqNormal.xyz, HighFreqNormal.w, Albedo.w, Albedo.xyz); 
-
-	//Albedo.w = pow(texelFetch(ShadowMap, ivec2(gl_FragCoord),0).x,1024); 
 
 }

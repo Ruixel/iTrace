@@ -354,52 +354,12 @@ namespace iTrace {
 
 			PrimarySoundTracingBuffer.UnBind(Window);
 
-			while(glGetError()) {}
-
-
 
 			auto ReflectivityRatios = ReflectivityRatiosBuffer.GetData(); 
 			auto GainsShared = SharedGainsBuffer.GetData(); 
 			auto TotalOcclusion = TotalOcclusionBuffer.GetData(); 
 
-			/*
-			glFinish();
-
-
-
-			glBindTexture(GL_TEXTURE_2D, SecondarySoundTracingBuffer.ColorBuffers[0]);
-
-			glGetTextureSubImage(SecondarySoundTracingBuffer.ColorBuffers[0], 0, 0, 0, 0, MAX_OBJECTS + 1, NUM_RAYS, 1, GL_RGB, GL_FLOAT, 3 * NUM_RAYS * (MAX_OBJECTS + 1) * sizeof(float), GainsShared);
-
-		//	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, GainsShared);
-
-			glBindTexture(GL_TEXTURE_2D, 0);
-			glFinish();
-
-			std::cout << "first: " << glGetError() << ' ' << SecondarySoundTracingBuffer.ColorBuffers[0] << '\n'; 
-
-			glBindTexture(GL_TEXTURE_2D, SecondarySoundTracingBuffer.ColorBuffers[1]);
-			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, ReflectivityRatios);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			glFinish();
-
-			std::cout << "second: " << glGetError() << ' ' << SecondarySoundTracingBuffer.ColorBuffers[1] << '\n';
-
-
-			glBindTexture(GL_TEXTURE_2D, PrimarySoundTracingBuffer.ColorBuffer);
-			glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, TotalOcclusion);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			glFinish();
-
-			std::cout << "third: " << glGetError() << ' ' << PrimarySoundTracingBuffer.ColorBuffer << '\n';
-			*/
-
-
-			//TODO: Push to secondary sound thread! 
-
-
-
-
+			
 			int x = 0;
 
 			float PrecomputedHemisphericalGain = -1.0f, PrecomputedHemisphericalCutoff = -1.0f;
@@ -420,7 +380,6 @@ namespace iTrace {
 						int BasePixel = (x * NUM_RAYS + y);
 
 						Vector3f VGainsShared = GainsShared[BasePixel].ToVector4f();
-
 
 						Vector3f VReflectivityRatios = ReflectivityRatios[BasePixel].ToVector4f();
 
@@ -472,8 +431,6 @@ namespace iTrace {
 
 
 					SendGain1 *= (float)pow(BounceReflectivityRatios[1], 1.0);
-					//sendGain1 += sendGain2 * (1.0f - (float)Math.pow(bounceReflectivityRatio[2], 3.0)) * 0.5f; 
-					//sendGain1 += sendGain3 * (1.0f - (float)Math.pow(bounceReflectivityRatio[3], 4.0)) * 0.5f;
 					SendGain2 *= (float)pow(BounceReflectivityRatios[2], 3.0);
 					SendGain3 *= (float)pow(BounceReflectivityRatios[3], 4.0);
 
@@ -486,8 +443,6 @@ namespace iTrace {
 					SendGain1 *= (float)pow(sendCutoff1, 0.1);
 					SendGain2 *= (float)pow(sendCutoff2, 0.1);
 					SendGain3 *= (float)pow(sendCutoff3, 0.1);
-
-					//std::cout << SharedAirSpace << '\n';
 
 					SetEnvironment(Instance.second.SourceID, SendGain0, SendGain1, SendGain2, SendGain3, sendCutoff0, sendCutoff1, sendCutoff2, sendCutoff3, directCutoff, directGain);
 					x++;
@@ -508,10 +463,7 @@ namespace iTrace {
 
 							OcclusionAccumulation += VGainsShared.z;
 
-
 						}
-
-
 
 						PrecomputedHemisphericalCutoff = (float)exp(-OcclusionAccumulation * absorptionCoeff * rcpTotalRays * 0.25f);
 						PrecomputedHemisphericalGain = (float)pow(PrecomputedHemisphericalCutoff, 0.1);
@@ -529,11 +481,6 @@ namespace iTrace {
 			SharedGainsBuffer.UnMap(); 
 			ReflectivityRatiosBuffer.UnMap(); 
 			TotalOcclusionBuffer.UnMap(); 
-
-		/*	delete[] GainsShared;
-			delete[] ReflectivityRatios;
-			delete[] TotalOcclusion;
-			*/
 
 		}
 		void SoundHandler::PrepareSoundBlockData()

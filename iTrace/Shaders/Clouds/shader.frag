@@ -243,8 +243,6 @@ void main() {
 
 	}
 
-	//Clouds = SampleCloud(Origin, Direction); 
-
 	Depth = mix(Depth / max(DepthWeight,1e-4),End,pow(Clouds.a,12.0)); 
 
 	Depth = mix(Depth, 300.0, pow(1.0-Direction.y, 16.0)); 

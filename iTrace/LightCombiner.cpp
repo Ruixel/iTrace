@@ -59,7 +59,9 @@ namespace iTrace {
 			Particles.ParticleSystemFBO.BindDepthImage(17); 
 			Deferred.RawDeferred.BindDepthImage(18); 
 
-
+			glActiveTexture(GL_TEXTURE19); 
+			glBindTexture(GL_TEXTURE_CUBE_MAP, Sky.SkyCube.Texture[0]); 
+			
 
 			LightCombinerShader.SetUniform("LightDirection", Sky.Orientation);
 			LightCombinerShader.SetUniform("SunColor", Sky.SunColor);
@@ -101,6 +103,8 @@ namespace iTrace {
 			LightCombinerShader.SetUniform("Particles", 16);
 			LightCombinerShader.SetUniform("ParticleDepth", 17);
 			LightCombinerShader.SetUniform("Depth", 18);
+
+			LightCombinerShader.SetUniform("SkyCube", 19);
 
 			LightCombinerShader.UnBind();
 		}
