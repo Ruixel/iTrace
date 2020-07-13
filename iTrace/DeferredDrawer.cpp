@@ -4,6 +4,7 @@
 #include "BooleanCommands.h"
 #include "RainDropBaker.h"
 #include "Weather.h"
+#include "Profiler.h"
 
 namespace iTrace {
 
@@ -89,6 +90,9 @@ namespace iTrace {
 
 			Deferred.Bind(); 
 
+			Profiler::SetPerformance("Deferred polling");
+
+
 			DeferredUnwrapper.Bind();
 
 			glActiveTexture(GL_TEXTURE0); 
@@ -151,7 +155,7 @@ namespace iTrace {
 
 			Deferred.UnBind(); 
 
-			Profiler::SetPerformance("Deferred drawing"); 
+			Profiler::SetPerformance("Deferred unwrapping"); 
 			
 		}
 

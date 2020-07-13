@@ -702,7 +702,7 @@ namespace iTrace {
 
 
 			if (!Commands.Active)
-				Camera.HandleInput(Window, sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) ? 100.f : 20.0f, 0.15f, Active, Active);
+				Camera.HandleInput(Window, sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift) ? 100.f : sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) ? 1.0 : 15.0, 0.15f, Active, Active);
 
 			GetGlobalCommandPusher().GivenConstantData["camera_pos"] = Camera.Position;
 			GetGlobalCommandPusher().GivenConstantData["camera_rot"] = Camera.Rotation;

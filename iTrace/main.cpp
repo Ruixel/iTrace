@@ -50,7 +50,7 @@ int main(int *argc, char*argv[]) {
 
 	alutInit(argc, argv); 
 
-	Window Screen = Window(Vector2i(1920, 1080), true); 
+	Window Screen = Window(Vector2i(1920, 1080), false); 
 	Camera Camera = iTrace::Camera(90.0, 0.01, 250., Vector3f(64.,128.0,64.0), Vector3f(0.), Screen); 
 
 	iTrace::Pipeline Pipeline; 

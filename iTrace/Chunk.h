@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <array>
 #include "SoundReflectivity.h"
+#include "Frustum.h"
 #include <iostream>
 /*
 
@@ -193,6 +194,9 @@ namespace iTrace {
 				unsigned int ChunkVAOID, ChunkVBOID[3]; //VBO IDs -> Triangles, Normals, Texture Coordinates (z component stores material), Tangents, Indicies 
 				long long X, Y; 
 				unsigned int Vertices = 0; 
+
+				FrustumAABB MainChunkFrustum; 
+				FrustumAABB SecondaryFrustums[4][4];
 				
 				std::vector<unsigned char> ConstructMip(std::vector<unsigned char> Data, unsigned char Res); 
 				void Draw(Shader & RenderToShader, Camera& Camera); //draws chunk data to  

@@ -215,7 +215,6 @@ void main() {
 		//Lighting.xyz = DirectSpecular; 
 
 		//Lighting.xyz = AlbedoFetch.www; 
-		//Lighting.xyz = IndirectSpecular.xyz; 
 	}
 	else {
 		vec4 CloudSample = texture(Clouds, TexCoord); 

@@ -76,7 +76,7 @@ namespace iTrace {
 				Chunk::AddBlock(Chunk::BlockType("Diamond block", { 57 }, true, false, false, SoundType::STONE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Metal test", { 58 }, true, false, false, SoundType::METAL)); //CC0, good 
 
-				Chunk::AddTexture("stone", 0.75);
+				Chunk::AddTexture("stonelowres", 0.75);
 				Chunk::AddTexture("Dirt", 0.4);
 				Chunk::AddTexture("Grass", 0.1f);
 				Chunk::AddTexture("Grass_Side", 0.4);
@@ -152,46 +152,113 @@ namespace iTrace {
 
 		}
 		bool Update = true;
-
+		bool FirstGen = true; 
 		void WorldManager::GenerateWorld(Camera& Camera)
 		{
-			/*if (Chunk == nullptr) {
-				Chunk = new Chunk::Chunk(0, 0); 
-				Chunk->Generate({ nullptr,nullptr,nullptr,nullptr }); 
-
-				for (int x = 0; x < CHUNK_SIZE; x++) {
-
-					for (int y = 0; y < CHUNK_SIZE; y++) {
-
-						for (int z = 0; z < CHUNK_SIZE; z++) {
-
-							auto BlockIndex = Chunk->GetBlock(x, y, z); 
-
-							if (Chunk::GetBlock(BlockIndex).IsEmissive) {
-								AddLightSource(Vector3i(x, y, z), GetBlockEmissiveColor(BlockIndex)); 
-							}
-							
-
-						}
-
-					}
-
-
-				}
-
-				
-				Chunk->UpdateAllMeshData({ nullptr,nullptr,nullptr,nullptr }, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
-				Chunk->UpdateAllMeshData({ nullptr,nullptr,nullptr,nullptr }, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
-
-
-
-
-
-			}*/
-
+			
 			sf::Clock GenTime;
 
-			for (int x = 0; x < (CHUNK_RENDER_DISTANCE*2+1); x++) {
+			//figure out where the camera is located in chunk-space 
+			
+			Vector3i CameraChunkSpace = Vector3i(Camera.Position) / CHUNK_SIZE; 
+
+			//figure out if we should gen or not 
+
+			if (FirstGen) {
+			
+
+				long long CenterX = CameraChunkSpace.x; 
+				long long CenterY = CameraChunkSpace.y; 
+
+				//first time? yeah, generate! 
+
+				for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 3; x++) {
+					for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 3; y++) {
+
+						long long ChunkPosX = x - (CHUNK_RENDER_DISTANCE + 1); 
+						long long ChunkPosY = y - (CHUNK_RENDER_DISTANCE + 1); 
+
+						InternalChunks[x][y] = new Chunk::Chunk(ChunkPosX, ChunkPosY);
+						InternalChunks[x][y]->Generate({ nullptr,nullptr,nullptr,nullptr });
+
+					}
+				}
+
+				for (int x = 0; x < (CHUNK_RENDER_DISTANCE * 2 + 3); x++) {
+					for (int y = 0; y < (CHUNK_RENDER_DISTANCE * 2 + 3); y++) {
+						//TODO: add support for multiple chunks (make sure the mutli-meshing works first though!) 
+						std::vector<Chunk::Chunk*> Neighboors = { nullptr, nullptr, nullptr, nullptr };
+						if (x != CHUNK_RENDER_DISTANCE * 2 + 2) {
+							Neighboors[0] = InternalChunks[x + 1][y];
+						}
+						if (x != 0)
+							Neighboors[2] = InternalChunks[x - 1][y]; 
+						if (y != CHUNK_RENDER_DISTANCE * 2 + 2)
+							Neighboors[1] = InternalChunks[x][y + 1];
+						if (y != 0)
+							Neighboors[3] = InternalChunks[x][y - 1];
+						InternalChunks[x][y]->UpdateAllMeshData(Neighboors, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
+						InternalChunks[x][y]->UpdateAllMeshData(Neighboors, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
+
+					}
+				}
+
+				for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+					for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+						Chunks[x][y] = InternalChunks[x + 1][y + 1]; 
+					}
+				}
+				UpdateChunkTexture(Vector3i(0), Vector3i(CHUNK_SIZE) * Vector3i(CHUNK_RENDER_DISTANCE * 2 + 1, 1, CHUNK_RENDER_DISTANCE * 2 + 1) - Vector3i(1));
+				FirstGen = false; 
+			}
+			else {
+
+				//first of all, what section are we in? 
+
+				int WorldCenterX = InternalChunks[CHUNK_RENDER_DISTANCE + 1][CHUNK_RENDER_DISTANCE + 1]->X * CHUNK_SIZE + CHUNK_SIZE / 2;
+				int WorldCenterY = InternalChunks[CHUNK_RENDER_DISTANCE + 1][CHUNK_RENDER_DISTANCE + 1]->Y * CHUNK_SIZE + CHUNK_SIZE / 2;
+
+				int VectorX = int(Camera.Position.x) - WorldCenterX;
+				int VectorY = int(Camera.Position.z) - WorldCenterY;
+
+				//todo: generate 
+
+				int LocalCenterX = Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->X * CHUNK_SIZE + CHUNK_SIZE / 2; 
+				int LocalCenterY = Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->Y * CHUNK_SIZE + CHUNK_SIZE / 2;
+
+				int LocalVectorX = int(Camera.Position.x) - LocalCenterX;
+				int LocalVectorY = int(Camera.Position.z) - LocalCenterY;
+
+				std::cout << LocalVectorX << ' ' << LocalVectorY << '\n'; 
+
+				if (abs(LocalVectorX) > 64 || abs(LocalVectorY) > 64) {
+
+					int ShiftX = abs(LocalVectorX) > 64 ? (LocalVectorX < 0 ? CurrentShiftX -1 : CurrentShiftX+1) : 0;
+					int ShiftY = abs(LocalVectorY) > 64 ? (LocalVectorY < 0 ? CurrentShiftY -1 : CurrentShiftY+1) : 0;
+
+					CurrentShiftX = ShiftX; 
+					CurrentShiftY = ShiftY; 
+
+					for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+						for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+							Chunks[x][y] = InternalChunks[x + 1 + ShiftX][y + 1 + ShiftY];
+						}
+					}
+					UpdateChunkTexture(Vector3i(0), Vector3i(CHUNK_SIZE) * Vector3i(CHUNK_RENDER_DISTANCE * 2 + 1, 1, CHUNK_RENDER_DISTANCE * 2 + 1) - Vector3i(1));
+				}
+
+
+
+			}
+
+
+
+
+
+
+
+
+			/*for (int x = 0; x < (CHUNK_RENDER_DISTANCE*2+1); x++) {
 				for (int y = 0; y < (CHUNK_RENDER_DISTANCE * 2 + 1); y++) {
 					//TODO: add support for multiple chunks (make sure the mutli-meshing works first though!) 
 
@@ -202,17 +269,30 @@ namespace iTrace {
 						Chunks[x][y]->Generate({ nullptr,nullptr ,nullptr ,nullptr });
 					}
 				}
-			}
+			}*/
 
-			sf::Clock MeshDataTime; 
-
+			/*
 			if (Update) {
 				for (int x = 0; x < (CHUNK_RENDER_DISTANCE * 2 + 1); x++) {
 					for (int y = 0; y < (CHUNK_RENDER_DISTANCE * 2 + 1); y++) {
 						//TODO: add support for multiple chunks (make sure the mutli-meshing works first though!) 
 
-						Chunks[x][y]->UpdateAllMeshData({ nullptr,nullptr ,nullptr ,nullptr }, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
-						Chunks[x][y]->UpdateAllMeshData({ nullptr,nullptr ,nullptr ,nullptr }, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
+						std::vector<Chunk::Chunk*> Neighboors = { nullptr, nullptr, nullptr, nullptr }; 
+							
+						if (x != CHUNK_RENDER_DISTANCE*2) {
+							Neighboors[0] = Chunks[x + 1][y];
+						}
+
+						if (x != 0)
+							Neighboors[2] = Chunks[x - 1][y]; 
+
+						if (y != CHUNK_RENDER_DISTANCE*2)
+							Neighboors[1] = Chunks[x][y + 1];
+						if (y != 0)
+							Neighboors[3] = Chunks[x][y - 1];
+						std::cout << x << ' ' << y << '\n'; 
+						Chunks[x][y]->UpdateAllMeshData(Neighboors, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
+						Chunks[x][y]->UpdateAllMeshData(Neighboors, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
 
 					}
 				}
@@ -223,9 +303,13 @@ namespace iTrace {
 			if (Update) {
 				std::cout << "Generation time: " << GenTime.getElapsedTime().asSeconds() << "\nMeshing time: " << MeshDataTime.getElapsedTime().asSeconds() << '\n';
 			}
-			Update = false; 
+			Update = false; */
 
-		
+			CenterX = Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->X; 
+			CenterY = Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->Y;
+
+			BiasX = Chunks[0][0]->X * CHUNK_SIZE; 
+			BiasY = Chunks[0][0]->Y * CHUNK_SIZE;
 
 		}
 
@@ -676,7 +760,7 @@ namespace iTrace {
 
 			glBindTexture(GL_TEXTURE_3D, ChunkContainer);
 
-			glGenerateMipmap(GL_TEXTURE_3D); //<- can we avoid this call? very slow. 
+			//glGenerateMipmap(GL_TEXTURE_3D); //<- can we avoid this call? very slow. 
 
 			glBindTexture(GL_TEXTURE_3D, 0);
 			glFinish();

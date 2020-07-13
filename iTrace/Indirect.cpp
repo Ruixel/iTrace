@@ -239,6 +239,7 @@ namespace iTrace {
 			IndirectLightShader.SetUniform("zfar", Camera.zfar);
 			IndirectLightShader.SetUniform("LightDirection", Sky.Orientation);
 			IndirectLightShader.SetUniform("SunColor", Sky.SunColor);
+			IndirectLightShader.SetUniform("PositionBias", Vector2i(World.BiasX, World.BiasY));
 
 			glActiveTexture(GL_TEXTURE25);
 			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(3));

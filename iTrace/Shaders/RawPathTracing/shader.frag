@@ -60,8 +60,12 @@ uniform int ParallaxDirections;
 uniform float Time; 
 uniform int ParallaxResolution; 
 uniform bool DoParallax; 
+uniform ivec2 PositionBias; 
 
 uniform mat4 CameraMatrix; 
+
+
+
 
 int FetchFromTexture(sampler2D Texture, int Index) {
 
@@ -846,6 +850,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 		vec2 ProjectedTC = TC.xy + DirectionProjected.xy * TraversalDirection;
 		
 		BlockColor = pow(texture(DiffuseTextures, vec3(ProjectedTC, int(TC.z+.2))).xyz, vec3(2.2));  
+
 		Position = Origin; 
 
 		int Side = int(ParallaxData.x+.1); 
@@ -863,8 +868,6 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 		float TraversalSun = GetTraversal(NewTC.xy, LightDirection, uint(ParallaxData.x+.1), uint(ParallaxData.y+.1)-1u, SunProjected, ParallaxData.z); 
 
-
-
 		DirectMultiplier = ((TraversalSun+0.00390625) >= ParallaxData.w * (1.0-pow(abs(SunProjected.z),4.0)) ? 1.0 : 0.0);
 
 
@@ -876,7 +879,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 	bool ParallaxHit = Hit; 
 
 	if(!Hit)
-		Hit = RawTraceOld(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, Specular ? 128 : 64);
+		Hit = RawTraceOld(Direction, Origin - vec3(PositionBias.x, 0, PositionBias.y), Block, Face, OutNormal, TexCoord, Position, Specular ? 128 : 64);
 
 	if(!Hit) {
 		//Hit = RawTrace(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 256);

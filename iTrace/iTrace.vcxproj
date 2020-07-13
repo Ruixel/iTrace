@@ -157,6 +157,7 @@
     <ClInclude Include="DependenciesRendering.h" />
     <ClInclude Include="FootstepManager.h" />
     <ClInclude Include="FrameBuffer.h" />
+    <ClInclude Include="Frustum.h" />
     <ClInclude Include="Glow.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="Indirect.h" />
@@ -192,6 +193,7 @@
     <ClCompile Include="DeferredDrawer.cpp" />
     <ClCompile Include="FootstepManager.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
+    <ClCompile Include="Frustum.cpp" />
     <ClCompile Include="Glow.cpp" />
     <ClCompile Include="include\GL\glad.c" />
     <ClCompile Include="Indirect.cpp" />

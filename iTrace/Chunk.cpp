@@ -884,11 +884,20 @@ namespace iTrace {
 				glBindVertexArray(0);
 				*/
 
+				Matrix4f Project = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, Camera.znear, Camera.zfar); 
+
+				Frustum Frustum; 
+				Frustum.Update(Camera.Project * Camera.View);
+
+				if (!Frustum.InFrustum(MainChunkFrustum))
+					return; 
+
 				RenderToShader.SetUniform("IdentityMatrix", Camera.Project * Camera.View * ModelMatrix);
 
 				for (int x = 0; x < 4; x++) {
 					for (int y = 0; y < 4; y++) {
-						MeshDataOpaque.Draw(x, y); 
+						if(Frustum.InFrustum(SecondaryFrustums[x][y]))
+							MeshDataOpaque.Draw(x, y); 
 					}
 				}
 
@@ -953,7 +962,7 @@ namespace iTrace {
 					int Dist = Height - MyY;
 
 					if (Dist == 1)
-						return (Height > 100 ? 3 : Height > 60 ? 3 : 3); //snow
+						return (Height > 100 ? 1 : Height > 60 ? 1 : 1); //snow
 					else if (Dist < 4)
 						return 2; //dirt
 					return 1; //stone 
@@ -1033,8 +1042,6 @@ namespace iTrace {
 				for (int x = 0; x < CHUNK_SIZE; x++) {
 
 					for (int z = 0; z < CHUNK_SIZE; z++) {
-
-						
 
 						auto Height = HeightMap[x * CHUNK_SIZE + z]; 
 
@@ -1362,9 +1369,31 @@ namespace iTrace {
 						BlockPosition.y >= 0 && BlockPosition.y < CHUNK_SIZE &&
 						BlockPosition.z >= 0 && BlockPosition.z < CHUNK_SIZE) {
 
-
 						return Types[Blocks[BlockPosition.x * CHUNK_SIZE * CHUNK_SIZE + BlockPosition.y * CHUNK_SIZE + BlockPosition.z]];
 
+					}
+					else if (BlockPosition.x >= CHUNK_SIZE && NeighbooringChunks[0] != nullptr) {
+
+						Vector3i BlockPos = BlockPosition - Vector3i(CHUNK_SIZE, 0, 0); 
+						return Types[NeighbooringChunks[0]->Blocks[BlockPos.x * CHUNK_SIZE * CHUNK_SIZE + BlockPos.y * CHUNK_SIZE + BlockPos.z]];
+
+					}
+					else if (BlockPosition.z >= CHUNK_SIZE && NeighbooringChunks[1] != nullptr) {
+
+						Vector3i BlockPos = BlockPosition - Vector3i(0, 0, CHUNK_SIZE);
+						return Types[NeighbooringChunks[1]->Blocks[BlockPos.x * CHUNK_SIZE * CHUNK_SIZE + BlockPos.y * CHUNK_SIZE + BlockPos.z]];
+
+					}
+					else if (BlockPosition.x < 0 && NeighbooringChunks[2] != nullptr) {
+
+						Vector3i BlockPos = BlockPosition + Vector3i(CHUNK_SIZE, 0, 0);
+						return Types[NeighbooringChunks[2]->Blocks[BlockPos.x * CHUNK_SIZE * CHUNK_SIZE + BlockPos.y * CHUNK_SIZE + BlockPos.z]];
+
+					}
+					else if (BlockPosition.z < 0 && NeighbooringChunks[3] != nullptr) {
+
+						Vector3i BlockPos = BlockPosition + Vector3i(0, 0, CHUNK_SIZE);
+						return Types[NeighbooringChunks[3]->Blocks[BlockPos.x * CHUNK_SIZE * CHUNK_SIZE + BlockPos.y * CHUNK_SIZE + BlockPos.z]];
 
 					}
 
@@ -1637,7 +1666,7 @@ namespace iTrace {
 
 			void Chunk::UpdateTextureData()
 			{
-				glBindTexture(GL_TEXTURE_3D, ChunkTexID);
+				/*glBindTexture(GL_TEXTURE_3D, ChunkTexID);
 
 				glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, Blocks.data());
 
@@ -1676,7 +1705,7 @@ namespace iTrace {
 				glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA16F, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, 0, GL_RGBA, GL_FLOAT, BlockLighting.data());
 				glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glBindTexture(GL_TEXTURE_3D, 0);
+				glBindTexture(GL_TEXTURE_3D, 0);*/
 			}
 
 			void Chunk::SetBlock(unsigned char x, unsigned char y, unsigned char z, unsigned char type)
@@ -1686,7 +1715,7 @@ namespace iTrace {
 
 			}
 
-			Chunk::Chunk(long long X, long long Y) : X(X), Y(Y)
+			Chunk::Chunk(long long X, long long Y) : X(X), Y(Y), MainChunkFrustum(Vector3f(X*CHUNK_SIZE, 0.0, Y*CHUNK_SIZE), Vector3f(X*CHUNK_SIZE+CHUNK_SIZE, CHUNK_SIZE, Y*CHUNK_SIZE+CHUNK_SIZE))
 			{
 				glGenVertexArrays(1, &ChunkVAOID);
 				glBindVertexArray(ChunkVAOID);
@@ -1701,14 +1730,28 @@ namespace iTrace {
 
 				ModelMatrix = Core::ModelMatrix(Vector3f(-X, 0, -Y) * Vector3f(CHUNK_SIZE), Vector3f(0.0), Vector3f(1.0)); 
 
+				for (int x = 0; x < 4; x++) {
+					for (int y = 0; y < 4; y++) {
+
+						Vector3f Base = Vector3f(X, 0, Y) * float(CHUNK_SIZE); 
+
+						Vector3f Min = Base + Vector3f(x * (CHUNK_SIZE / 4), 0, y * (CHUNK_SIZE / 4)); 
+						Vector3f Max = Min + Vector3f(CHUNK_SIZE / 4, CHUNK_SIZE, CHUNK_SIZE / 4);
+
+						SecondaryFrustums[x][y] = FrustumAABB(Min, Max); 
+
+					}
+				}
+
+
 
 			}
 
 			Chunk::~Chunk()
 			{
 
-				glDeleteTextures(1, &ChunkTexID); 
-				glDeleteTextures(1, &ChunkLightTexID); 
+				//glDeleteTextures(1, &ChunkTexID); 
+				//glDeleteTextures(1, &ChunkLightTexID); 
 
 				MeshDataOpaque.Delete(); 
 				MeshDataTransparent.Delete(); 

@@ -13,9 +13,12 @@ namespace iTrace {
 		
 			Chunk::Chunk * Chunk = nullptr; //will be replaced with some kind of container when more chunks are allowed 
 
-			Chunk::Chunk* Chunks[3][3]; 
+			Chunk::Chunk* Chunks[3][3]; //<- these are not ownership chunks, they are just handled by the rendering. 
+			Chunk::Chunk* InternalChunks[CHUNK_SIZE * 2 + 3][CHUNK_SIZE * 2 + 3]; //<- these are the ownership chunks 
 
 			uint64_t CenterX, CenterY; 
+			int BiasX, BiasY; 
+			int CurrentShiftX = 0, CurrentShiftY = 0; 
 
 			unsigned int ChunkContainer; 
 
