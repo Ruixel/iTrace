@@ -414,8 +414,6 @@ namespace iTrace {
 		RequestBoolean("spatialupscale", true);
 		RequestBoolean("freezetime", false);
 
-		//GetGlobalCommandPusher().World = &World; 
-
 		GetGlobalCommandPusher().GivenConstantData["camera_pos"] = Camera.Position;
 
 		glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -432,6 +430,7 @@ namespace iTrace {
 		Sky.PrepareSkyRenderer(Window);
 		Combiner.PrepareLightCombiner(Window);
 		Particles.PrepareParticleSystem(Window); 
+		Crosshair.PrepareCrosshairDrawer(Window); 
 
 		Text = TextSystem("Textures/Font.png");
 
@@ -500,6 +499,7 @@ namespace iTrace {
 		int Block = 0;
 
 		int FramesPerSecond = 0;
+		Window.GetRawWindow()->setMouseCursorVisible(false);
 
 		while (Running) {
 
@@ -565,7 +565,7 @@ namespace iTrace {
 							break;
 						case sf::Keyboard::F1:
 							ShowGUI = !ShowGUI;
-							Window.GetRawWindow()->setMouseCursorVisible(ShowGUI);
+							Window.GetRawWindow()->setMouseCursorVisible(false);
 							break;
 
 						case sf::Keyboard::Space:
@@ -693,16 +693,10 @@ namespace iTrace {
 
 				}
 
-
-
 			}
 
-
-
-
-
 			if (!Commands.Active)
-				Camera.HandleInput(Window, sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift) ? 100.f : sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) ? 1.0 : 15.0, 0.15f, Active, Active);
+				Camera.HandleInput(Window, sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift) ? 100.f : sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) ? 1.0 : 4.0, 0.15f, Active, Active);
 
 			GetGlobalCommandPusher().GivenConstantData["camera_pos"] = Camera.Position;
 			GetGlobalCommandPusher().GivenConstantData["camera_rot"] = Camera.Rotation;
@@ -716,22 +710,17 @@ namespace iTrace {
 					Camera.Position += Camera.Velocity * glm::min(Window.GetFrameTime(), 0.1f);
 				}
 				if (!GetBoolean("freefly") || !GetBoolean("noclip"))
-					World.Chunk->ManageCollision(Camera.Position, Camera.Acceleration, Camera.Velocity);
+					World.ManageCollision(Camera.Position, Camera.Acceleration, Camera.Velocity);
 			}
 
 			Camera.PrevView = Camera.View;
 			Camera.View = Core::ViewMatrix(Camera.Position, Camera.Rotation);
-			//Camera.Project = Camera.RawProject;
-
-			//Particles.PollParticles(Window, World); 
-
+			
 			Profiler::SetPerformance("Pre-render step");
-
 
 			Sky.RenderSky(Window, Camera, World);
 
 			Profiler::SetPerformance("Sky render step");
-
 
 			glEnable(GL_DEPTH_TEST);
 
@@ -753,8 +742,6 @@ namespace iTrace {
 			Compositor.DoCompositing(Camera, Deferred, Combiner, Glow);
 			Profiler::SetPerformance("Composite");
 
-			
-
 			if (ShowGUI) {
 
 				Text.PrepareTextDrawing();
@@ -768,6 +755,8 @@ namespace iTrace {
 				Text.EndTextDrawing();
 
 				Inventory.DrawInventory(Window);
+
+				Crosshair.DrawCrosshair();
 
 			}
 
@@ -807,15 +796,8 @@ namespace iTrace {
 				SoundEffects.GetSoundEffect("Thunder").Play(rand() % 6); 
 
 			SoundEffects.PollSoundEffects(Sounds, Window, Camera); 
-			//Sounds.Update(Camera, Window, World);
 			Profiler::SetPerformance("The rest");
 
 		}
-
-
-
-
-
 	}
-
 }

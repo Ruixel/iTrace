@@ -187,6 +187,21 @@
     <Filter Include="Shaders\ParticleShader">
       <UniqueIdentifier>{260db287-e8d8-4fa4-8f0d-81b8d17cae26}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\UIShader">
+      <UniqueIdentifier>{a097a9c1-9987-454a-a633-ec0912dfe3c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Stylizer">
+      <UniqueIdentifier>{176d03d1-7de8-4973-bcb4-adec88407d6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Stylizer\NormalMapBake">
+      <UniqueIdentifier>{1a720ad7-ab77-4ba2-a8ff-1b517d1e8dbd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Stylizer\Stylizer">
+      <UniqueIdentifier>{56c79fd0-4e21-4a18-842a-f5419744e929}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Checkerboarder">
+      <UniqueIdentifier>{2020fd0e-051a-483e-b806-1e17ba1c8dd8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -297,6 +312,12 @@
     <ClInclude Include="Frustum.h">
       <Filter>Header Files\Engine Core</Filter>
     </ClInclude>
+    <ClInclude Include="AtmosphereRenderer.h">
+      <Filter>Header Files\Engine Core</Filter>
+    </ClInclude>
+    <ClInclude Include="CrosshairDrawer.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">
@@ -397,6 +418,12 @@
     </ClCompile>
     <ClCompile Include="Frustum.cpp">
       <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="CrosshairDrawer.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureBaker.cpp">
+      <Filter>Source Files\World</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -639,6 +666,30 @@
     </None>
     <None Include="Shaders\ParticleShader\shader.vert">
       <Filter>Shaders\ParticleShader</Filter>
+    </None>
+    <None Include="Shaders\UIShader\shader.vert">
+      <Filter>Shaders\UIShader</Filter>
+    </None>
+    <None Include="Shaders\UIShader\shader.frag">
+      <Filter>Shaders\UIShader</Filter>
+    </None>
+    <None Include="Stylizer\NormalMapBake\shader.vert">
+      <Filter>Stylizer\NormalMapBake</Filter>
+    </None>
+    <None Include="Stylizer\NormalMapBake\shader.frag">
+      <Filter>Stylizer\NormalMapBake</Filter>
+    </None>
+    <None Include="Stylizer\Stylizer\shader.vert">
+      <Filter>Stylizer\Stylizer</Filter>
+    </None>
+    <None Include="Stylizer\Stylizer\shader.frag">
+      <Filter>Stylizer\Stylizer</Filter>
+    </None>
+    <None Include="Shaders\Checkerboarder\shader.frag">
+      <Filter>Shaders\Checkerboarder</Filter>
+    </None>
+    <None Include="Shaders\Checkerboarder\shader.vert">
+      <Filter>Shaders\Checkerboarder</Filter>
     </None>
   </ItemGroup>
 </Project>

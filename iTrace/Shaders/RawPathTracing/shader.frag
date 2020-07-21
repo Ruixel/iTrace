@@ -143,7 +143,9 @@ float GradientNoise(vec2 ScreenPos) {
 
 }
 
-float DirectHQ(vec3 Position, float Penumbra, vec2 ScreenPos) {
+float PenumShifts[4] = float[4](1.0, 0.25, 0.0833333, 0.025); 
+
+float DirectHQ(vec3 Position, float Penumbra, vec2 ScreenPos, float SmoothNess) {
 		
 	//first, find the correct shadow cascade! 
 
@@ -178,7 +180,7 @@ float DirectHQ(vec3 Position, float Penumbra, vec2 ScreenPos) {
 
 		vec2 VogelFetch = VogelDisk(Sample, 8, 2.82842712475, Noise); 
 
-		vec2 ShadowCoord = (NDC.xy) * 0.5 + 0.5 + VogelFetch * clamp(Penumbra * 0.1,0.0,0.05); 
+		vec2 ShadowCoord = (NDC.xy) * 0.5 + 0.5 + VogelFetch * clamp(Penumbra * 0.1 * SmoothNess * PenumShifts[Cascade] * PenumShifts[Cascade],0.0,0.05); 
 
 		ShadowCoord = clamp(ShadowCoord, vec2(0.0), vec2(1.0)); 
 
@@ -775,7 +777,7 @@ float ScreenSpaceTraceShadows(vec3 Origin, vec3 Direction, float MaxTraversal, i
 		float LinCur = LinearDepth(CurrentClip.z); 
 
 		if(CurrentClip.z > zFetch && abs(LinearDepth(zFetch)-LinCur) < max(10.0 * abs(LinCur-LinPrev),0.1)) {
-			return pow(float(i)/float(Steps),3); 
+			return pow(float(i)/float(Steps),5); 
 		}
 		LinPrev = LinCur;  
 		PreviousClip = CurrentClip; 
@@ -792,9 +794,10 @@ float ScreenSpaceTraceHQ(vec3 Origin, vec3 Direction, float MaxTraversal, int St
 	return 0.0; 
 }
 
+
 vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 	const vec3 PlayerOrigin = vec3(0,6200,0); 
-	const float PlanetRadius = 6373; 
+	const float PlanetRadius = 6473; 
 
 	float Traversal = (PlanetRadius - (PlayerOrigin.y + Origin.y)) / Direction.y; 
 
@@ -802,11 +805,15 @@ vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 
 	//Fetch it! 
 
-	return texture(ProjectedClouds, fract(vec2((NewPoint.x + Time + 500) / 1024, (NewPoint.z + 500) / 1024))); 
+	float fade = exp(-Traversal*1.5e-4); 
+
+	vec4 Sample = texture(ProjectedClouds, fract(vec2((NewPoint.x + 500.0 + Time * 6.0) / 2048, (NewPoint.z + 500.0) / 2048)));  
+
+	//Sample.a = mix(1.0,Sample.a,fade); 
+
+	return Sample;  
 
 }
-
-
 
 
 vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4 ParallaxData, vec3 TC, vec3 LowFrequencyNormal) {
@@ -872,7 +879,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 
 	}
-
+	
 	//return vec4(ParallaxData.www,1.0);
 
 
@@ -884,6 +891,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 	if(!Hit) {
 		//Hit = RawTrace(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 256);
 	}
+	Position += vec3(PositionBias.x, 0, PositionBias.y); 
 
 
 	vec4 Diffuse = vec4(0.0); 
@@ -1110,16 +1118,16 @@ void main() {
 
 	float DirectDensity = SampleCloud(WorldPos.xyz, LightDirection).a; 
 
-	float SmoothNessFactor = clamp((1.0-DirectDensity) * 100.0, 0.0,8.0); 
+	float SmoothNessFactor = clamp((1.0-DirectDensity) * 100.0, 1.0,8.0); 
 
 
 	DirectDensity = pow(DirectDensity, 4.0); 
+	vec3 Incident = (WorldPos - CameraPosition);
+	float IncidentLength = length(Incident); 
+	Incident /= IncidentLength; 
 
-
-	Direct = DirectHQ(WorldPos,max(Penum * SmoothNessFactor,0.007),vec2(Pixel) / 2); 
-	Direct *= ScreenSpaceTraceShadows(WorldPos + Normal.xyz * 0.01, normalize(LightDirection), 0.15,9) * DirectDensity; 
-	//Direct = pow(texelFetch(Depth, Pixel, 0).x,3000.0); 
-	//	Direct = texture(BlockerData, TexCoord).x; 
+	Direct = DirectHQ(WorldPos,max(Penum,0.007),vec2(Pixel) / 2, SmoothNessFactor); 
+	Direct *= ScreenSpaceTraceShadows(WorldPos + Normal.xyz * mix(0.01,0.1,clamp(IncidentLength/30.0,0.0,1.0)), normalize(LightDirection), 0.3,9) * DirectDensity; 
 
 	vec2 hash = hash2();
 
@@ -1131,7 +1139,6 @@ void main() {
 	vec3 TC = texelFetch(TCData, Pixel, 0).xyz; 
 	vec3 LowFrequencyNormal = texelFetch(LowFrequencyNormal, Pixel, 0).xyz; 
 
-	vec3 Incident = normalize(WorldPos - CameraPosition);
 	vec3 Direction = cosWeightedRandomHemisphereDirection(Normal.xyz, hash);
 
 	vec3 SpecularDirection = GetSpecularRayDirection(reflect(Incident, Normal.xyz), Normal.xyz, Incident, RawNormal.w, Pixel);

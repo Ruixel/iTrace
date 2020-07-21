@@ -144,6 +144,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AtmosphereRenderer.h" />
     <ClInclude Include="BooleanCommands.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Chunk.h" />
@@ -152,6 +153,7 @@
     <ClInclude Include="CommandPusher.h" />
     <ClInclude Include="Compositor.h" />
     <ClInclude Include="Core.h" />
+    <ClInclude Include="CrosshairDrawer.h" />
     <ClInclude Include="DeferredDrawer.h" />
     <ClInclude Include="DependenciesMath.h" />
     <ClInclude Include="DependenciesRendering.h" />
@@ -190,6 +192,7 @@
     <ClCompile Include="CommandPusher.cpp" />
     <ClCompile Include="Compositor.cpp" />
     <ClCompile Include="Core.cpp" />
+    <ClCompile Include="CrosshairDrawer.cpp" />
     <ClCompile Include="DeferredDrawer.cpp" />
     <ClCompile Include="FootstepManager.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
@@ -212,6 +215,7 @@
     <ClCompile Include="SoundEffectManager.cpp" />
     <ClCompile Include="text.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TextureBaker.cpp" />
     <ClCompile Include="Weather.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WorldManager.cpp" />
@@ -227,6 +231,8 @@
     <None Include="Shaders\BlurHorizontal\shader.vert" />
     <None Include="Shaders\BlurVertical\shader.frag" />
     <None Include="Shaders\BlurVertical\shader.vert" />
+    <None Include="Shaders\Checkerboarder\shader.frag" />
+    <None Include="Shaders\Checkerboarder\shader.vert" />
     <None Include="Shaders\CloudProjection\shader.frag" />
     <None Include="Shaders\CloudProjection\shader.vert" />
     <None Include="Shaders\Clouds\shader.frag" />
@@ -295,8 +301,14 @@
     <None Include="Shaders\TemporalUpscaler\shader.vert" />
     <None Include="Shaders\TextShader\shader.frag" />
     <None Include="Shaders\TextShader\shader.vert" />
+    <None Include="Shaders\UIShader\shader.frag" />
+    <None Include="Shaders\UIShader\shader.vert" />
     <None Include="Shaders\Volumetrics\shader.frag" />
     <None Include="Shaders\Volumetrics\shader.vert" />
+    <None Include="Stylizer\NormalMapBake\shader.frag" />
+    <None Include="Stylizer\NormalMapBake\shader.vert" />
+    <None Include="Stylizer\Stylizer\shader.frag" />
+    <None Include="Stylizer\Stylizer\shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

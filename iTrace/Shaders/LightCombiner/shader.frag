@@ -158,15 +158,9 @@ void main() {
 	}
 	
 
-
-
-
-
 	vec4 NormalFetch = textureLod(Normal, TexCoord,0.0); 
 
 	float L = length(NormalFetch.xyz); 
-
-
 
 	if(L > 0.3 && L < 1.7) {
 
@@ -183,8 +177,7 @@ void main() {
 
 		float Roughness = HighfreqNormalSample.w; 
 
-
-		vec4 AlbedoFetch =  texture(Albedo, TexCoord); 
+		vec4 AlbedoFetch = texture(Albedo, TexCoord); 
 
 		if(NoAlbedo) {
 			AlbedoFetch.xyz = vec3(1.0); 
@@ -212,24 +205,15 @@ void main() {
 		Lighting.xyz = DiffuseColor * ((IndirectDiffuse.xyz * Kd + Direct) * IndirectDiffuse.www) + SpecularColor * (IndirectSpecular.xyz) + DirectSpecular + AlbedoFetch.xyz * NormalFetch.www;
 		//Lighting.xyz =  DiffuseColor * ((IndirectDiffuse.xyz + Direct) * IndirectDiffuse.www ); 
 		Glow.xyz = DirectSpecular * pow(1.0-Roughness,5.0) + AlbedoFetch.xyz * NormalFetch.www; 
-		//Lighting.xyz = DirectSpecular; 
-
-		//Lighting.xyz = AlbedoFetch.www; 
 	}
 	else {
 		vec4 CloudSample = texture(Clouds, TexCoord); 
-		Lighting = mix(CloudSample,texture(Sky, TexCoord),CloudSample.w); 
+		Lighting = mix(texture(Sky, TexCoord),CloudSample,pow(1-CloudSample.w,2.0)); 
 	}
 	vec4 Volumetrics = texture(Volumetrics, TexCoord); 
 
 	Lighting.xyz = mix(Lighting.xyz, Volumetrics.xyz,1.0-Volumetrics.w);
 
 	Lighting.xyz *= Multiplier; 
-
-//	Lighting.xyz = texture(IndirectSpecular, TexCoord).xyz; 
-
-
-
-
 
 }

@@ -61,7 +61,7 @@ float PhaseFunction() {
 
 float GetDensity(vec3 WorldPosition) {
 	 
-	return .5 * (1.0 - clamp((WorldPosition.y - 70.0) * 0.02, 0.0, 1.0)) * pow(texture(Wind, (WorldPosition.xz *.001 + Time * .001)).x,2.0); 
+	return 10.0 * pow(.5 * (1.0 - clamp((WorldPosition.y - 70.0) * 0.005, 0.0, 1.0)),3.0);// * pow(texture(Wind, (WorldPosition.xz *.001 + Time * .001)).x,2.0); 
 
 	return .3 * pow(texture(Wind, (WorldPosition.xz *.1 + Time * .1) * .05).x,2.0); 
 	return 1.0 * (1.0 - clamp((WorldPosition.y - 60.0) * 0.05, 0.0, 1.0)) * texture(Wind, (WorldPosition.xz *.1 + Time * .1)* .01).x; 
@@ -100,7 +100,7 @@ float DirectBasic(vec3 Position) {
 
 vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 	const vec3 PlayerOrigin = vec3(0,6200,0); 
-	const float PlanetRadius = 6373; 
+	const float PlanetRadius = 6473; 
 
 	float Traversal = (PlanetRadius - (PlayerOrigin.y + Origin.y)) / Direction.y; 
 
@@ -108,7 +108,13 @@ vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 
 	//Fetch it! 
 
-	return texture(ProjectedClouds, fract(vec2((NewPoint.x + Time + 500) / 1024, (NewPoint.z + 500) / 1024))); 
+	float fade = exp(-Traversal*1.5e-4); 
+
+	vec4 Sample = texture(ProjectedClouds, fract(vec2((NewPoint.x + 500.0 + Time * 6.0) / 2048, (NewPoint.z + 500.0) / 2048)));  
+
+	//Sample.a = mix(1.0,Sample.a,fade); 
+
+	return Sample;  
 
 }
 
@@ -121,8 +127,8 @@ void main() {
 		return; 
 	}
 
-	float SigmaS = 0.2 * 0.0625 * ScatteringMultiplier; 
-	float SigmaA = 0.2 * 0.0625 * AbsorptionMultiplier; 
+	float SigmaS = 0.2 * 0.0625 * ScatteringMultiplier * 0.1; 
+	float SigmaA = 0.2 * 0.0625 * AbsorptionMultiplier * 0.1; 
 	float SigmaE = SigmaS + SigmaA; 
 
 	Volumetrics = vec4(0.0,0.0,0.0,1.0); 

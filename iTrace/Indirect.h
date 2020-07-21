@@ -13,16 +13,16 @@ namespace iTrace {
 
 			Shader IndirectLightShader, RTMotionVectorCalculator,
 				TemporalUpscaler,SpatialPacker, SpatialFilter, 
-				SpatialUpscaler, TemporalFilter, FrameCount, Volumetrics, DirectBlocker, CloudRenderer, CloudProjection; 
+				SpatialUpscaler, TemporalFilter, FrameCount, Volumetrics, DirectBlocker, CloudRenderer, CloudProjection, CheckerboardUpscaler; 
 
-			MultiPassFrameBufferObject RawPathTrace[4], TemporalyUpscaled, SpatialyFiltered[8], SpatialyUpscaled, Clouds[4];
+			MultiPassFrameBufferObject RawPathTrace[4], TemporalyUpscaled, SpatialyFiltered[8], SpatialyUpscaled, Clouds[4], Checkerboarder[4];
 			FrameBufferObject MotionVectors[4], PackedData, DirectBlockerBuffer, PackedSpatialData;
 			MultiPassFrameBufferObjectPreviousData TemporallyFiltered; 
 			FrameBufferObjectPreviousData TemporalFrameCount, ProjectedClouds;
 			FrameBufferObject VolumetricFBO[4];
 
-			TextureGL WindNoise, SimplifiedBlueNoise, WeatherMap; 
-			TextureGL3D CloudNoise; 
+			TextureGL WindNoise, SimplifiedBlueNoise, WeatherMap, Turbulence, Cirrus; 
+			TextureGL3D CloudNoise, CloudShape; 
 
 			unsigned int SobolTexture, RankingTexture, ScramblingTexture; 
 
@@ -38,6 +38,7 @@ namespace iTrace {
 			void TemporalyFilter(Window& Window, Camera& Camera, DeferredRenderer& Deferred);
 			void DoVolumetricLighting(Window& Window, Camera& Camera, DeferredRenderer& Deferred, WorldManager& World, SkyRendering& Sky);
 			void GenerateMotionVectors(Window& Window, Camera& Camera, DeferredRenderer& Deferred); 
+			void CheckerboardUpscale(Window& Window); 
 			void RenderClouds(Window & Window,Camera& Camera, DeferredRenderer & Deferred, SkyRendering& Sky);
 
 			void ReloadIndirect(Window& Window); 

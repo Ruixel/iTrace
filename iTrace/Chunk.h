@@ -113,6 +113,7 @@ namespace iTrace {
 			unsigned char GetBlockSize(); 
 			void AddTexture(const std::string& Directory, float ParallaxStrenght = 1.0f); 
 			void GenerateBlockTextureData(); 
+			void CreateStylizedTextures(); 
 			unsigned int GetTextureArrayList(unsigned char Idx); 
 			unsigned int GetBlockDataTexture(); 
 			unsigned int GetTextureExtensionData(); 
@@ -245,7 +246,8 @@ namespace iTrace {
 			
 			};
 			
-			
+			std::vector<BlockType>& GetTypes(); 
+
 		}
 	}
 }

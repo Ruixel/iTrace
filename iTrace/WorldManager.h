@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Chunk.h"
-
+#include <queue>
 
 namespace iTrace {
 
@@ -13,8 +13,10 @@ namespace iTrace {
 		
 			Chunk::Chunk * Chunk = nullptr; //will be replaced with some kind of container when more chunks are allowed 
 
-			Chunk::Chunk* Chunks[3][3]; //<- these are not ownership chunks, they are just handled by the rendering. 
-			Chunk::Chunk* InternalChunks[CHUNK_SIZE * 2 + 3][CHUNK_SIZE * 2 + 3]; //<- these are the ownership chunks 
+			std::array<std::array<std::unique_ptr<Chunk::Chunk>, CHUNK_RENDER_DISTANCE * 2 + 1>, CHUNK_RENDER_DISTANCE * 2 + 1> Chunks; 
+			
+
+
 
 			uint64_t CenterX, CenterY; 
 			int BiasX, BiasY; 
@@ -34,6 +36,7 @@ namespace iTrace {
 			void FindLightSources(Vector3i Location, Vector3i& OriginLocation, Vector3i & ThisBlockPos, std::vector<bool>& Data, std::vector<Vector4i>& FoundSources, int Distance); 
 			void UpdateBlockThenLighting(Vector3i LocationBlock, int NewBlockType); 
 
+			Vector3i TraceBlock(Vector3f Origin, Vector3f Direction, unsigned short Distance, int& Side, Vector2i & ChunkPos, int &TypeIdx); 
 
 			bool CastBlock(Camera Camera, Chunk::BLOCK_ACTION Action, unsigned short Distance, unsigned char Block);
 
@@ -41,6 +44,7 @@ namespace iTrace {
 			//probably one of the hardest functions I'm every going to write
 			void UpdateChunkTexture(Vector3i Min, Vector3i Max); 
 
+			void ManageCollision(Vector3f& Position, Vector3f& Acceleration, Vector3f& Velocity); 
 
 
 		};

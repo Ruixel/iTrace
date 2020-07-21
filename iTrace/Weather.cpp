@@ -80,7 +80,7 @@ namespace iTrace {
 		Derivative = glm::sign(Derivative) * glm::clamp(glm::abs(Derivative) - 0.00625f, 0.0f, 1.0f); 
 		Derivative *= 1.5;
 
-		CurrentWeatherFactor += Derivative * ft;
+		//CurrentWeatherFactor += Derivative * ft;
 		CurrentWeatherFactor = glm::clamp(CurrentWeatherFactor, 0.0f, 4.0f); 
 
 		int MixUnder = floor(CurrentWeatherFactor); 

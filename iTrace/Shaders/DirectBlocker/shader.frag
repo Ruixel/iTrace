@@ -47,6 +47,10 @@ float AverageDepthToPenum(float NDCz, float AverageDepth) {
 	return clamp(100.0 * Penum * Penum, 0.0, 1.0); 
 }
 
+
+float PenumShifts[4] = float[4](1.0, 0.25, 0.0833333, 0.025); 
+
+
 float Penumbra(int Cascade, float Noise, vec3 NDC, int Samples, float RootSamples) {
 
 	float AverageBlockerDepth = 0.0;
@@ -54,7 +58,7 @@ float Penumbra(int Cascade, float Noise, vec3 NDC, int Samples, float RootSample
 
 	for(int i = 0; i < Samples; i++) {
 	
-		vec2 SampleUV = (NDC.xy) * 0.5 + 0.5 + MAXPENUM * VogelDisk(i, Samples, RootSamples, Noise * 2.4);  
+		vec2 SampleUV = (NDC.xy) * 0.5 + 0.5 + MAXPENUM * VogelDisk(i, Samples, RootSamples, Noise * 2.4) * PenumShifts[Cascade] * PenumShifts[Cascade];  
 		SampleUV = clamp(SampleUV, vec2(0.01), vec2(0.99)); 
 		float Shadow = texelFetch(DirectionalCascades[Cascade], ivec2(SampleUV * 2048.0), 0).x; 
 

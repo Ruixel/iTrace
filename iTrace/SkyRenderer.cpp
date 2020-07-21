@@ -211,10 +211,9 @@ namespace iTrace {
 
 			Move(Orientation, 1.0, Direction.x, Direction.y - 90.0);
 
-			SunColor = 9.0f * Atmospheric::GetSunColor(Orientation);
+			SunColor = 9.0f * Atmospheric::GetSunColor(Orientation); 
 
-
-			SkyColor = (Atmospheric::GetSkyColor(Vector3f(0.0, 1.0, 0.0)));
+			SkyColor = (Atmospheric::GetSkyColor(Orientation, Vector3f(0.0, 1.0, 0.0)));
 		}
 		void SkyRendering::UpdateShadowMap(Window& Window, Camera& Camera, WorldManager& World)
 		{
