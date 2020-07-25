@@ -6,14 +6,17 @@ uniform mat4 ViewMatrix;
 uniform mat4 IdentityMatrix; 
 uniform sampler2D InstanceData; 
 out vec2 TexCoord;  
+uniform vec3 CameraPosition; 
 
 uniform int Resolution; 
 
 mat4 ModelMatrixFromPosition(vec3 Position) {
-	mat4 Matrix = mat4(0.0); 
+	mat4 Matrix = mat4(1.0); 
 
 	for(int x=0;x<3;x++) {
 		for(int y=0;y<3;y++) {
+			
+			
 			Matrix[x][y] = ViewMatrix[y][x]; 
 		}
 	}
@@ -33,8 +36,12 @@ void main(void) {
 	mat4 Matrix = ModelMatrixFromPosition(Data.xyz); 
 
 
-	vec2 Size = vec2(0.0175,0.07); 
+	vec3 Incident = normalize(CameraPosition.xyz - Data.xyz); 
 
+
+
+	vec2 Size = vec2(0.0175,0.07) * 1.4; 
+	Size.y *= mix(1.3,0.2,abs(Incident.y)); 
 	TexCoord = Texc; 
 	gl_Position = IdentityMatrix * Matrix * vec4(Vert.xy * Size,0.f,1.0); 
 }

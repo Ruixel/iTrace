@@ -41,7 +41,7 @@ namespace iTrace {
 			float GetVolume(); 
 
 		};
-
+ 
 		struct SoundEffectManager {
 
 			std::map<std::string, SoundEffect> SoundEffects; 

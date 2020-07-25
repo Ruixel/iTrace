@@ -73,7 +73,9 @@ vec4 GetClamped(sampler2D Current, sampler2D Previous, vec2 PreviousTexCoord, fl
 void main() {
 
 	
-
+	IndirectSpecular.xyz = vec3(1.0); 
+	IndirectDiffuse.xyz = vec3(1.0); 
+	
 	vec2 MotionVectors = texture(MotionVectors, TexCoord).xy; 
 	
 	float FrameCount = max(texture(FrameCount, TexCoord + MotionVectors).x - 1.0,0.0); 
@@ -85,7 +87,7 @@ void main() {
 
 	float NewMaxTemporal = FrameCount < 4.0 ? 0.0 : (NewFiltering ? 0.99 : 0.95); 
 	float MaxTemporalShadow = FrameCount < 6.0 ? 0.0 : 0.95; 
-	float MaxTemporalClouds = FrameCount < 8.0 ? 0.0 : 0.9677; 
+	float MaxTemporalClouds = FrameCount < 1.0 ? 0.0 : 0.9677; 
 
 	float MixFactor = min(FrameCount / (FrameCount+1.0),NewMaxTemporal);
 	float MixFactorVolume = min(FrameCount / (FrameCount+1.0),min(NewMaxTemporal, 0.0));
@@ -129,5 +131,5 @@ void main() {
 	IndirectDiffuse.xyz = max(IndirectDiffuse.xyz, vec3(0.0)); 
 	IndirectSpecular.xyz = max(IndirectSpecular.xyz, vec3(0.0));
 	Clouds.xyz = clamp(Clouds.xyz, vec3(0.0),vec3(100.0)); 
-
+	
 }

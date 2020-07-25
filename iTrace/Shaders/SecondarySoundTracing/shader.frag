@@ -16,6 +16,7 @@ layout(binding = 1, std140) buffer ReflectivityRatiosBuffer {
 uniform sampler2D SoundLocations; 
 uniform vec3 PlayerPosition;
 uniform int MaxSounds; 
+uniform ivec2 PositionBias; 
 const int Bounces = 4; 
 uniform int NumRays; 
 
@@ -33,10 +34,12 @@ vec3 BlockNormals[6] = vec3[](
 
 
 
+
 bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, inout vec3 Normal, inout vec3 Position, int Steps, float MaxLength) {
 
-	Position = Origin;
 
+
+	Position = Origin;
 	vec3 Clamped = vec3(RayDirection.x > 0.0 ? 1.0 : 0.0, RayDirection.y > 0.0 ? 1.0 : 0.0, RayDirection.z > 0.0 ? 1.0 : 0.0);
 
 	vec3 NextPlane = floor(Position + Clamped);
@@ -78,9 +81,9 @@ bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, i
 
 		//	std::cout << CoordInt.x << ' ' << CoordInt.y << ' ' << CoordInt.z << '\n'; 
 
-		if (CoordInt.x > -1 && CoordInt.x < 128 &&
+		if (CoordInt.x > -1 && CoordInt.x < 384 &&
 			CoordInt.y > -1 && CoordInt.y < 128 &&
-			CoordInt.z > -1 && CoordInt.z < 128) {
+			CoordInt.z > -1 && CoordInt.z < 384) {
 
 			vec3 UVWP = Position - floor(Position);
 
@@ -101,12 +104,13 @@ bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, i
 
 			Normal = BlockNormals[Side];
 
-			Block = int(floor(textureLod(VoxelData, TexelCoord.zyx / vec3(128.0),0.0) * 255.0 + .9));
+			Block = int(floor(texelFetch(VoxelData, ivec3(TexelCoord.zyx),0) * 255.0 + .9));
 			Face = Side;
 
-
-			if (Block != 0)
+			if (Block != 0) { 
+				//Position += vec3(PositionBias.x, 0, PositionBias.y); 
 				return true;
+			}
 		}
 		else return false;
 	}
@@ -117,6 +121,7 @@ bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, i
 
 	return false;
 }
+
 
 
 #define GLOBAL_REFLECTIVITY 0.5
@@ -251,8 +256,10 @@ void MainPositional() {
 
 	int Block, Face; 
 
-	Hit = RawTrace(RayDir,RayOrigin, Block, Face, Normal, HitLocation, 256,10000.0); 
+	Hit = RawTrace(RayDir,RayOrigin - vec3(PositionBias.x, 0, PositionBias.y), Block, Face, Normal, HitLocation, 256,10000.0); 
 	
+	HitLocation +=  vec3(PositionBias.x, 0, PositionBias.y); 
+
 	vec4 BounceReflectivityRatios = vec4(0.); 
 
 	if(Hit) {
@@ -274,7 +281,9 @@ void MainPositional() {
 			vec3 NewRayDir = normalize(reflect(LastRayDir, LastHitNormal)); 
 			vec3 NewOrigin = LastPosHit; 
 
-			Hit = RawTrace(NewRayDir, NewOrigin, Block, Face, Normal, HitLocation, 256, 10000.0); 
+			Hit = RawTrace(NewRayDir, NewOrigin- vec3(PositionBias.x, 0, PositionBias.y), Block, Face, Normal, HitLocation, 256, 10000.0); 
+
+			HitLocation += vec3(PositionBias.x, 0, PositionBias.y); 
 
 			float EnergyTowardsPlayer = 0.5 * (GLOBAL_REFLECTIVITY *.5+.5); 
 			float BouncePlayerDistance = distance(LastPosHit, PlayerPosition); 
@@ -303,10 +312,12 @@ void MainPositional() {
 				vec3 FinalRayDirection = normalize(PlayerPosition - HitLocation); 
 		
 			
-				bool NewHit = RawTrace(FinalRayDirection, FinalRayStart, Block, Face, Normal, HitLocation, 256,distance(FinalRayStart, PlayerPosition)); 
+				bool NewHit = RawTrace(FinalRayDirection, FinalRayStart - vec3(PositionBias.x, 0, PositionBias.y), Block, Face, Normal, HitLocation, 256,distance(FinalRayStart, PlayerPosition)); 
 
 				if(!NewHit) 
 					SharedAirSpace += 1.0; 
+
+				HitLocation += vec3(PositionBias.x, 0, PositionBias.y); 
 
 
 			}
@@ -373,12 +384,12 @@ void MainAmbience() {
 		vec3 HitPosition, Normal; 
 		int Block, Face; 
 
-		Hit = RawTrace(RayDirection, Origin, Block, Face, Normal, HitPosition, 256, 10000.0); 
+		Hit = RawTrace(RayDirection, Origin - vec3(PositionBias.x, 0, PositionBias.y), Block, Face, Normal, HitPosition, 256, 10000.0); 
 
 		if(Hit) {
-			
-			GainsShared.z += 0.5 * RayDirection.y; 
-			Origin = HitPosition + RayDirection * 0.1; 
+
+			GainsShared.z += 0.5; 
+			Origin = HitPosition + RayDirection * 0.1 +  vec3(PositionBias.x, 0, PositionBias.y); 
 
 		}
 		else {
@@ -401,6 +412,7 @@ void main(void) {
 		MainAmbience(); 
 	else 
 		MainPositional(); 
+
 
 	ReflectivityRatiosData[Index].xyz = ReflectivityRatios; 
 	GainsSharedData[Index].xyz = GainsShared; 

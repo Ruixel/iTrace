@@ -13,11 +13,13 @@ namespace iTrace {
 
 			Shader IndirectLightShader, RTMotionVectorCalculator,
 				TemporalUpscaler,SpatialPacker, SpatialFilter, 
-				SpatialUpscaler, TemporalFilter, FrameCount, Volumetrics, DirectBlocker, CloudRenderer, CloudProjection, CheckerboardUpscaler; 
+				SpatialUpscaler, TemporalFilter, FrameCount, Volumetrics, 
+				DirectBlocker, CloudRenderer, CloudProjection, CheckerboardUpscaler,
+				PreSpatialTemporalFilter; 
 
 			MultiPassFrameBufferObject RawPathTrace[4], TemporalyUpscaled, SpatialyFiltered[8], SpatialyUpscaled, Clouds[4], Checkerboarder[4];
 			FrameBufferObject MotionVectors[4], PackedData, DirectBlockerBuffer, PackedSpatialData;
-			MultiPassFrameBufferObjectPreviousData TemporallyFiltered; 
+			MultiPassFrameBufferObjectPreviousData TemporallyFiltered, PreSpatialTemporal;
 			FrameBufferObjectPreviousData TemporalFrameCount, ProjectedClouds;
 			FrameBufferObject VolumetricFBO[4];
 

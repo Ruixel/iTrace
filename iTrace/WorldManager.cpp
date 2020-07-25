@@ -151,6 +151,15 @@ namespace iTrace {
 			glGenerateMipmap(GL_TEXTURE_3D);
 			glBindTexture(GL_TEXTURE_3D, 0);
 
+			glGenTextures(1, &LightContainer);
+			glBindTexture(GL_TEXTURE_3D, LightContainer);
+			glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA16F, (CHUNK_RENDER_DISTANCE * 2 + 1)* CHUNK_SIZE, CHUNK_SIZE, (CHUNK_RENDER_DISTANCE * 2 + 1)* CHUNK_SIZE, 0, GL_RGBA, GL_FLOAT, nullptr);
+			glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glGenerateMipmap(GL_TEXTURE_3D);
+			glBindTexture(GL_TEXTURE_3D, 0);
+
+
 		}
 		bool Update = true;
 		bool FirstGen = true;
@@ -164,6 +173,11 @@ namespace iTrace {
 			Vector3i CameraChunkSpace = Vector3i(Camera.Position) / CHUNK_SIZE;
 
 			//figure out if we should gen or not 
+
+
+			//CenterX = Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->X;
+			//CenterY = Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->Y;
+
 
 			if (FirstGen) {
 				for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
@@ -185,9 +199,9 @@ namespace iTrace {
 							Neighboors[2] = Chunks[x - 1][y].get(); 
 
 						if (y != CHUNK_RENDER_DISTANCE * 2)
-							Neighboors[0] = Chunks[x][y+1].get();
+							Neighboors[1] = Chunks[x][y+1].get();
 						if (y != 0)
-							Neighboors[2] = Chunks[x][y-1].get();
+							Neighboors[3] = Chunks[x][y-1].get();
 
 						Chunks[x][y]->UpdateAllMeshData(Neighboors, Chunk::BLOCK_RENDER_TYPE::OPAQUE); 
 						Chunks[x][y]->UpdateAllMeshData(Neighboors, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
@@ -201,7 +215,144 @@ namespace iTrace {
 
 				FirstGen = false; 
 			}
+			else {
 
+				CenterX = Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->X;
+				CenterY = Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->Y;
+
+				Vector2i Distance = (Vector2i(CenterX, CenterY) * CHUNK_SIZE + CHUNK_SIZE / 2) - Vector2i(Camera.Position.x, Camera.Position.z);
+				
+				std::cout << "Distance: " << Distance.x << ' ' << Distance.y << '\n'; 
+
+				auto UpdateWorld = [&]() {
+					for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+						for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+
+							std::vector<Chunk::Chunk*> Neighboors = { nullptr, nullptr, nullptr, nullptr };
+							//^ non-ownership raw pointers, so its fine! 
+
+							if (x != CHUNK_RENDER_DISTANCE * 2)
+								Neighboors[0] = Chunks[x + 1][y].get();
+							if (x != 0)
+								Neighboors[2] = Chunks[x - 1][y].get();
+
+							if (y != CHUNK_RENDER_DISTANCE * 2)
+								Neighboors[1] = Chunks[x][y + 1].get();
+							if (y != 0)
+								Neighboors[3] = Chunks[x][y - 1].get();
+
+							Chunks[x][y]->UpdateAllMeshData(Neighboors, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
+							Chunks[x][y]->UpdateAllMeshData(Neighboors, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
+							Chunks[x][y]->UpdateAllMeshData(Neighboors, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE);
+
+						}
+
+					}
+					UpdateChunkTexture(Vector3i(0), Vector3i(CHUNK_RENDER_DISTANCE * 2 + 1, 1, CHUNK_RENDER_DISTANCE * 2 + 1) * CHUNK_SIZE - Vector3i(1));
+				}; 
+
+				//case 1, hardcoded (for now :/) 
+				if (Distance.x < -(CHUNK_SIZE / 2 + 10)) {
+
+					//step 1: move memory 
+
+					for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+
+						for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+
+							if (x != CHUNK_RENDER_DISTANCE * 2) {
+								Chunks[x][y] = std::move(Chunks[x + 1][y]); 
+							}
+
+						}
+
+					}
+
+					for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+						Chunks[CHUNK_RENDER_DISTANCE*2][y] = std::make_unique<Chunk::Chunk>(Chunks[CHUNK_RENDER_DISTANCE*2-1][y]->X+1, Chunks[CHUNK_RENDER_DISTANCE * 2 - 1][y]->Y);
+						Chunks[CHUNK_RENDER_DISTANCE * 2][y]->Generate({ nullptr, nullptr, nullptr, nullptr });
+					}
+
+					
+					UpdateWorld(); 
+
+				}
+				else if (Distance.x > (CHUNK_SIZE / 2 + 10)) {
+
+					//step 1: move memory 
+
+					for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+
+						for (int x = CHUNK_RENDER_DISTANCE*2; x != -1; x--) {
+
+							if (x != 0) {
+								Chunks[x][y] = std::move(Chunks[x - 1][y]);
+							}
+
+						}
+
+					}
+
+					for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+						Chunks[0][y] = std::make_unique<Chunk::Chunk>(Chunks[1][y]->X - 1, Chunks[1][y]->Y);
+						Chunks[0][y]->Generate({ nullptr, nullptr, nullptr, nullptr });
+					}
+
+					UpdateWorld();
+
+				}
+
+				if (Distance.y < -(CHUNK_SIZE / 2 + 10)) {
+
+					//step 1: move memory 
+
+					for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+
+						for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+
+							if (y != CHUNK_RENDER_DISTANCE * 2) {
+								Chunks[x][y] = std::move(Chunks[x][y+1]);
+							}
+
+						}
+
+					}
+
+					for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+						Chunks[x][CHUNK_RENDER_DISTANCE * 2] = std::make_unique<Chunk::Chunk>(Chunks[x][CHUNK_RENDER_DISTANCE * 2 - 1]->X, Chunks[x][CHUNK_RENDER_DISTANCE * 2 - 1]->Y+1);
+						Chunks[x][CHUNK_RENDER_DISTANCE * 2]->Generate({ nullptr, nullptr, nullptr, nullptr });
+					}
+
+
+					UpdateWorld();
+
+				}
+				else if (Distance.y > (CHUNK_SIZE / 2 + 10)) {
+
+					//step 1: move memory 
+
+					for (int y = CHUNK_RENDER_DISTANCE*2; y !=-1; y--) {
+
+						for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+
+							if (y != 0) {
+								Chunks[x][y] = std::move(Chunks[x][y - 1]);
+							}
+
+						}
+
+					}
+
+					for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+						Chunks[x][0] = std::make_unique<Chunk::Chunk>(Chunks[x][1]->X, Chunks[x][1]->Y - 1);
+						Chunks[x][0]->Generate({ nullptr, nullptr, nullptr, nullptr });
+					}
+
+
+					UpdateWorld();
+
+				}
+			}
 		
 
 			CenterX = Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->X;
@@ -234,7 +385,7 @@ namespace iTrace {
 			}
 		}
 
-		void WorldManager::AddLightBlock(Vector3i Location, Vector3i& OriginLocation, std::vector<unsigned char>& Data, int Distance)
+		void WorldManager::AddLightBlock(Vector3i Location, Vector3i& OriginLocation, std::vector<unsigned char>& Data, int Distance, Vector3i* Min , Vector3i* Max )
 		{
 
 			const int BoundingBox = LONGESTLIGHT * 2 + 1;
@@ -247,27 +398,32 @@ namespace iTrace {
 			if (Distance > LONGESTLIGHT)
 				return;
 
+		
 			for (int x = 0; x < 6; x++) {
 
 				Vector3i NewPosition = Location + Vector3i(Chunk::BlockNormals[x]);
 
-				if (NewPosition.x >= 0 && NewPosition.y >= 0 && NewPosition.z >= 0 &&
-					NewPosition.x < CHUNK_SIZE && NewPosition.y < CHUNK_SIZE && NewPosition.z < CHUNK_SIZE) {
+				int t = GetBlock(NewPosition + Vector3i(BiasX, 0, BiasY)); 
+
+				if(t != -1) {
 
 					Vector3i DataLocationNew = NewPosition - OriginLocation;
-
-					if (DataLocationNew.x >= 0 && DataLocationNew.y >= 0 && DataLocationNew.z >= 0 &&
-						DataLocationNew.x < CHUNK_SIZE && DataLocationNew.y < CHUNK_SIZE && DataLocationNew.z < CHUNK_SIZE) {
+					if (GetBlock(DataLocationNew + Vector3i(BiasX, 0, BiasY)) != -1) {
 
 						if (Data[DataLocationNew.x * BoundingBox * BoundingBox + DataLocationNew.y * BoundingBox + DataLocationNew.z] > Distance + 1) {
 
-							int TypeIdx = Chunk->Blocks[NewPosition.x * CHUNK_SIZE * CHUNK_SIZE + NewPosition.y * CHUNK_SIZE + NewPosition.z];
+							int TypeIdx = t;
 
 							auto& Type = Chunk::GetBlock(TypeIdx);
 
 							if (TypeIdx == 0) {
 
-								AddLightBlock(NewPosition, OriginLocation, Data, Distance + 1);
+								AddLightBlock(NewPosition, OriginLocation, Data, Distance + 1, Min, Max);
+
+								if (Min != nullptr && Max != nullptr) {
+									*Min = glm::min(*Min, Location);
+									*Max = glm::max(*Max, Location);
+								}
 
 							}
 						}
@@ -280,7 +436,7 @@ namespace iTrace {
 
 		}
 
-		void WorldManager::AddLightSource(Vector3i Location, Vector3f Color)
+		void WorldManager::AddLightSource(Vector3i Location, Vector3f Color, Vector3i * Min, Vector3i * Max)
 		{
 
 			int BoundingBox = LONGESTLIGHT * 2 + 1;
@@ -293,16 +449,15 @@ namespace iTrace {
 
 				Vector3i NewPosition = Location + Vector3i(Chunk::BlockNormals[x]);
 
-				if (NewPosition.x >= 0 && NewPosition.y >= 0 && NewPosition.z >= 0 &&
-					NewPosition.x < CHUNK_SIZE && NewPosition.y < CHUNK_SIZE && NewPosition.z < CHUNK_SIZE) {
+				auto TypeIdx = GetBlock(NewPosition + Vector3i(BiasX, 0, BiasY));
 
-					int TypeIdx = Chunk->Blocks[NewPosition.x * CHUNK_SIZE * CHUNK_SIZE + NewPosition.y * CHUNK_SIZE + NewPosition.z];
+				if (TypeIdx != -1) {
 
 					auto& Type = Chunk::GetBlock(TypeIdx);
 
 					if (TypeIdx == 0) {
 
-						AddLightBlock(NewPosition, OriginLocation, Data, 1);
+						AddLightBlock(NewPosition, OriginLocation, Data, 1, Min, Max);
 
 					}
 
@@ -324,13 +479,18 @@ namespace iTrace {
 						if (CurrentData != LONGESTLIGHT + 1) {
 
 							Vector3i BlockPos = OriginLocation + Vector3i(x, y, z);
-
-							if (BlockPos.x >= 0 && BlockPos.y >= 0 && BlockPos.z >= 0 &&
-								BlockPos.x < CHUNK_SIZE && BlockPos.y < CHUNK_SIZE && BlockPos.z < CHUNK_SIZE) {
-
+							Vector2i ChunkIdx; 
+							auto t = GetBlock(BlockPos + Vector3i(BiasX, 0, BiasY), &ChunkIdx);
 
 
-								Chunk->BlockLighting[BlockPos.x * CHUNK_SIZE * CHUNK_SIZE + BlockPos.y * CHUNK_SIZE + BlockPos.z] += Vector4f(Color / (9.0f + Vector3f(CurrentData * CurrentData * CurrentData)), 0.0);
+
+							if (t != -1) {
+
+
+								Vector3i RelativeBlockPos = BlockPos % CHUNK_SIZE; 
+
+
+								Chunks[ChunkIdx.x][ChunkIdx.y]->BlockLighting[RelativeBlockPos.x * CHUNK_SIZE * CHUNK_SIZE + RelativeBlockPos.y * CHUNK_SIZE + RelativeBlockPos.z] += Vector4f(Color / (9.0f + Vector3f(CurrentData * CurrentData * CurrentData)), 0.0);
 
 
 
@@ -369,8 +529,9 @@ namespace iTrace {
 
 				Vector3i NewPosition = Location + Vector3i(Chunk::BlockNormals[x]);
 
-				if (NewPosition.x >= 0 && NewPosition.y >= 0 && NewPosition.z >= 0 &&
-					NewPosition.x < CHUNK_SIZE && NewPosition.y < CHUNK_SIZE && NewPosition.z < CHUNK_SIZE) {
+				auto TypeIdx = GetBlock(NewPosition);
+
+				if (TypeIdx != -1) {
 
 					Vector3i DataLocationNew = NewPosition - OriginLocation;
 
@@ -378,8 +539,6 @@ namespace iTrace {
 						continue;
 
 					if (!Visited[DataLocationNew.x * BoundingBox * BoundingBox + DataLocationNew.y * BoundingBox + DataLocationNew.z]) {
-
-						int TypeIdx = Chunk->Blocks[NewPosition.x * CHUNK_SIZE * CHUNK_SIZE + NewPosition.y * CHUNK_SIZE + NewPosition.z];
 
 						auto& Type = Chunk::GetBlock(TypeIdx);
 
@@ -427,6 +586,8 @@ namespace iTrace {
 			Vector3i DataLocation = LocationBlock - OriginLocation;
 
 			Data[DataLocation.x * BoundingBox * BoundingBox + DataLocation.y * BoundingBox + DataLocation.z] = true;
+
+
 			if (false) {
 				for (int x = 0; x < 6; x++) {
 
@@ -462,13 +623,14 @@ namespace iTrace {
 
 							Vector3i NewPosition = LocationBlock + Vector3i(x, y, z);
 
-							if (NewPosition.x >= 0 && NewPosition.y >= 0 && NewPosition.z >= 0 &&
-								NewPosition.x < CHUNK_SIZE && NewPosition.y < CHUNK_SIZE && NewPosition.z < CHUNK_SIZE) {
+							int t = GetBlock(NewPosition); 
+
+							if(t != -1){
 
 								if (x == 0 && y == 0 && z == 0)
 									continue;
 
-								auto TypeIdx = Chunk->GetBlock(NewPosition.x, NewPosition.y, NewPosition.z);
+								auto TypeIdx = t;
 
 								if (Chunk::GetBlock(TypeIdx).IsEmissive) {
 									LightSources.push_back(Vector4i(NewPosition, TypeIdx));
@@ -485,15 +647,26 @@ namespace iTrace {
 
 			}
 
-			for (auto& Sources : LightSources) {
-				AddLightSource(Sources, -GetBlockEmissiveColor(Sources.w));
-			}
-
-			Chunk->SetBlock(LocationBlock.x, LocationBlock.y, LocationBlock.z, NewBlockType);
+			Vector3i Min = Vector3i(LocationBlock) - Vector3i(BiasX, 0, BiasY);
+			Vector3i Max = Vector3i(LocationBlock) - Vector3i(BiasX, 0, BiasY);
 
 			for (auto& Sources : LightSources) {
-				AddLightSource(Sources, GetBlockEmissiveColor(Sources.w));
+				AddLightSource(Vector3i(Sources) - Vector3i(BiasX, 0, BiasY), -GetBlockEmissiveColor(Sources.w));
 			}
+
+			SetBlock(LocationBlock, NewBlockType, true); 
+
+			//Chunk->SetBlock(LocationBlock.x, LocationBlock.y, LocationBlock.z, NewBlockType);
+
+			for (auto& Sources : LightSources) {
+				AddLightSource(Vector3i(Sources) - Vector3i(BiasX, 0, BiasY), GetBlockEmissiveColor(Sources.w), &Min, &Max);
+			}
+
+			SetBlock(LocationBlock, NewBlockType, true); //<- hacky 
+
+			UpdateChunkTexture(Min, Max, true);
+
+
 
 		}
 
@@ -521,9 +694,10 @@ namespace iTrace {
 				if (RelativeBlockPosition.z < 0)
 					Relative.z -= 1;
 
-				if (abs(Relative.x) > 1 || abs(Relative.z) > 1 || RelativeBlockPosition.y >= CHUNK_SIZE || RelativeBlockPosition.y < 0)
-					return -1;
-
+				if (abs(Relative.x) > 1 || abs(Relative.z) > 1 || RelativeBlockPosition.y >= CHUNK_SIZE || RelativeBlockPosition.y < 0) {
+					std::cout << "Exit!\n";
+					return -1; 
+				}
 				ChunkPos = Vector2i(CHUNK_RENDER_DISTANCE + Relative.x, CHUNK_RENDER_DISTANCE + Relative.z);
 
 				std::cout << "Chunk position: " << ChunkPos.x << ' ' << ChunkPos.y << '\n';
@@ -597,9 +771,81 @@ namespace iTrace {
 
 			}
 
+			std::cout << "Exit2!\n";
 
 
 			return Vector3i(-1);
+		}
+
+		int Rendering::WorldManager::GetBlock(Vector3i Position, Vector2i* ChunkPos)
+		{
+			Vector3i RelativeBlockPosition = Position - Vector3i(Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->X, 0, Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->Y) * CHUNK_SIZE;
+
+			Vector3i Relative = RelativeBlockPosition / CHUNK_SIZE;
+
+			if (RelativeBlockPosition.x < 0)
+				Relative.x -= 1;
+			if (RelativeBlockPosition.z < 0)
+				Relative.z -= 1;
+
+			if (abs(Relative.x) > 1 || abs(Relative.z) > 1 || RelativeBlockPosition.y >= CHUNK_SIZE || RelativeBlockPosition.y < 0)
+				return -1;
+
+			if(ChunkPos!=nullptr)
+				*ChunkPos = Vector2i(CHUNK_RENDER_DISTANCE + Relative.x, CHUNK_RENDER_DISTANCE + Relative.z);
+
+			Vector3i BlockPos = RelativeBlockPosition - Relative * CHUNK_SIZE;
+
+			return static_cast<int>(Chunks[CHUNK_RENDER_DISTANCE + Relative.x][CHUNK_RENDER_DISTANCE + Relative.z]->GetBlock(BlockPos.x, BlockPos.y, BlockPos.z));
+
+		}
+
+		bool Rendering::WorldManager::SetBlock(Vector3i Position, unsigned char Type, bool Update)
+		{
+			Vector3i RelativeBlockPosition = Position - Vector3i(Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->X, 0, Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->Y) * CHUNK_SIZE;
+
+			Vector3i Relative = RelativeBlockPosition / CHUNK_SIZE;
+
+			if (RelativeBlockPosition.x < 0)
+				Relative.x -= 1;
+			if (RelativeBlockPosition.z < 0)
+				Relative.z -= 1;
+
+			if (abs(Relative.x) > 1 || abs(Relative.z) > 1 || RelativeBlockPosition.y >= CHUNK_SIZE || RelativeBlockPosition.y < 0)
+				return false;
+
+			Vector3i BlockPos = RelativeBlockPosition - Relative * CHUNK_SIZE;
+
+			unsigned char _PrevType = Chunks[CHUNK_RENDER_DISTANCE + Relative.x][CHUNK_RENDER_DISTANCE + Relative.z]->GetBlock(BlockPos.x, BlockPos.y, BlockPos.z); 
+
+
+			Chunks[CHUNK_RENDER_DISTANCE + Relative.x][CHUNK_RENDER_DISTANCE + Relative.z]->SetBlock(BlockPos.x, BlockPos.y, BlockPos.z, Type); 
+
+			if (Update) {
+
+				int x = CHUNK_RENDER_DISTANCE + Relative.x; 
+				int y = CHUNK_RENDER_DISTANCE + Relative.y; 
+
+				std::vector<Chunk::Chunk*> Neighboors = { nullptr, nullptr, nullptr, nullptr };
+				//^ non-ownership raw pointers, so its fine! 
+
+				if (x != CHUNK_RENDER_DISTANCE * 2)
+					Neighboors[0] = Chunks[x + 1][y].get();
+				if (x != 0)
+					Neighboors[2] = Chunks[x - 1][y].get();
+
+				if (y != CHUNK_RENDER_DISTANCE * 2)
+					Neighboors[1] = Chunks[x][y + 1].get();
+				if (y != 0)
+					Neighboors[3] = Chunks[x][y - 1].get();
+
+
+				Chunks[CHUNK_RENDER_DISTANCE + Relative.x][CHUNK_RENDER_DISTANCE + Relative.z]->UpdateMeshDataSpecificBlock(Neighboors, BlockPos, Chunk::GetBlock(Type == 0 ? _PrevType : Type).RenderType);
+				UpdateChunkTexture(Vector3i(Position) - Vector3i(BiasX, 0, BiasY), Position - Vector3i(BiasX, 0, BiasY));
+			}
+
+			return static_cast<int>(Chunks[CHUNK_RENDER_DISTANCE + Relative.x][CHUNK_RENDER_DISTANCE + Relative.z]->GetBlock(BlockPos.x, BlockPos.y, BlockPos.z));
+
 		}
 
 		bool WorldManager::CastBlock(Camera Camera, Chunk::BLOCK_ACTION Action, unsigned short Distance, unsigned char Block)
@@ -619,9 +865,9 @@ namespace iTrace {
 
 			CoordInt = TraceBlock(Position, RayDirection, Distance, Side, ChunkIdx, TypeIdx);
 
-			if (CoordInt.x < 0)
+			if (CoordInt.y < 0) {
 				return false;
-
+			}
 			if (Action == Chunk::BLOCK_ACTION::BREAK) {
 
 
@@ -634,10 +880,14 @@ namespace iTrace {
 
 
 
-					//AddLightSource(CoordInt, -GetBlockEmissiveColor(BreakType));
+					Vector3i Min = CoordInt - Vector3i(BiasX, 0, BiasY);
+					Vector3i Max = CoordInt - Vector3i(BiasX, 0, BiasY);
+					AddLightSource(CoordInt- Vector3i(BiasX, 0, BiasY), -GetBlockEmissiveColor(TypeIdx), &Min, &Max);
+
+					UpdateChunkTexture(Min, Max, true);
 
 				}
-				//UpdateBlockThenLighting(CoordInt, 0);
+				UpdateBlockThenLighting(CoordInt, 0);
 				/*
 				if (Chunk->GetTallestBlock(CoordInt.x, CoordInt.z) == CoordInt.y) {
 
@@ -655,12 +905,14 @@ namespace iTrace {
 
 				}*/
 
+
+				/*
 				Vector3i RelativePosition = CoordInt % CHUNK_SIZE; 
 
 				Chunks[ChunkIdx.x][ChunkIdx.y]->SetBlock(RelativePosition.x, RelativePosition.y, RelativePosition.z, 0); 
 				Chunks[ChunkIdx.x][ChunkIdx.y]->UpdateMeshDataSpecificBlock({ nullptr, nullptr,nullptr,nullptr,nullptr }, RelativePosition, Chunk::GetBlock(TypeIdx).RenderType);
 				UpdateChunkTexture(Vector3i(0), Vector3i(CHUNK_RENDER_DISTANCE * 2 + 1, 1, CHUNK_RENDER_DISTANCE * 2 + 1) * CHUNK_SIZE - 1);
-
+				*/
 				//Chunk->UpdateMeshData({ nullptr, nullptr,nullptr,nullptr,nullptr });
 
 
@@ -668,10 +920,62 @@ namespace iTrace {
 			}
 			else if (Action == Chunk::BLOCK_ACTION::PLACE) {
 
+				/*Vector3i RelativePosition = CoordInt % CHUNK_SIZE;
+				Vector3i Offset = Chunk::BlockNormals[Side]; 
+
+				for (int i = 0; i < 2; i++) {
+					if (Offset[i*2] < 0 && RelativePosition[i*2] == 0) {
+						if (ChunkIdx[i] == 0)
+							return false;
+						else {
+							ChunkIdx[i] --;
+							RelativePosition[i*2] = CHUNK_SIZE-1; 
+						}
+					}
+					else if (Offset[i * 2] > 0 && RelativePosition[i * 2] == CHUNK_SIZE - 1) {
+						if (ChunkIdx[i] == CHUNK_RENDER_DISTANCE * 2)
+							return false; 
+						else {
+							ChunkIdx[i]++; 
+							RelativePosition[i * 2] = 0; 
+						}
+					}
+					else {
+						RelativePosition[i * 2] += Offset[i * 2]; 
+					}
+				}
 
 
-				CoordInt += Chunk::BlockNormals[Side];
+				RelativePosition.y += Offset.y; 
 
+				if (CoordInt.y < 0 || CoordInt.y >= CHUNK_SIZE)
+					return false; 
+				
+				Chunks[ChunkIdx.x][ChunkIdx.y]->SetBlock(RelativePosition.x, RelativePosition.y, RelativePosition.z, Block);
+				Chunks[ChunkIdx.x][ChunkIdx.y]->UpdateMeshDataSpecificBlock({ nullptr, nullptr,nullptr,nullptr,nullptr }, RelativePosition, Chunk::GetBlock(Block).RenderType);
+				UpdateChunkTexture(Vector3i(0), Vector3i(CHUNK_RENDER_DISTANCE * 2 + 1, 1, CHUNK_RENDER_DISTANCE * 2 + 1) * CHUNK_SIZE - 1);
+
+				*/
+
+				CoordInt += Chunk::BlockNormals[Side]; 
+				
+				if (GetBlock(CoordInt) == -1) {
+					return false;
+				}
+
+				UpdateBlockThenLighting(CoordInt, Block);
+				if (Chunk::GetBlock(Block).IsEmissive) {
+
+					Vector3i Min = CoordInt - Vector3i(BiasX, 0, BiasY);
+					Vector3i Max = CoordInt - Vector3i(BiasX, 0, BiasY);
+					AddLightSource(CoordInt- Vector3i(BiasX, 0, BiasY), GetBlockEmissiveColor(Block), &Min, &Max);
+
+					UpdateChunkTexture(Min, Max, true);
+
+
+				}
+				
+				//UpdateChunkTexture(Vector3i(CoordInt), CoordInt);
 
 
 				/*if (CoordInt.x > -1 && CoordInt.x < CHUNK_SIZE &&
@@ -701,7 +1005,7 @@ namespace iTrace {
 
 		}
 
-		void WorldManager::UpdateChunkTexture(Vector3i Min, Vector3i Max) //<- always assume local space! 
+		void WorldManager::UpdateChunkTexture(Vector3i Min, Vector3i Max, bool OnlyLight) //<- always assume local space! 
 		{
 
 			glFinish();
@@ -717,6 +1021,8 @@ namespace iTrace {
 			Vector3i Size = ActualMax - Min;
 
 			std::vector<unsigned char> Pixels = std::vector<unsigned char>((Size.x) * (Size.y+1) * (Size.z), 0);
+			std::vector<Vector4f> ChunkLight = std::vector<Vector4f>((Size.x) * (Size.y) * (Size.z)); 
+
 
 			for (int x = 0; x < Pixels.size(); x++) {
 				//Pixels[x] = 1; 
@@ -746,10 +1052,12 @@ namespace iTrace {
 							throw std::exception("Chunk out of range!");
 						}
 						auto Block = Chunks[SubChunkX][SubChunkZ]->Blocks[ChunkBlockPosition.x * CHUNK_SIZE * CHUNK_SIZE + ChunkBlockPosition.y * CHUNK_SIZE + ChunkBlockPosition.z];
+						auto Light = Chunks[SubChunkX][SubChunkZ]->BlockLighting[ChunkBlockPosition.x * CHUNK_SIZE * CHUNK_SIZE + ChunkBlockPosition.y * CHUNK_SIZE + ChunkBlockPosition.z];
 
+						
 						//if(FirstGen) 
 						Pixels[Texel.x * Size.y * Size.z + Texel.y * Size.z + Texel.z] = Block;
-
+						ChunkLight[Texel.x * Size.y * Size.z + Texel.y * Size.z + Texel.z] = Light; 
 						//^ what is going on here? 
 
 
@@ -760,11 +1068,17 @@ namespace iTrace {
 			TimeCopy = clock.getElapsedTime().asSeconds();
 			clock.restart();
 
-			glBindTexture(GL_TEXTURE_3D, ChunkContainer);
-			glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, Size.x, Size.y, Size.z, GL_RED, GL_UNSIGNED_BYTE, Pixels.data());
+			if (!OnlyLight) {
+				glBindTexture(GL_TEXTURE_3D, ChunkContainer);
+				glTexSubImage3D(GL_TEXTURE_3D, 0, Min.z, Min.y, Min.x, Size.z, Size.y, Size.x, GL_RED, GL_UNSIGNED_BYTE, Pixels.data());
+				glBindTexture(GL_TEXTURE_3D, 0);
+			}
+
+			glBindTexture(GL_TEXTURE_3D, this->LightContainer);
+			glTexSubImage3D(GL_TEXTURE_3D, 0, Min.z, Min.y, Min.x, Size.z, Size.y, Size.x, GL_RGBA, GL_FLOAT, ChunkLight.data());
 			glBindTexture(GL_TEXTURE_3D, 0);
 			glFinish();
-
+			
 			TimeUpload = clock.getElapsedTime().asSeconds();
 			clock.restart();
 

@@ -11,6 +11,7 @@ uniform sampler2D SoundLocations;
 uniform vec3 PlayerPosition; 
 uniform sampler3D VoxelData; 
 uniform sampler1D VoxelReflectivites; 
+uniform ivec2 PositionBias; 
 
 vec3 BlockNormals[6] = vec3[](
 	vec3(1.0, 0.0, 0.0),
@@ -66,9 +67,9 @@ bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, i
 
 		//	std::cout << CoordInt.x << ' ' << CoordInt.y << ' ' << CoordInt.z << '\n'; 
 
-		if (CoordInt.x > -1 && CoordInt.x < 128 &&
+		if (CoordInt.x > -1 && CoordInt.x < 384 &&
 			CoordInt.y > -1 && CoordInt.y < 128 &&
-			CoordInt.z > -1 && CoordInt.z < 128) {
+			CoordInt.z > -1 && CoordInt.z < 384) {
 
 			vec3 UVWP = Position - floor(Position);
 
@@ -89,12 +90,14 @@ bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, i
 
 			Normal = BlockNormals[Side];
 
-			Block = int(floor(textureLod(VoxelData, TexelCoord.zyx / vec3(128.0),0.0) * 255.0 + .9));
+			Block = int(floor(texelFetch(VoxelData, ivec3(TexelCoord.zyx),0) * 255.0 + .9));
 			Face = Side;
+			
 
 
-			if (Block != 0)
+			if (Block != 0) { 
 				return true;
+			}
 		}
 		else return false;
 	}
@@ -130,13 +133,13 @@ void main(void) {
 		vec3 HitPosition, Normal; 
 		int Block, Face; 
 
-		Hit = RawTrace(normalize(PlayerPosition - RayOrigin), RayOrigin, Block, Face, Normal, HitPosition, 256, distance(PlayerPosition,RayOrigin)); 
+		Hit = RawTrace(normalize(PlayerPosition - RayOrigin) , RayOrigin- vec3(PositionBias.x, 0, PositionBias.y), Block, Face, Normal, HitPosition, 256, distance(PlayerPosition,RayOrigin)); 
 
 		if(Hit) {
 			NumberOcclusionHits++; 
 			TotalOcclusion += 1.0; 
 
-			RayOrigin = HitPosition + ToPlayerVector * 0.5; 
+			RayOrigin = HitPosition + ToPlayerVector * 0.5 + vec3(PositionBias.x, 0, PositionBias.y); 
 
 		}
 		else {

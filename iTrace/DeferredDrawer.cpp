@@ -21,6 +21,7 @@ namespace iTrace {
 			TransparentDeferredManager = Shader("Shaders/DeferredTransparent"); 
 			Deferred = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 8, { GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_RGBA16F, GL_R16F,GL_RGBA16F,GL_RGB16F,GL_RGB16F }, false);
 			RawDeferred = FrameBufferObject(Window.GetResolution(), GL_RGBA16F); 
+			DeferredRefractive = FrameBufferObject(Window.GetResolution(), GL_RGBA16F, false); 
 			TestStoneTexture = LoadTextureGL("Materials/Stone/Albedo.png"); 
 
 			Noise = LoadTextureGL("Textures/Noise.png",GL_RED); 
@@ -111,7 +112,7 @@ namespace iTrace {
 			glBindTexture(GL_TEXTURE_1D, Chunk::GetTextureExtensionData());
 
 			glActiveTexture(GL_TEXTURE4);
-			glBindTexture(GL_TEXTURE_3D, World.Chunks[0][0]->ChunkLightTexID);
+			glBindTexture(GL_TEXTURE_3D, World.LightContainer);
 
 			glActiveTexture(GL_TEXTURE7);
 			glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockExtraDataTexture());
@@ -148,6 +149,7 @@ namespace iTrace {
 			DeferredUnwrapper.SetUniform("RainFrames", RAINDROP_FRAMES);
 			DeferredUnwrapper.SetUniform("WetNess", GetGlobalWeatherManager().GetWeather().Wetness);
 			DeferredUnwrapper.SetUniform("RainMatrix", Sky.ProjectionMatrices[4] * Sky.ViewMatrices[4]);
+			DeferredUnwrapper.SetUniform("PositionBias", Vector2i(World.BiasX, World.BiasY)); 
 
 			DrawPostProcessQuad(); 
 

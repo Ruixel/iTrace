@@ -82,10 +82,10 @@ namespace iTrace {
 
 			float AspectCorrect = float(Window.GetResolution().y) / float(Window.GetResolution().x); 
 
+			auto BlockCount = GetBlockRequests().size();
 
 			ItemDrawer Drawer; 
 
-			Drawer.TextureID = ActiveSlot; 
 			
 			
 			
@@ -96,14 +96,20 @@ namespace iTrace {
 
 			ItemDrawShader.Bind(); 
 
-			for (int i = 0; i < 10; i++) {
+			for (int i = 0; i < 9; i++) {
+
+				Drawer.TextureID = ActiveSlot + (i-4);
+
+				if (Drawer.TextureID < -1)
+					Drawer.TextureID += (BlockCount+1); 
+				if (Drawer.TextureID > BlockCount)
+					Drawer.TextureID -= (BlockCount+1); 
 
 				Drawer.Size = Vector2f(0.1 * AspectCorrect, 0.1);
 
-				float x = float(i) - 4.5; 
+				float x = float(i) - 4; 
 
 				Drawer.Position = Vector2f(x * 0.2 * AspectCorrect, -0.8);
-
 
 
 

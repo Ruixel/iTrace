@@ -152,8 +152,7 @@ void main() {
 		vec4 ParticleSample = texelFetch(Particles, ivec2(gl_FragCoord), 0); 
 		ParticleSample.w = pow(ParticleSample.w,0.25); 
 		TexCoord += ParticleSample.xy * mix(0.0,0.05,ParticleSample.w); 
-		Multiplier = mix(vec3(1.0),vec3(0.8,0.9,1.0),ParticleSample.w); 
-
+		Multiplier = mix(vec3(1.0),vec3(0.8,0.9,1.0)*0.9,ParticleSample.w); 
 
 	}
 	
@@ -188,7 +187,7 @@ void main() {
 		vec3 DiffuseColor = mix(AlbedoFetch.xyz,vec3(0.0),AlbedoFetch.w); 		
 
 
-		float Shadow = texture(DirectMultiplier, TexCoord).x * IndirectSpecular.w; 
+		float Shadow = IndirectSpecular.w; 
 
 	//	vec3 Direct = Shadow * max(dot(LightDirection, HighfreqNormalSample.xyz),0.0);
 	//	vec3 DirectSpecular = 10.0 * Shadow * pow(max(dot(LightDirection, SpecDir),0.0),1024.0); 
@@ -202,9 +201,12 @@ void main() {
 
 		vec3 Kd = 1 - SpecularColor; //for energy conservation, Specular + Diffuse <= 1, so ensure this is the case! 
 
-		Lighting.xyz = DiffuseColor * ((IndirectDiffuse.xyz * Kd + Direct) * IndirectDiffuse.www) + SpecularColor * (IndirectSpecular.xyz) + DirectSpecular + AlbedoFetch.xyz * NormalFetch.www;
+		Lighting.xyz = DiffuseColor * ((IndirectDiffuse.xyz * Kd + Direct)) + SpecularColor * (IndirectSpecular.xyz) + DirectSpecular + AlbedoFetch.xyz * NormalFetch.www;
 		//Lighting.xyz =  DiffuseColor * ((IndirectDiffuse.xyz + Direct) * IndirectDiffuse.www ); 
 		Glow.xyz = DirectSpecular * pow(1.0-Roughness,5.0) + AlbedoFetch.xyz * NormalFetch.www; 
+		//Glow.xyz = vec3(0.); 
+		//Lighting.xyz = IndirectSpecular.xyz; 
+		//Lighting.xyz = vec3(Shadow); 
 	}
 	else {
 		vec4 CloudSample = texture(Clouds, TexCoord); 
@@ -215,5 +217,4 @@ void main() {
 	Lighting.xyz = mix(Lighting.xyz, Volumetrics.xyz,1.0-Volumetrics.w);
 
 	Lighting.xyz *= Multiplier; 
-
 }

@@ -104,7 +104,7 @@ void main() {
 	if(DoGlow) 
        Lighting += texture(Glow, TexCoord); 
 	   
-	Lighting.xyz = mix(Lighting.xyz,DofFetch.xyz,min(DofFetch.w/2.0,1.0)); 
+	Lighting.xyz = mix(DofFetch.xyz,Lighting.xyz,pow(1.0-min(DofFetch.w/2.0,1.0),2.0)); 
 
 
     Lighting.xyz = ACESFitted(Lighting.xyz, 1.0); 

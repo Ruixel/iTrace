@@ -58,17 +58,17 @@ int State = 0;
 ivec2 Pixel; 
 
 const vec3 PlayerOrigin = vec3(0,6200,0); 
-const float PlanetRadius = 6373; 
-const float AtmosphereRadius = 6573; 
+const float PlanetRadius = 6573; 
+const float AtmosphereRadius = 7773; 
 const float Size = AtmosphereRadius - PlanetRadius; 
 const int Steps = 8; 
-const int LightSteps = 2; 
+const int LightSteps = 3; 
 const float Epsilon = 1e-4; 
 
 //Cloud properties 
 
-const float SigmaS = 0.2 * 400; 
-const float SigmaA = 0.2 * 100; 
+const float SigmaS = 0.2 * 200; 
+const float SigmaA = 0.2 * 50; 
 const vec3 CloudColor = vec3(1.0); //<- is this really physically plausible? 
 
 vec2 hash2() {
@@ -90,35 +90,60 @@ float Density(vec3 Position) {
 
 	Position.x += Time * 6.0; 
 
-	vec3 TurbulenceSample = texture(Turbulence, Position.xz / 256).xyz; 
-	vec3 WeatherSample = texture(WeatherMap, Position.xz / 2048).xyz; 
+	vec3 WeatherSample = texture(WeatherMap, (Position.xz) / 8192).xyz; 
 
-	vec4 NoiseFetch1 = texture(CloudNoise, ((Position + TurbulenceSample * 100 + vec3(0.0,-Time*2,0.0)) * vec3(1.0,2.0,1.0)) / 4096); 
-	vec4 NoiseFetch2 = texture(CloudShape, (Position + TurbulenceSample * 100 + vec3(0.0,Time*2,0.0)) / 128); 
+	float WeatherNoise =  (1.0-pow(1.0-WeatherSample.x,3.0)); ; 
 
-	float ErosionNoise = dot(NoiseFetch2.xyz, vec3(0.25,0.125,0.625)); 
+	if(WeatherNoise < 1.0/256.0)
+		return 0.0; 
 
-	float ErosionNoiseHighFrequency = dot(NoiseFetch2.yz, vec2(0.4,0.6)); 
-	float ErosionNoise2 = remap(NoiseFetch2.x, ErosionNoiseHighFrequency, 1.0, 0.0, 1.0); 
-
-	float HighFrequencyNoise = dot(NoiseFetch1.yzw, vec3(0.4,0.3,0.3)); 
-	float ShapeNoise = dot(vec2(NoiseFetch1.x, HighFrequencyNoise), vec2(0.4,0.6)); 
+	vec4 NoiseFetch1 = texture(CloudNoise, ((Position + vec3(0.0,-Time*10,0.0)) * vec3(1.0,1,1.0)) / 4096); 
+	
+	float HighFrequencyNoise = dot(NoiseFetch1.yzw, vec3(0.25,0.125,0.625)); 
 
 	float ShapeNoise2 = remap(NoiseFetch1.x, HighFrequencyNoise, 1.0, 0.0, 1.0); 
 
+	if(ShapeNoise2 < 1.0/256.0)
+		return 0.0; 
+	
+	
+
+	float ShapeNoise = dot(vec2(NoiseFetch1.x, HighFrequencyNoise), vec2(0.4,0.6)); 
+
+
 	float HeightSignal = Position.y / Size; 
-	HeightSignal = (1.0-pow(1.0-HeightSignal,7.0)) * (1.0-pow(HeightSignal,7.0)); 
+	float AnvilSignal = HeightSignal-0.7; 
+	if(AnvilSignal < 0.0) {
+		AnvilSignal = max(-AnvilSignal-0.2,0.0) / 0.5; 
+	}
+	else {
+		AnvilSignal = AnvilSignal / 0.3; 
+	}
 
+	float HeightShape = 1.0-pow(1.0-HeightSignal,5.0); 
 
-
-	float BaseShape = (ShapeNoise2) * HeightSignal * (1.0-pow(1.0-WeatherSample.x,3.0)); 
+	float BaseShape = (ShapeNoise)  * WeatherNoise * HeightShape; 
 	//BaseShape = pow(BaseShape,1.5); 
-	BaseShape = pow(BaseShape,0.0625 * GlobalPower * 2.0); 
+
+
+
+	BaseShape = pow(BaseShape,0.0625 *8.0 *GlobalPower * (.4+16.0*pow(HeightSignal,8.0))); 
+
+	if(BaseShape < 1.0/25.0)
+		return 0.; 
+
+	vec4 NoiseFetch2 = texture(CloudShape, (Position + vec3(0.0,Time*2,0.0)) / 384); 
+
+	float ErosionNoise = dot(NoiseFetch2.xyz, vec3(0.25,0.125,0.625)); 
+
+	float ErosionNoiseHighFrequency = dot(NoiseFetch2.yz, vec2(0.3,0.7)); 
+	float ErosionNoise2 = remap(NoiseFetch2.x, ErosionNoiseHighFrequency, 1.0, 0.0, 1.0); 
+
 
 	//BaseShape -= min(1.0,1.0) * pow((1.0-min(BaseShape*1.9,1.0)),3.0);
-	BaseShape -= pow(ErosionNoise,7.0) * pow((1.0-min(BaseShape,1.0)),2.0); 
+	BaseShape -= 30.0*pow(ErosionNoise,5.0) * pow((1.0-min(BaseShape*1.3,1.0)),7.0); 
 	BaseShape = clamp(BaseShape, 0.0, 1.0); 
-	return 0.0006*BaseShape*2.0; 
+	return 0.0006*BaseShape*1.0; 
 
 }
 
@@ -146,7 +171,7 @@ float InnerScatter(float InnerScatteringDepth, float Height) {
 
 float densityToLight(vec3 Point, vec3 Direction, float Dither) {
     float End = (AtmosphereRadius - Point.y) / Direction.y;  
-	End = min(End, 400.0); 
+	End = min(End, 2000.0); 
 	vec3 StartPosition = Point; 
 	vec3 EndPosition = Point + Direction * End; 
 
@@ -187,7 +212,11 @@ float densityToLight(vec3 Point, vec3 Direction, float Dither) {
 
 float beerLambert(float d) {
 
-    return max(exp(-d),0.4*exp(-d*0.4));
+    return max(exp(-d),0.47*exp(-d*.34));
+}
+
+float beerLambertPowder(float d) {
+    return max(exp(-d),0.3*exp(-d*.45));
 }
 
 vec3 Radiance(vec3 Position, float Height, float SilverIntensity, float SilverSpread, float Hash, vec3 LightDir, float VdL) {
@@ -199,20 +228,34 @@ vec3 Radiance(vec3 Position, float Height, float SilverIntensity, float SilverSp
     float hg = max(HG1, SilverIntensity*HG2);
 
 	float d = densityToLight(Position, LightDir, Hash) ;
-    float bl = beerLambert(d);
+    float bl = beerLambert(d*1.4);
 
-	float InnerScatteringDensity = GetLodDensity(Position, 5.0); 
+	float InnerScatteringDensity = GetLodDensity(Position, 10.0+Hash*40.0); 
 	float InnerScatter = InnerScatter(InnerScatteringDensity, Height); 
 
-	float powder = 1-beerLambert(d*0.2); 
-	float dpowder = min(powder, 1.0-exp(-d*0.5)); 
+	float innerpowder = 1-beerLambertPowder(d*0.1);
+	float outerpowder = 1-beerLambertPowder(d*0.5); 
+	float hpowder = 1.0-pow(1.0-Height,2.5); 
 
-	vec3 sunLight = mix(SunColor,SunColor.rrr,0.0) * 0.25 * (bl * hg);
-    vec3 ambientLight = 0.7 * mix(SkyColor,SkyColor.zzz*0.5,0.3);
-    
-	return vec3(ambientLight  * powder + sunLight); 
+	vec3 sunLight = SunColor * 0.2 * (bl * hg);
+   
+	InnerScatter = clamp(InnerScatter,0.0,1.0); 
 
-	return ambientLight + sunLight;   
+
+	float Powder = dot(vec2(outerpowder,innerpowder),vec2(0.3,0.7)); 
+	float PowderScatter = Powder * InnerScatter; 
+	float Scatter = InnerScatter; 
+
+	float Mixed = dot(vec3(Powder*Powder*1.0, PowderScatter, Scatter), vec3(0.5,0.3,0.7)); 
+
+	float InversePowder = 1.0 - clamp(2.0 * Powder*Powder,0.0,0.8); 
+
+	vec3 ambientLight = InversePowder * mix(mix(SkyColor.zzz*0.8,SkyColor*1.3,0.5),SkyColor*1.3,1.0-pow(clamp(InnerScatter,0.0,1.0),2.0));
+
+	ambientLight = mix(InversePowder*SkyColor,ambientLight,clamp(100.0*bl * hg,0.7,1.0)); 
+
+
+	return ambientLight * Mixed * 1.5 + sunLight; 
 
 	return mix(sunLight, ambientLight, 1-Height);
 
@@ -220,17 +263,17 @@ vec3 Radiance(vec3 Position, float Height, float SilverIntensity, float SilverSp
 
 vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 	const vec3 PlayerOrigin = vec3(0,6200,0); 
-	const float PlanetRadius = 6473; 
+	const float PlanetRadius = 6573 + 7773 * 0.1; 
 
-	float Traversal = (PlanetRadius - (Origin.y)) / Direction.y; 
+	float Traversal = (PlanetRadius - (PlayerOrigin.y + Origin.y)) / Direction.y; 
 
 	vec3 NewPoint = PlayerOrigin + Origin + Direction * Traversal; 
 
 	//Fetch it! 
 
 	float fade = exp(-Traversal*1.5e-4); 
-
-	vec4 Sample = texture(ProjectedClouds, fract(vec2((NewPoint.x + 500.0 + Time * 6.0) / 2048, (NewPoint.z + 500.0) / 2048)));  
+	fade = clamp(fade, 0.0, 1.0); 
+	vec4 Sample = texture(ProjectedClouds, fract(vec2((NewPoint.x-4096) / 8192, (NewPoint.z+4096) / 8192)));  
 
 	Sample.a = mix(1.0,Sample.a,fade); 
 
@@ -239,7 +282,7 @@ vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 }
 
 float SampleCirrus(vec3 Position) { //gets cirrus density -> 
-	return 1.0-pow(texture(Cirrus, Position.xz * 0.0021).x, 0.25 * GlobalPower); 
+	return 1.0-pow(texture(Cirrus, Position.xz * 0.00041).x, 0.3 * GlobalPower); 
 }
 
 vec4 SampleCirrus(vec4 CurrentCloud, vec3 Position, float Hash, float SilverIntensity, float SilverSpread, float VdL) {
@@ -328,7 +371,7 @@ void main() {
 		return; 
 	
 	float T = End-Start; 
-	T = min(T, 6000.0); 
+	T = min(T, 12000.0); 
 	End = Start + T; 
 
 	vec3 StartPosition = Origin + Direction * Start; 
@@ -363,7 +406,7 @@ void main() {
 		float Density = Density(Position); 
 		//is there a cloud? 
 
-		if(Density > Epsilon) {
+		if(Density / 0.0006 > 0.1) {
 			
 			float Mix = Height / Size; 
 
@@ -382,43 +425,34 @@ void main() {
 
 			Clouds.xyz += SIntegrated * Clouds.a; 
 			Clouds.a *= Transmittance; 
+
+
 			Depth += (Traversal + Start) * (Density / Epsilon); 
 			DepthWeight += (Density / Epsilon); 
 		}
+		if(Clouds.a < 0.01)
+			break; 
 
 		PreviousTraversal = Traversal; 
 
 	}
 
-	float fade = exp(-T*0.75e-4); 
+	Clouds.a = clamp(Clouds.a-0.01,0.0,0.99) / 0.99; 
+
+	float fade = exp(-T*1e-4); 
 	
 
 	vec3 Position = Origin + Direction * End; 
 
-
-
-	//Clouds.xyz = vec3(1.0); 
-	//Clouds.a = 1.0-pow(texture(Cirrus, Position.xz * 0.002).x, 0.125 * GlobalPower ); 
-	//Clouds.xyz = vec3(1.0); 
-	//Clouds.a = 1.0; 
-	Clouds = SampleCirrus(Clouds, Position, hash.y, 3.0, 0.8, ndl); 
-		Clouds.a = mix(1.0,Clouds.a,fade); 
-	Clouds.a *= Clouds.a; 
-
-
-	//Clouds = SampleCloud(Origin,Direction); 
-
-
-	//Clouds.xyz = vec3(1.0); 
-
-//	Clouds.xyz = vec3(max(ndl,0.0)); 
 	Depth = mix(Depth / max(DepthWeight,1e-4),End * 3.0,pow(Clouds.a,3.0)); 
 
-
-
 	Depth = mix(Depth, 300.0, pow(1.0-Direction.y, 16.0)); 
-	//Depth = 300.0; 
 
+	Clouds = SampleCirrus(Clouds, Position, hash.y, 3.0, 0.8, ndl); 
 
+	Clouds.a = mix(1.0,Clouds.a,fade); 
+	Clouds.a *= Clouds.a; 
+
+	//Clouds = SampleCloud(CameraPosition,Direction); 
 
 }

@@ -150,21 +150,7 @@ namespace iTrace {
 
 			void Chunk::Draw(Shader& RenderToShader, Camera& Camera)
 			{
-				/*
-				glBindVertexArray(ChunkVAOID);
-
-			//	if(sf::Keyboard::isKeyPressed(sf::Keyboard::T))
-				//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-				glDrawElements(GL_TRIANGLES, Vertices, GL_UNSIGNED_INT, nullptr);
-
-
-			//	if (sf::Keyboard::isKeyPressed(sf::Keyboard::T))
-			//		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-				glBindVertexArray(0);
-				*/
-
+				
 				Matrix4f Project = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, Camera.znear, Camera.zfar); 
 
 				Frustum Frustum; 
@@ -204,7 +190,7 @@ namespace iTrace {
 					return glm::simplex(Vector2f(x, y) + Vector2f(-seed, seed));
 
 				};
-
+				
 				auto vecnoise = [](Vector2f p, int seed) {
 
 
@@ -243,7 +229,7 @@ namespace iTrace {
 					int Dist = Height - MyY;
 
 					if (Dist == 1)
-						return (BiomeNoise > 0.7 ? 20 : BiomeNoise > 0.3 ? 41 : 3); //snow
+						return (BiomeNoise > 0.7 ? 20 : BiomeNoise > 0.3 ? 3 : 31); //snow
 					else if (Dist < 4)
 						return 2; //dirt
 					return 1; //stone 
@@ -333,7 +319,7 @@ namespace iTrace {
 
 							unsigned char BlockType = 0; 
 
-							srand((x / 5)* CHUNK_SIZE + (z / 5));
+							srand(((x+X * CHUNK_SIZE) / 5)* CHUNK_SIZE + ((z+Y*CHUNK_SIZE) / 5));
 
 							if (y < Height) {
 
@@ -343,7 +329,7 @@ namespace iTrace {
 							}
 							else {
 
-								if (rand() % 17 == 0) {
+								/*if (rand() % 17 == 0) {
 									//tree! 
 
 									auto RelativeX = x % 5; 
@@ -353,17 +339,17 @@ namespace iTrace {
 
 									int HeightDiff = y - HeightBaseTree;
 
-									//if (RelativeX == 2 && RelativeZ == 2 && HeightDiff <= 3)
-									//	BlockType = 27; 
+									if (RelativeX == 2 && RelativeZ == 2 && HeightDiff <= 3)
+										BlockType = 27; 
 
 									for (int TreeH = 0; TreeH < 3; TreeH++) {
 										if ((((RelativeX == TreeH || RelativeX == 4-TreeH) && (RelativeZ >= TreeH && RelativeZ <= 4-TreeH)) || ((RelativeZ == TreeH || RelativeZ == 4 - TreeH) && (RelativeX >= TreeH && RelativeX <= 4 - TreeH))) && HeightDiff == 2+TreeH) {
-											//BlockType = 42; 
+											BlockType = 42; 
 										}
 									}
 
 
-								}
+								}*/
 
 							}
 
@@ -1032,26 +1018,24 @@ namespace iTrace {
 
 			Chunk::~Chunk()
 			{
-
-				//glDeleteTextures(1, &ChunkTexID); 
-				//glDeleteTextures(1, &ChunkLightTexID); 
+				DumpToFile(); 
 
 				MeshDataOpaque.Delete(); 
 				MeshDataTransparent.Delete(); 
 				MeshDataRefractive.Delete(); 
-
 				//Mask.clear(); 
 				TallestBlock.clear(); 
 				Blocks.clear(); 
 				BlockLighting.clear(); 
-
 			}
 
 			void Chunk::DumpToFile()
 			{
 
+				std::string Title = "World/Chunk_" + std::to_string(X) + '_' + std::to_string(Y) + ".bin"; 
+
 				std::ofstream File; 
-				File.open("World.bin", std::ios::out | std::ios::binary); 
+				File.open(Title, std::ios::out | std::ios::binary);
 				File.write((char*)Blocks.data(), Blocks.size()); 
 				File.close(); 
 
@@ -1060,8 +1044,10 @@ namespace iTrace {
 			void Chunk::LoadFromFile()
 			{
 
+				std::string Title = "World/Chunk_" + std::to_string(X) + '_' + std::to_string(Y) + ".bin";
+
 				std::ifstream File; 
-				File.open("World.bin", std::ios::out | std::ios::binary); 
+				File.open(Title, std::ios::out | std::ios::binary);
 				File.read((char*)Blocks.data(), Blocks.size()); 
 				File.close(); 
 
@@ -1083,8 +1069,6 @@ namespace iTrace {
 
 					CollisionBox.Min = Vector3f(Positionf - Vector3f(0.125, 0.25, 0.125));
 					CollisionBox.Max = Vector3f(Positionf + Vector3f(1.125, 2.5, 1.125));
-
-
 
 					return CollisionBox.HandleCollision(Position); 
 				

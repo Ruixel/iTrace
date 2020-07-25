@@ -22,6 +22,8 @@ uniform int ParallaxResolution;
 
 uniform bool DoParallax; 
 
+uniform ivec2 PositionBias;  
+
 const vec3 BlockNormals[6] = vec3[](
 				vec3(0.0, 0.0, 1.0),
 				vec3(0.0, 0.0, -1.0),
@@ -262,21 +264,6 @@ void main() {
 		BetterWorldPos = BetterWorldPos + Incident * Traversal; 
 
 		Albedo.xyz = pow(texture(DiffuseTextures, vec3(TC,TextureIdx)).xyz,vec3(2.2));
-
-		//Arbitrary directions are not possible, due to limited data. boohoo
-		
-	//	if(BlockSide == 4u) {
-		
-			//lets assume the sun is ALSO 2 dimensional!
-
-			vec3 SunProjected; 
-
-			float TraversalSun = GetTraversal(TC, SunDirection, BlockSide, TBN, uint(TextureExData.x)-1u,SunProjected,lod) ;  
-
-			DirectMultiplier = ((TraversalSun+0.00390625) >= Traversal * (1.0-pow(abs(SunProjected.z),4.0)) ? 1.0 : 0.0); 
-
-			
-		//}
 		
 		ParallaxData = vec4(float(BlockSide), float(TextureExData.x),lod, Traversal); 
 
@@ -301,13 +288,8 @@ void main() {
 	HighFreqNormal.xyz = normalize(TBN * (normalize(texture(NormalTextures, vec3(TC.xy, TextureIdx)).xyz * 2.0 - 1.0)));
 	HighFreqNormal.w = texture(RoughnessTextures, vec3(TC, TextureIdx)).x;	
 	
-	//HighFreqNormal.w = 0.0; 
-	//HighFreqNormal.xyz = Normal.xyz; 
-	//HighFreqNormal.xyz = normalize(mix(HighFreqNormal.xyz,Normal.xyz,0.9)); 
-
-	SimpleLighting = texture(LightData,(WorldPos.xyz + Normal.xyz * .5).zyx/128.0).xyz; 
+	SimpleLighting = texture(LightData,(WorldPos.xyz - vec3(PositionBias.x, 0.0, PositionBias.y) + Normal.xyz * .5).zyx / vec3(384.0,128.0,384.0)).xyz; 
 	
-
 	_TC.xy = fract(TC);
 	_TC.z = TextureIdx; 
 

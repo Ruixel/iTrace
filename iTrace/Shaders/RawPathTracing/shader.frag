@@ -13,6 +13,8 @@ layout(location = 1) out vec4 Normal;
 layout(location = 2) out vec3 WorldPos;
 layout(location = 3) out vec4 IndirectSpecular;
 layout(location = 4) out float Direct;
+layout(location = 5) out vec4 Detail;
+
 
 uniform sampler2D Normals;
 uniform sampler2D WorldPosition;
@@ -54,6 +56,8 @@ uniform int FrameCount;
 uniform sampler2DShadow DirectionalCascades[4]; 
 uniform mat4 DirectionMatrices[4]; 
 uniform vec3 SunColor; 
+uniform vec3 SkyColor; 
+
 uniform vec3 LightDirection; 
 
 uniform int ParallaxDirections; 
@@ -797,7 +801,7 @@ float ScreenSpaceTraceHQ(vec3 Origin, vec3 Direction, float MaxTraversal, int St
 
 vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 	const vec3 PlayerOrigin = vec3(0,6200,0); 
-	const float PlanetRadius = 6473; 
+	const float PlanetRadius = 6573 + 7773 * 0.1; 
 
 	float Traversal = (PlanetRadius - (PlayerOrigin.y + Origin.y)) / Direction.y; 
 
@@ -806,24 +810,23 @@ vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 	//Fetch it! 
 
 	float fade = exp(-Traversal*1.5e-4); 
+	fade = clamp(fade, 0.0, 1.0); 
+	vec4 Sample = texture(ProjectedClouds, fract(vec2((NewPoint.x-4096) / 8192, (NewPoint.z+4096) / 8192)));  
 
-	vec4 Sample = texture(ProjectedClouds, fract(vec2((NewPoint.x + 500.0 + Time * 6.0) / 2048, (NewPoint.z + 500.0) / 2048)));  
-
-	//Sample.a = mix(1.0,Sample.a,fade); 
+	Sample.a = mix(0.0,Sample.a,fade); 
 
 	return Sample;  
 
 }
 
-
-vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4 ParallaxData, vec3 TC, vec3 LowFrequencyNormal) {
-
+vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4 ParallaxData, vec3 TC, vec3 LowFrequencyNormal, out vec4 Detail) {
 
 
+	Detail = vec4(1.0); 
 	if(!DoRayTracing) {
 		
 		vec3 Diffuse = GetHemisphericalShadowMaphit(Origin, Normal, 0, 1); 
-		Diffuse += textureLod(LightingData, (Origin + Normal * .5).zyx / 128.0, 0.0).xyz;
+		Diffuse += textureLod(LightingData, (Origin + Normal * .5).zyx / vec3(384,128,384), 0.0).xyz;
 		return vec4(Diffuse, 1.0); 
 	
 	
@@ -875,7 +878,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 		float TraversalSun = GetTraversal(NewTC.xy, LightDirection, uint(ParallaxData.x+.1), uint(ParallaxData.y+.1)-1u, SunProjected, ParallaxData.z); 
 
-		DirectMultiplier = ((TraversalSun+0.00390625) >= ParallaxData.w * (1.0-pow(abs(SunProjected.z),4.0)) ? 1.0 : 0.0);
+		DirectMultiplier = ((TraversalSun+0.00390625) >= ParallaxData.w * (1.0-pow(abs(SunProjected.z),4.0)) ? 1.0 : sqrt(TraversalSun));
 
 
 	}
@@ -969,7 +972,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 			ClipSpace.xyz = ClipSpace.xyz * 0.5 + 0.5; 
 
 
-			HemiSpherical += texture(SkyNoMie, Direction).xyz * texture(HemisphericalShadowMap, vec4(ClipSpace.xy,Sample,ClipSpace.z-0.00027)) * _Weight; 
+			HemiSpherical +=texture(HemisphericalShadowMap, vec4(ClipSpace.xy,Sample,ClipSpace.z-0.0003)) * _Weight; 
 			j = 0; 
 
 			i++; 
@@ -980,6 +983,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 		}
 
 		HemiSpherical /= 12.0; 
+		HemiSpherical *= HemiSpherical * HemiSpherical * SkyColor;  
 
 		//HemiSpherical =  GetHemisphericalShadowMaphit(Position, OutNormal, 0, 1); 
 	
@@ -991,24 +995,19 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 		Diffuse.xyz += DirectBasic(Position) * max(dot(OutNormal, LightDirection), 0.0) * SunColor * BlockColor * DirectMultiplier * DirectDensity; 
 
-
-
-		//Diffuse.xyz = OutNormal; 
-
-		//For nearest: 
-		//Diffuse.xyz += BlockColor * texelFetch(LightingData, ivec3(Position + OutNormal * .5).zyx, 0).xyz; 
-		
-		vec4 LightingData = textureLod(LightingData, (Position + OutNormal * .5).zyx / 128.0, 0.0); 
+		vec4 LightingData = textureLod(LightingData, (Position - vec3(PositionBias.x, 0.0, PositionBias.y) + OutNormal * .5).zyx / vec3(384.0,128.0,384.0), 0.0); 
 		
 		//return LightingData.xyz; 
 
-		Diffuse.xyz += (LightingData.xyz) * BlockColor; 
+		Diffuse.xyz += 1.0 * (LightingData.xyz) * (BlockColor); 
 
 		//idea: if specular and roughness < treshhold, consider applying some super basic ambient light.
 
 
 		//AO: 
-		Diffuse.w = pow(min(distance(Origin, Position), 1.0), 5.0);
+		Diffuse.w = pow(min(distance(Origin, Position), 4.0), 1.0);
+		Detail.w = Diffuse.w; 
+		Detail.xyz = BlockColor; 
 	}
 	else {
 		//GI: 
@@ -1025,7 +1024,8 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 		Diffuse.xyz = mix(Cloud.xyz, Diffuse.xyz, Cloud.w); 
 
-		Diffuse.w = 1.0; 
+		Diffuse.w = 4.0; 
+		Detail = Diffuse * vec4(0.1,0.1,0.1,1.0); 
 	}		
 
 
@@ -1078,6 +1078,16 @@ ivec2 States[] = ivec2[](
 
 
 
+vec3 SphericalCoordinate(vec2 Angles) {
+
+	float CosX = cos(Angles.x); 
+
+	return vec3( 
+		cos(Angles.y) * CosX, 
+		sin(Angles.x),
+		sin(Angles.y) * CosX); 
+
+}
 
 
 void main() {
@@ -1118,7 +1128,7 @@ void main() {
 
 	float DirectDensity = SampleCloud(WorldPos.xyz, LightDirection).a; 
 
-	float SmoothNessFactor = clamp((1.0-DirectDensity) * 100.0, 1.0,8.0); 
+	float SmoothNessFactor = clamp(pow(1.0-DirectDensity,2.0) * 20.0, 1.0,8.0); 
 
 
 	DirectDensity = pow(DirectDensity, 4.0); 
@@ -1129,21 +1139,37 @@ void main() {
 	Direct = DirectHQ(WorldPos,max(Penum,0.007),vec2(Pixel) / 2, SmoothNessFactor); 
 	Direct *= ScreenSpaceTraceShadows(WorldPos + Normal.xyz * mix(0.01,0.1,clamp(IncidentLength/30.0,0.0,1.0)), normalize(LightDirection), 0.3,9) * DirectDensity; 
 
+	vec4 ParallaxData = texelFetch(ParallaxData, Pixel, 0); 
+	vec3 TC = texelFetch(TCData, Pixel, 0).xyz; 
+
+	vec3 SunProjected; 
+
+
+
+	float TraversalSun = GetTraversal(TC.xy, LightDirection, uint(ParallaxData.x+.1), uint(ParallaxData.y+.1)-1u, SunProjected, ParallaxData.z); 
+
+	float DirectMultiplier = ((TraversalSun+0.00390625) >= ParallaxData.w * (1.0-pow(abs(SunProjected.z),4.0)) ? 1.0 : sqrt(TraversalSun));
+
+	DirectMultiplier = mix(DirectMultiplier, 1.0, pow(clamp(0.05*distance(CameraPosition, WorldPos), 0.0, 1.0),2.0)); 
+
+	Direct *= DirectMultiplier; 
+
+
+	
 	vec2 hash = hash2();
 
 	if (!UseWhiteNoise) {
 		hash = hash2(Pixel / 2, FrameCount / 4, 0);
 	}
 
-	vec4 ParallaxData = texelFetch(ParallaxData, Pixel, 0); 
-	vec3 TC = texelFetch(TCData, Pixel, 0).xyz; 
+	
 	vec3 LowFrequencyNormal = texelFetch(LowFrequencyNormal, Pixel, 0).xyz; 
 
 	vec3 Direction = cosWeightedRandomHemisphereDirection(Normal.xyz, hash);
 
 	vec3 SpecularDirection = GetSpecularRayDirection(reflect(Incident, Normal.xyz), Normal.xyz, Incident, RawNormal.w, Pixel);
-	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.0025, Direction,Normal.xyz, false, ParallaxData,TC,LowFrequencyNormal); 
-	vec4 Specular = GetRayShading(WorldPos + Normal.xyz * 0.0025, SpecularDirection, Normal.xyz, true, ParallaxData,TC,LowFrequencyNormal); 
+	vec4 Specular = GetRayShading(WorldPos + Normal.xyz * 0.0025, SpecularDirection, Normal.xyz, true, ParallaxData,TC,LowFrequencyNormal, Detail); 
+	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.0025, Direction,Normal.xyz, false, ParallaxData,TC,LowFrequencyNormal,Detail); 
 
 	float L = length(Normal.xyz); 
 
@@ -1154,6 +1180,8 @@ void main() {
 
 	}
 	
+	Detail.w *= 0.25; 
+
 	IndirectDiffuse = Diffuse; 
 	IndirectSpecular = Specular; 
 

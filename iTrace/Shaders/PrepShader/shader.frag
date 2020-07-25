@@ -22,7 +22,7 @@ void main() {
 	}	
 	else {
 		//LightingGlow = vec3(0.0); 
-		LightingGlow = mix(vec3(0.0), texture(SkyReigh, TexCoord).xyz, pow(texture(Clouds,TexCoord).w,2.0)); 
+		LightingGlow = mix(vec3(0.0), texture(SkyReigh, TexCoord).xyz, pow(texture(Clouds,TexCoord).w,1.0)); 
 	}
 
 	LightingGlow = mix(vec3(0.0), LightingGlow, texture(Volumetrics, TexCoord).a); 

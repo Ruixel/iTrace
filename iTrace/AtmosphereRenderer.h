@@ -148,13 +148,32 @@ namespace iTrace {
 					100.0,                           // intensity of the sun
 					6371e3,                         // radius of the planet in meters
 					6471e3,                         // radius of the atmosphere in meters
-					vec3(5.5e-6, 13.0e-6, 22.4e-6) * vec3(0.5, 0.5, 1.0), // Rayleigh scattering coefficient
+					vec3(5.5e-6, 13.0e-6, 22.4e-6) * vec3(0.2, 0.3, 1.0), // Rayleigh scattering coefficient
 					21e-6,                          // Mie scattering coefficient
 					8e3,                            // Rayleigh scale height
 					1.2e3,                          // Mie scale height
 					0.758                           // Mie preferred scattering direction
 				);
-				return Result.WithMie;
+
+
+
+				//hardcoded sunrise / sunfall colors -> 
+
+				//std::cout << Result.WithMie.x << ' ' << Result.WithMie.y << ' ' << Result.WithMie.z << '\n'; 
+
+				Vector3f cSunFall = Vector3f(32.5406,20.6592,4.41121); 
+
+				//reconstruct sun intensity from this -> 
+
+				Vector3f SunNormalized = Result.WithMie / cSunFall; 
+
+				float SunIntensity = (SunNormalized.x + SunNormalized.y + SunNormalized.z) / 3.0; 
+				
+				//std::cout << SunIntensity << '\n'; 
+
+				Vector3f SunRiseColor = Vector3f(1.0, 0.1, 0.4) * 25.0f * SunIntensity; 
+
+				return  Result.WithMie;
 
 			}
 
@@ -166,7 +185,7 @@ namespace iTrace {
 					100.0,                           // intensity of the sun
 					6371e3,                         // radius of the planet in meters
 					6471e3,                         // radius of the atmosphere in meters
-					vec3(5.5e-6, 13.0e-6, 22.4e-6) * vec3(0.5,0.5,1.0), // Rayleigh scattering coefficient
+					vec3(5.5e-6, 13.0e-6, 22.4e-6) * vec3(0.2, 0.3, 1.0), // Rayleigh scattering coefficient
 					21e-6,                          // Mie scattering coefficient
 					8e3,                            // Rayleigh scale height
 					1.2e3,                          // Mie scale height

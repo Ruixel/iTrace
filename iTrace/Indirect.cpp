@@ -19,13 +19,14 @@ namespace iTrace {
 
 			
 			for (int x = 0; x < 4; x++) {
-				RawPathTrace[x] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 5, { GL_RGBA16F, GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_R16F }, false);
+				RawPathTrace[x] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 6, { GL_RGBA16F, GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_R16F,GL_RGBA16F }, false);
 				MotionVectors[x] = FrameBufferObject(Window.GetResolution() / 2, GL_RGB16F, false);
 				SpatialyFiltered[x * 2] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 				SpatialyFiltered[x * 2 + 1] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 				VolumetricFBO[x] = FrameBufferObject(Window.GetResolution() / 4, GL_RGBA16F, false);
 				Clouds[x] = MultiPassFrameBufferObject(Vector2i(Window.GetResolution().x / 4, Window.GetResolution().y / 4), 2, { GL_RGBA16F, GL_R32F }, false);
 				Checkerboarder[x] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 2, { GL_RGBA16F, GL_R32F }, false); 
+
 			}
 
 			DirectBlockerBuffer = FrameBufferObject(Window.GetResolution() / 8, GL_RG16F, false);
@@ -35,6 +36,7 @@ namespace iTrace {
 			TemporallyFiltered = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 2, 4, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 			SpatialyUpscaled = MultiPassFrameBufferObject(Window.GetResolution(), 2, { GL_RGBA16F,GL_RGBA16F }, false);
 			ProjectedClouds = FrameBufferObjectPreviousData(Vector2i(256), GL_RGBA16F, false); 
+			PreSpatialTemporal = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 4, 4, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 
 			IndirectLightShader = Shader("Shaders/RawPathTracing");
 			TemporalUpscaler = Shader("Shaders/TemporalUpscaler");
@@ -49,10 +51,10 @@ namespace iTrace {
 			CloudRenderer = Shader("Shaders/Clouds"); 
 			CloudProjection = Shader("Shaders/CloudProjection"); 
 			CheckerboardUpscaler = Shader("Shaders/Checkerboarder"); 
+			PreSpatialTemporalFilter = Shader("Shaders/PreSpatialTemporal"); 
 
 			SetShaderUniforms(Window); 
 			
-
 			glGenTextures(1, &SobolTexture);
 			glBindTexture(GL_TEXTURE_2D, SobolTexture);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 256, 256, 0, GL_RED, GL_UNSIGNED_BYTE, sobol_256spp_256d);
@@ -117,8 +119,6 @@ namespace iTrace {
 
 			SpatialyFilter(Window, Camera, Deferred);
 			Profiler::SetPerformance("Spatial filter");
-
-			
 
 			TemporalyUpscale(Window, Camera, Deferred);
 			Profiler::SetPerformance("Temporal upscale");
@@ -192,7 +192,7 @@ namespace iTrace {
 			glBindTexture(GL_TEXTURE_CUBE_MAP, Sky.SkyCube.Texture[0]);
 
 			glActiveTexture(GL_TEXTURE14);
-			glBindTexture(GL_TEXTURE_3D, World.Chunks[0][0]->ChunkLightTexID);
+			glBindTexture(GL_TEXTURE_3D, World.LightContainer);
 			
 			glActiveTexture(GL_TEXTURE15);
 			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(4));
@@ -243,6 +243,8 @@ namespace iTrace {
 			IndirectLightShader.SetUniform("zfar", Camera.zfar);
 			IndirectLightShader.SetUniform("LightDirection", Sky.Orientation);
 			IndirectLightShader.SetUniform("SunColor", Sky.SunColor);
+			IndirectLightShader.SetUniform("SkyColor", Sky.SkyColor);
+
 			IndirectLightShader.SetUniform("PositionBias", Vector2i(World.BiasX, World.BiasY));
 
 			glActiveTexture(GL_TEXTURE25);
@@ -288,6 +290,33 @@ namespace iTrace {
 			SpatialPacker.UnBind();
 
 			PackedSpatialData.UnBind();
+			
+			PreSpatialTemporalFilter.Bind(); 
+
+			PreSpatialTemporal.Bind(); 
+
+			RawPathTrace[Window.GetFrameCount() % 4].BindImage(0, 0);
+			RawPathTrace[Window.GetFrameCount() % 4].BindImage(3, 1);
+			RawPathTrace[Window.GetFrameCount() % 4].BindImage(5, 2);
+
+			PreSpatialTemporal.BindImagePrevious(0, 3); 
+			PreSpatialTemporal.BindImagePrevious(1, 4);
+			PreSpatialTemporal.BindImagePrevious(2, 5);
+			
+			PackedSpatialData.BindImage(6);
+
+			MotionVectors[Window.GetFrameCount() % 4].BindImage(7);
+			TemporalFrameCount.BindImage(8);
+
+			PreSpatialTemporalFilter.SetUniform("SubFrame", Window.GetFrameCount() % 4); 
+
+			DrawPostProcessQuad(); 
+
+			PreSpatialTemporal.UnBind(); 
+
+			PreSpatialTemporalFilter.UnBind(); 
+			
+
 
 			SpatialFilter.Bind();
 
@@ -300,12 +329,13 @@ namespace iTrace {
 			PackedSpatialData.BindImage(0);
 
 			RawPathTrace[Window.GetFrameCount() % 4].BindImage(0, 1); 
+			PreSpatialTemporal.BindImage(3, 1); 
 			TemporalFrameCount.BindImage(3);
 			VolumetricFBO[Window.GetFrameCount() % 4].BindImage(4); 
 			RawPathTrace[Window.GetFrameCount() % 4].BindImage(3, 5);
 			MotionVectors[Window.GetFrameCount() % 4].BindImage(6);
 			RawPathTrace[Window.GetFrameCount() % 4].BindImage(4, 7);
-
+			PreSpatialTemporal.BindImage(2, 8); 
 
 			for (int x = 0; x < 3; x++) {
 
@@ -635,6 +665,7 @@ namespace iTrace {
 			DirectBlocker.Reload("Shaders/DirectBlocker"); 
 			CloudRenderer.Reload("Shaders/Clouds"); 
 			CloudProjection.Reload("Shaders/CloudProjection"); 
+			PreSpatialTemporalFilter.Reload("Shaders/PreSpatialTemporal"); 
 
 			SetShaderUniforms(Window); 
 
@@ -751,6 +782,7 @@ namespace iTrace {
 			SpatialFilter.SetUniform("InputSpecular", 5);
 			SpatialFilter.SetUniform("MotionVectors", 6);
 			SpatialFilter.SetUniform("Direct", 7);
+			SpatialFilter.SetUniform("Detail", 8);
 
 
 			SpatialFilter.UnBind();
@@ -849,6 +881,23 @@ namespace iTrace {
 			CloudProjection.SetUniform("Turbulence", 6);
 
 			CloudProjection.UnBind();
+
+			PreSpatialTemporalFilter.Bind(); 
+
+			PreSpatialTemporalFilter.SetUniform("CurrentDiffuse", 0); 
+			PreSpatialTemporalFilter.SetUniform("CurrentSpecular", 1);
+			PreSpatialTemporalFilter.SetUniform("CurrentDetail", 2);
+			
+			PreSpatialTemporalFilter.SetUniform("PreviousDiffuse", 3);
+			PreSpatialTemporalFilter.SetUniform("PreviousSpecular", 4);
+			PreSpatialTemporalFilter.SetUniform("PreviousDetail", 5);
+
+			PreSpatialTemporalFilter.SetUniform("SpatialDenoiseData", 6);
+
+			PreSpatialTemporalFilter.SetUniform("MotionVectors", 7);
+			PreSpatialTemporalFilter.SetUniform("FrameCount", 8);
+
+			PreSpatialTemporalFilter.UnBind();
 
 
 		}

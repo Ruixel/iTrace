@@ -202,6 +202,12 @@
     <Filter Include="Shaders\Checkerboarder">
       <UniqueIdentifier>{2020fd0e-051a-483e-b806-1e17ba1c8dd8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\PreSpatialTemporal">
+      <UniqueIdentifier>{dae12c72-64a5-4ef6-8acb-99cbab871496}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\DeferredRefractive">
+      <UniqueIdentifier>{315719f2-3842-45e3-aadc-8f8ea4e95f2c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -690,6 +696,18 @@
     </None>
     <None Include="Shaders\Checkerboarder\shader.vert">
       <Filter>Shaders\Checkerboarder</Filter>
+    </None>
+    <None Include="Shaders\PreSpatialTemporal\shader.frag">
+      <Filter>Shaders\PreSpatialTemporal</Filter>
+    </None>
+    <None Include="Shaders\PreSpatialTemporal\shader.vert">
+      <Filter>Shaders\PreSpatialTemporal</Filter>
+    </None>
+    <None Include="Shaders\DeferredRefractive\shader.vert">
+      <Filter>Shaders\DeferredRefractive</Filter>
+    </None>
+    <None Include="Shaders\DeferredRefractive\shader.frag">
+      <Filter>Shaders\DeferredRefractive</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -15,13 +15,8 @@ namespace iTrace {
 
 			ParticleSystemFBO = FrameBufferObject(Window.GetResolution(), GL_RGBA16F); 
 			ParticleSystemShader = Shader("Shaders/ParticleShader"); 
-
-			ParticleSystemShader.Bind(); 
-
-			ParticleSystemShader.SetUniform("InstanceData", 0); 
-			ParticleSystemShader.SetUniform("RainNormalMap", 1); 
-
-			ParticleSystemShader.UnBind(); 
+			SetShaderUniforms(); 
+			
 
 			RainDropNormal = LoadTextureGL("Resources/BakeData/RainDrop_Normal.png"); 
 
@@ -51,14 +46,12 @@ namespace iTrace {
 			
 				//for now: 
 
-				auto& Chunk = *World.Chunk; 
-
 				//assume a particle is never travelling more than 1 block per frame 
 				//todo: replace this with a velocity based method in the future to allow for lower framerates (<10) 
 
 				Vector3i Floored = Particle.Position; 
 
-				if (Chunk::GetBlock(Chunk.GetBlock(Floored.x, Floored.y, Floored.z)).IsSolid)
+				if (Chunk::GetBlock(World.GetBlock(Floored)).IsSolid)
 					return true; 
 				return false; 
 			};
@@ -94,6 +87,7 @@ namespace iTrace {
 			ParticleSystemShader.SetUniform("Resolution", Resolution); 
 			ParticleSystemShader.SetUniform("ViewMatrix", Camera.View); 
 			ParticleSystemShader.SetUniform("IdentityMatrix", Camera.Project * Camera.View); 
+			ParticleSystemShader.SetUniform("CameraPosition", Camera.Position);
 
 			glActiveTexture(GL_TEXTURE0); 
 			glBindTexture(GL_TEXTURE_2D, ParticleContainer); 
@@ -105,6 +99,22 @@ namespace iTrace {
 			ParticleSystemShader.UnBind(); 
 			ParticleSystemFBO.UnBind();
 
+		}
+
+		void ParticleSystem::ReloadParticles()
+		{
+			ParticleSystemShader.Reload("Shaders/ParticleShader");
+			SetShaderUniforms();
+		}
+
+		void ParticleSystem::SetShaderUniforms()
+		{
+			ParticleSystemShader.Bind();
+
+			ParticleSystemShader.SetUniform("InstanceData", 0);
+			ParticleSystemShader.SetUniform("RainNormalMap", 1);
+
+			ParticleSystemShader.UnBind();
 		}
 
 	}

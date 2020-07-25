@@ -1,4 +1,5 @@
 #include "Sound.h"
+#include "Profiler.h"
 #include <fstream>
 
 namespace iTrace {
@@ -321,12 +322,13 @@ namespace iTrace {
 			glBindTexture(GL_TEXTURE_2D, DirectData);
 
 			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_3D, World.Chunk->ChunkTexID);
+			glBindTexture(GL_TEXTURE_3D, World.ChunkContainer);
 
 			SharedGainsBuffer.Bind(0); 
 			ReflectivityRatiosBuffer.Bind(1); 
 
 			SecondarySoundTracingShader.SetUniform("PlayerPosition", Camera.Position);
+			SecondarySoundTracingShader.SetUniform("PositionBias", Vector2i(World.BiasX, World.BiasY));
 
 			Rendering::DrawPostProcessQuad();
 
@@ -342,11 +344,12 @@ namespace iTrace {
 			glBindTexture(GL_TEXTURE_2D, DirectData);
 
 			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_3D, World.Chunk->ChunkTexID);
+			glBindTexture(GL_TEXTURE_3D, World.ChunkContainer);
 
 			TotalOcclusionBuffer.Bind(0); 
 
 			PrimarySoundTracingShader.SetUniform("PlayerPosition", Camera.Position);
+			PrimarySoundTracingShader.SetUniform("PositionBias", Vector2i(World.BiasX, World.BiasY));
 
 			Rendering::DrawPostProcessQuad();
 
@@ -354,6 +357,7 @@ namespace iTrace {
 
 			PrimarySoundTracingBuffer.UnBind(Window);
 
+			Profiler::SetPerformance("Sound tracing"); 
 
 			auto ReflectivityRatios = ReflectivityRatiosBuffer.GetData(); 
 			auto GainsShared = SharedGainsBuffer.GetData(); 
@@ -481,6 +485,9 @@ namespace iTrace {
 			SharedGainsBuffer.UnMap(); 
 			ReflectivityRatiosBuffer.UnMap(); 
 			TotalOcclusionBuffer.UnMap(); 
+
+			Profiler::SetPerformance("Sound parameter handling");
+
 
 		}
 		void SoundHandler::PrepareSoundBlockData()

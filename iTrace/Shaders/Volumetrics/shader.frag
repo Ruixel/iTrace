@@ -61,7 +61,25 @@ float PhaseFunction() {
 
 float GetDensity(vec3 WorldPosition) {
 	 
-	return 10.0 * pow(.5 * (1.0 - clamp((WorldPosition.y - 70.0) * 0.005, 0.0, 1.0)),3.0);// * pow(texture(Wind, (WorldPosition.xz *.001 + Time * .001)).x,2.0); 
+
+	//try a new density function: 
+	
+
+	//Density peaks at 40, then quickly fades 
+
+	float dens = 30 / (max(WorldPosition.y-55,0.0)*.5+.5); 
+
+	return dens; 
+
+	//~^-^~
+	 
+
+
+
+
+	
+
+	return 10 * pow(.5 * (1.0 - clamp((WorldPosition.y - 70.0) * 0.005, 0.0, 1.0)),3.0);// * pow(texture(Wind, (WorldPosition.xz *.001 + Time * .001)).x,2.0); 
 
 	return .3 * pow(texture(Wind, (WorldPosition.xz *.1 + Time * .1) * .05).x,2.0); 
 	return 1.0 * (1.0 - clamp((WorldPosition.y - 60.0) * 0.05, 0.0, 1.0)) * texture(Wind, (WorldPosition.xz *.1 + Time * .1)* .01).x; 
@@ -100,7 +118,7 @@ float DirectBasic(vec3 Position) {
 
 vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 	const vec3 PlayerOrigin = vec3(0,6200,0); 
-	const float PlanetRadius = 6473; 
+	const float PlanetRadius = 6573 + 7773 * 0.1; 
 
 	float Traversal = (PlanetRadius - (PlayerOrigin.y + Origin.y)) / Direction.y; 
 
@@ -109,10 +127,10 @@ vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 	//Fetch it! 
 
 	float fade = exp(-Traversal*1.5e-4); 
+	fade = clamp(fade, 0.0, 1.0); 
+	vec4 Sample = texture(ProjectedClouds, fract(vec2((NewPoint.x-4096) / 8192, (NewPoint.z+4096) / 8192)));  
 
-	vec4 Sample = texture(ProjectedClouds, fract(vec2((NewPoint.x + 500.0 + Time * 6.0) / 2048, (NewPoint.z + 500.0) / 2048)));  
-
-	//Sample.a = mix(1.0,Sample.a,fade); 
+	Sample.a = mix(0.0,Sample.a,fade); 
 
 	return Sample;  
 
@@ -127,8 +145,8 @@ void main() {
 		return; 
 	}
 
-	float SigmaS = 0.2 * 0.0625 * ScatteringMultiplier * 0.1; 
-	float SigmaA = 0.2 * 0.0625 * AbsorptionMultiplier * 0.1; 
+	float SigmaS = 0.3 * 0.0625 * 0.05 *1; 
+	float SigmaA = 0.05 * 0.0625 * 0.05 * 40.0; 
 	float SigmaE = SigmaS + SigmaA; 
 
 	Volumetrics = vec4(0.0,0.0,0.0,1.0); 
@@ -165,6 +183,8 @@ void main() {
 		ActualDistance = texelFetch(CloudDepth, ivec2(gl_FragCoord.xy), 0).x; 
 	}
  
+	ActualDistance = min(ActualDistance, VOLUMETRIC_MAX_DISTANCE); 
+
 	State = Frame / 4; 
 	float StepSize = ActualDistance / float(VOLUMETRIC_STEPS); 
 

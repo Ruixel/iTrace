@@ -31,6 +31,13 @@ namespace iTrace {
 
 			void PollParticles(Window& Window, WorldManager& World); //<- physics calculations
 			void DrawParticles(Window& Window, Camera& Camera); 
+			void ReloadParticles(); 
+
+			
+		private: 
+			void SetShaderUniforms(); 
+
+
 
 		};
 

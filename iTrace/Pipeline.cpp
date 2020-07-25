@@ -455,9 +455,7 @@ namespace iTrace {
 		Sounds.PrepareSoundBlockData();
 
 		Sounds.LoadSound("Footsteps", "Sound/Footsteps/Grass/Step.wav");
-		//Sounds.LoadSound("Music", "Sound/Creeper.wav");
 
-		//Sounds.AddSoundInstance(SoundInstance(), "CreeperInstance", "Footsteps");
 		FootSteps.PrepareFootStepManager(Sounds);
 		FootSteps.SetActiveMaterial(SoundType::STONE, Sounds);
 
@@ -469,7 +467,9 @@ namespace iTrace {
 		SoundEffects.AddSoundEffect(RainEffect, Sounds);
 		SoundEffects.AddSoundEffect(ThunderEffect, Sounds);
 
-		//SoundEffects.GetSoundEffect("Forest").SetVolume(100.0); 
+		SoundEffects.GetSoundEffect("Forest").SetVolume(0.0); 
+		SoundEffects.GetSoundEffect("Rain").SetVolume(0.0);
+		SoundEffects.GetSoundEffect("Thunder").SetVolume(0.0);
 
 
 		RainBaker Baker;
@@ -546,6 +546,9 @@ namespace iTrace {
 						switch (Event.key.code) {
 						case sf::Keyboard::Escape:
 							//World.Chunk->DumpToFile();
+
+
+
 							return;
 							break;
 
@@ -561,6 +564,7 @@ namespace iTrace {
 								Sky.ReloadSky();
 								Glow.ReloadPostProcess(Window, Camera);
 								Sounds.ReloadSounds();
+								Particles.ReloadParticles(); 
 							}
 							break;
 						case sf::Keyboard::F1:
@@ -581,10 +585,7 @@ namespace iTrace {
 							//Sounds.AddSoundInstance(SoundInstance(Camera.Position, 1.0), "MusicInstance", "Music");
 							//SoundEffects.GetSoundEffect("Thunder").Play(rand()%6); 
 
-							
-
 							break;
-
 						}
 					}
 					break;
@@ -650,19 +651,25 @@ namespace iTrace {
 
 					Camera.fov += 45.0 * Window.GetFrameTime();
 					Camera.fov = glm::clamp(Camera.fov, 10.0f, 90.0f);
-					Camera.Project = glm::perspective(glm::radians(Camera.fov), float(Window.GetResolution().x) / float(Window.GetResolution().y), Camera.znear, Camera.zfar);
+					Camera.RawProject = glm::perspective(glm::radians(Camera.fov), float(Window.GetResolution().x) / float(Window.GetResolution().y), Camera.znear, Camera.zfar);
 
 				}
 				else if (sf::Keyboard::isKeyPressed(sf::Keyboard::L)) {
 
 					Camera.fov -= 45.0 * Window.GetFrameTime();
 					Camera.fov = glm::clamp(Camera.fov, 10.0f, 90.0f);
-					Camera.Project = glm::perspective(glm::radians(Camera.fov), float(Window.GetResolution().x) / float(Window.GetResolution().y), Camera.znear, Camera.zfar);
+					Camera.RawProject = glm::perspective(glm::radians(Camera.fov), float(Window.GetResolution().x) / float(Window.GetResolution().y), Camera.znear, Camera.zfar);
 
 
 				}
 
 			}
+
+			
+
+		
+			Camera.Project = Camera.RawProject;
+
 
 			Frames++;
 			Window.SetFrameTime(GameClock.getElapsedTime().asSeconds());
@@ -677,14 +684,14 @@ namespace iTrace {
 
 				auto Weather = GetGlobalWeatherManager().GetWeather();
 
-				int Particles = glm::mix(0, int(ceil(2300.0 * Window.GetFrameTime())), sqrt(Weather.Wetness)); 
+				int Particles = glm::mix(0, int(ceil(3000.0 * Window.GetFrameTime())), sqrt(Weather.Wetness)); 
 
 				for (int Particle = 0; Particle < Particles; Particle++) {
 
 					float RandomAngle = (float(rand()) / float(RAND_MAX)) * 6.28;
-					float RandomRadius = 30.0 * glm::pow(float(rand()) / float(RAND_MAX),1.5) + 1.5; 
+					float RandomRadius = 30.0 * glm::pow(float(rand()) / float(RAND_MAX),1.5) + 2.7; 
 
-					Vector3f Position = Vector3f(Camera.Position.x, 0.0, Camera.Position.z) + Vector3f(cos(RandomAngle) * RandomRadius, Camera.Position.y + 20.0, sin(RandomAngle) * RandomRadius); 
+					Vector3f Position = Vector3f(Camera.Position.x, 0.0, Camera.Position.z) + Vector3f(cos(RandomAngle) * RandomRadius, Camera.Position.y + 7.0, sin(RandomAngle) * RandomRadius); 
 
 				//	std::cout << "Add particle\n";
 
@@ -723,8 +730,9 @@ namespace iTrace {
 			Profiler::SetPerformance("Sky render step");
 
 			glEnable(GL_DEPTH_TEST);
-
-			//Particles.DrawParticles(Window, Camera); 
+			
+			Particles.PollParticles(Window, World); 
+			Particles.DrawParticles(Window, Camera); 
 			Deferred.RenderDeferred(Sky,Window, Camera, World, Sky.Orientation);
 			Indirect.RenderIndirectLighting(Window, Camera, Deferred, World, Sky);
 			Combiner.CombineLighting(Window, Camera, Indirect, Deferred, Sky, Particles);
@@ -745,9 +753,7 @@ namespace iTrace {
 			if (ShowGUI) {
 
 				Text.PrepareTextDrawing();
-				//Text.DisplayText("Framerate: " + std::to_string(FramesPerSecond), Window, 0.005, Vector2f(-.97, .95), Vector3f(1.0));
-				//Text.DisplayText("X: " + std::to_string(Camera.Position.x) + " Y: " + std::to_string(Camera.Position.y) + " Z: " + std::to_string(Camera.Position.z), Window, 0.005, Vector2f(-.97, .9), Vector3f(1.0));
-				//Text.DisplayText("Type: " + Chunk::GetBlock(Block).Name, Window, 0.005, Vector2f(-.97, .85), Vector3f(1.0));
+				
 				Commands.DrawCommandText(&Text, Window);
 
 				Profiler::DrawProfiling(Window, Text);
@@ -766,11 +772,12 @@ namespace iTrace {
 				Sleep(30);
 			}
 
-			/*
+			
 			Vector3i Pos = Camera.Position;
 			Pos.y -= 2;
 
-			auto BlockIdx = World.Chunk->GetBlock(Pos.x, Pos.y, Pos.z);
+			auto BlockIdx = World.GetBlock(Pos);
+			
 			auto& Block = Chunk::GetBlock(BlockIdx);
 
 			bool Case = FootSteps.Poll(Camera, Sounds, Window);
@@ -778,14 +785,13 @@ namespace iTrace {
 			if (Case && Block.SoundMaterialType != ActiveSoundtype && Block.SoundMaterialType != SoundType::NONE) {
 				FootSteps.SetActiveMaterial(Block.SoundMaterialType, Sounds);
 			}
-			*/
+			
 
 
 			Window.GetRawWindow()->display();
 
 			Camera.PrevProject = Camera.Project;
-			//Sounds.SetSoundInstanceOrigin("CreeperInstance", Camera.Position - Vector3f(0.0,1.0,0.0));
-			//FootSteps.Step();
+			FootSteps.Step();
 
 			auto Weather = GetGlobalWeatherManager().GetWeather(); 
 
@@ -796,7 +802,9 @@ namespace iTrace {
 				SoundEffects.GetSoundEffect("Thunder").Play(rand() % 6); 
 
 			SoundEffects.PollSoundEffects(Sounds, Window, Camera); 
+
 			Profiler::SetPerformance("The rest");
+			Sounds.Update(Camera, Window, World);
 
 		}
 	}

@@ -14,6 +14,7 @@ namespace iTrace {
 			Shader DeferredManager, TransparentDeferredManager, DeferredUnwrapper;
 			FrameBufferObject RawDeferred; 
 			MultiPassFrameBufferObjectPreviousData Deferred; 
+			FrameBufferObject DeferredRefractive; //<- fallback refraction 
 			TextureGL Noise;
 			unsigned int RainDrop; 
 

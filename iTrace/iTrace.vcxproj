@@ -241,6 +241,8 @@
     <None Include="Shaders\Composite\shader.vert" />
     <None Include="Shaders\CubeItemDrawer\shader.frag" />
     <None Include="Shaders\CubeItemDrawer\shader.vert" />
+    <None Include="Shaders\DeferredRefractive\shader.frag" />
+    <None Include="Shaders\DeferredRefractive\shader.vert" />
     <None Include="Shaders\DeferredTransparent\shader.frag" />
     <None Include="Shaders\DeferredTransparent\shader.vert" />
     <None Include="Shaders\DeferredUnwrapper\shader.frag" />
@@ -271,6 +273,8 @@
     <None Include="Shaders\PlayerModelShader\shader.vert" />
     <None Include="Shaders\PrepShader\shader.frag" />
     <None Include="Shaders\PrepShader\shader.vert" />
+    <None Include="Shaders\PreSpatialTemporal\shader.frag" />
+    <None Include="Shaders\PreSpatialTemporal\shader.vert" />
     <None Include="Shaders\PrimarySoundTracing\shader.frag" />
     <None Include="Shaders\PrimarySoundTracing\shader.vert" />
     <None Include="Shaders\RainBaker\shader.frag" />

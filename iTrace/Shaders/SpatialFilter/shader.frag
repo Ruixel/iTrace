@@ -14,6 +14,7 @@ uniform sampler2D InputVolumetric;
 uniform sampler2D InputSpecular; 
 uniform sampler2D MotionVectors; 
 uniform sampler2D Direct; 
+uniform sampler2D Detail; 
 
 uniform bool DoSpatial; 
 uniform bool Final; 
@@ -55,29 +56,31 @@ float Luminance(vec3 x) {
 
 
 
-float WeightHeavy(vec4 LightingFetch, vec4 BaseFetch, float FrameCount, float BaseWeight, int StepSize) {
+float WeightHeavy(vec4 LightingFetch, vec4 BaseFetch, float FrameCount, float BaseWeight, int StepSize, float LumMultiplier) {
 	
 	float Weight = BaseWeight; 
 
-	float power = mix(1.0,1000.0,min((FrameCount-24.0)/30.0,1.0)); 
+	float power = mix(0.2,3.0,clamp((FrameCount-24.0)/4.0,0.0,1.0)); 
 
 	float OldWeight = Weight; 
 
-	Weight *= max(1.0-power*(abs(BaseFetch.w-LightingFetch.w)/min(BaseFetch.w,LightingFetch.w)),0.0); 
+	Weight /= pow(1.0+(12.0*power*(abs(min(BaseFetch.w,0.1)-min(LightingFetch.w,0.1)) / (0.6*max(min(BaseFetch.w,LightingFetch.w),1e-6)))),36.0); 
 
-	if(BaseFetch.w < 0.001 || LightingFetch.w < 0.001) {
-		return 0.0; 
-	}
+	//if(BaseFetch.w < 0.1 || LightingFetch.w < 0.1 || BaseFetch.w == LightingFetch.w) {
+	//	return Weight; 
+	//}
 				
 	//temporary, might not be used in the future! 
 				
 	float L1 = Luminance(LightingFetch.xyz); 
 	float L2 = Luminance(BaseFetch.xyz); 
 
-	Weight *= max(1.0-power*(abs(L1-L2)/min(L1,L2)),1.0); 
+	float LumWeight = StepSize == 1 ? 0.2 : 4.0; 
+
+	Weight /= (1.0 + LumMultiplier*LumWeight*(abs(L1-L2) / clamp(L1, 0.1,L2)));  
 
 	if(StepSize <= 3) {
-		Weight = mix(Weight, OldWeight, 0.125); 
+		//Weight = mix(Weight, OldWeight, 0.); 
 	}
 
 	return Weight; 
@@ -121,16 +124,26 @@ void main() {
 	float BaseRoughness = GetRoughness(BasePacked.xyz); 
 	
 	
-	if((Frame > 7.0 && StepSize > 5) || !DoSpatial ) {
+	if((Frame > 7.0 && StepSize > 5)  || !DoSpatial ) {
 	
 		IndirectDiffuse /= TotalWeight; 
 		Volumetric /= TotalWeightVolumetric; 
 		IndirectSpecular /= TotalWeightSpecular; 
 		if(Final) {
 		IndirectSpecular.w = texelFetch(Direct, Pixel,0).x; 
+		IndirectDiffuse.w = 1.0;
+		vec4 Detail = texelFetch(Detail, Pixel, 0); 
+
+		//IndirectDiffuse.xyz *= (Detail.xyz * Detail.w); 
 		}
 		return; 
 	}
+
+	float _ao = 0.0; 
+
+
+	vec4 BaseDetail = texelFetch(Detail, Pixel, 0); 
+
 
 	for(int x = -2; x <= 2; x++) {
 		for(int y = -2; y <= 2; y++) {
@@ -140,6 +153,8 @@ void main() {
 				
 			ivec2 NewPixel = Pixel + ivec2(x,y) * StepSize;
 			ivec2 NewPixelHighRes = HighResPixel + ivec2(x,y) * StepSize * 2; 
+
+			vec4 CurrentDetail = texelFetch(Detail, NewPixel, 0); 
 
 			vec4 CurrentPackedData = texelFetch(InputPacked, NewPixelHighRes, 0); 
 
@@ -159,17 +174,39 @@ void main() {
 
 			WeightSpecular /= pow(1.0 + 50.0 * abs(CurrentRoughness - BaseRoughness), 5.0); 
 
-			if(Frame > 24.0 && NewFiltering) {
+			if(Frame > 24.0) {
 
-				Weight = WeightHeavy(LightingSample, BaseIndirectDiffuse, Frame, Weight, StepSize); 
-				WeightSpecular = WeightHeavy(SpecularLightingSample, BaseIndirectSpecular, Frame, WeightSpecular, StepSize); 
+				Weight = WeightHeavy(CurrentDetail, BaseDetail, Frame, Weight, StepSize,6.0); 
+				WeightSpecular = WeightHeavy(SpecularLightingSample, BaseIndirectSpecular, Frame, WeightSpecular, StepSize,0.3*mix(0.5,2.0,pow(1.0-min(BaseRoughness,CurrentRoughness),2.0))); 
+
 
 			}
 
 			float BaseKernelWeight = Kernel[3-abs(x)] * Kernel[3-abs(y)]; 
 			float KernelWeight = BaseKernelWeight; 
-			if((Frame > 24.0 && StepSize > 3 && NewFiltering) || (Frame > 48.0 && NewFiltering)) {
-				KernelWeight = pow(KernelWeight,(StepSize > 3 && Frame > 48.0) ? 10.0 : 5.0); 
+			if((Frame > 12.0 && StepSize >= 3 && NewFiltering) || (Frame > 24.0 && NewFiltering)) {
+
+				float MinTraversal = min(LightingSample.w, BaseIndirectDiffuse.w); 
+
+
+
+				float KerWeight = mix(4.0,1.0,min(MinTraversal*0.5,1.0)); 
+
+
+
+
+
+				KernelWeight = pow(KernelWeight,KerWeight); 
+
+
+				//if(StepSize >= 3) {
+					Weight /= (1.0 + 0.6 * abs(Luminance(LightingSample.xyz-BaseIndirectDiffuse.xyz)));  
+
+				//}
+
+
+
+
 			}
 				 
 
@@ -190,10 +227,10 @@ void main() {
 
 			if((StepSize == 1 && Frame < 20.0) || (StepSize == 2 && Frame < 12.0) || Frame < 8.0) {
 
-				float WeightAO = Weight * pow(Kernel[3-abs(x)] * Kernel[3-abs(y)], mix(1.0, 1.5, clamp(Frame/30.0,0.0,1.0))); 
+				float WeightAO = Weight * pow(Kernel[3-abs(x)] * Kernel[3-abs(y)], mix(1.0, 2.0, clamp(Frame/30.0,0.0,1.0))); 
 
-				IndirectDiffuse.w += LightingSample.w * WeightAO; 
-				IndirectSpecular.w += SpecularLightingSample.w * WeightAO; 
+				//IndirectDiffuse.w += LightingSample.w * WeightAO; 
+				//IndirectSpecular.w += SpecularLightingSample.w * WeightAO; 
 				TotalWeightAO += WeightAO; 
 
 
@@ -204,15 +241,18 @@ void main() {
 		}
 	}
 	IndirectDiffuse.xyz /= TotalWeight; 
-	IndirectDiffuse.w /= TotalWeightAO; 
+//	IndirectDiffuse.w /= TotalWeightAO; 
 	Volumetric /= TotalWeightVolumetric;
 	IndirectSpecular.xyz /= TotalWeightSpecular; 
 	IndirectSpecular.w /= TotalWeightAO; 
-
+	IndirectDiffuse.w = BaseIndirectDiffuse.w; 
 	if(Final) {
 		IndirectSpecular.w = texelFetch(Direct, Pixel,0).x; 
+		vec4 Detail = texelFetch(Detail, Pixel, 0); 
+		//IndirectDiffuse.xyz *= (Detail.xyz * Detail.w); 
 	}
+	//IndirectDiffuse.xyz = vec3(pow(min(IndirectDiffuse.w,1.0),9.0)); 
 
-
-
+	//IndirectDiffuse.xyz = vec3(abs(BaseIndirectDiffuse.w-_ao)); 
+	
 }

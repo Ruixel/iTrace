@@ -2,6 +2,7 @@
 #include "DependenciesMath.h"
 #include <string>
 #include <algorithm>
+#include <iostream>
 constexpr double PI = 3.14159265;
 
 namespace iTrace {
@@ -123,6 +124,38 @@ namespace iTrace {
 		
 		bool SafeParseFloat(std::string Text, float & OutPut); 
 
+
+		//Custom cout for GLM types (2d/3d/4d vectors) 
+
+		inline std::ostream& operator<<(std::ostream& os, const Vector2f& c) {
+			return os << "{" << c.x << ", " << c.y << "}";
+		}
+		inline std::ostream& operator<<(std::ostream& os, const Vector3f& c) {
+			return os << "{" << c.x << ", " << c.y << ", " << c.z << "}"; 
+		}
+		inline std::ostream& operator<<(std::ostream& os, const Vector4f& c) {
+			return os << "{" << c.x << ", " << c.y << ", " << c.z << ", " << c.w << "}";
+		}
+
+		inline std::ostream& operator<<(std::ostream& os, const Vector2i& c) {
+			return os << "{" << c.x << ", " << c.y << "}";
+		}
+		inline std::ostream& operator<<(std::ostream& os, const Vector3i& c) {
+			return os << "{" << c.x << ", " << c.y << ", " << c.z << "}";
+		}
+		inline std::ostream& operator<<(std::ostream& os, const Vector4i& c) {
+			return os << "{" << c.x << ", " << c.y << ", " << c.z << ", " << c.w << "}";
+		}
+
+		inline std::ostream& operator<<(std::ostream& os, const Vector2d& c) {
+			return os << "{" << c.x << ", " << c.y << "}";
+		}
+		inline std::ostream& operator<<(std::ostream& os, const Vector3d& c) {
+			return os << "{" << c.x << ", " << c.y << ", " << c.z << "}";
+		}
+		inline std::ostream& operator<<(std::ostream& os, const Vector4d& c) {
+			return os << "{" << c.x << ", " << c.y << ", " << c.z << ", " << c.w << "}";
+		}
 
 
 	}
