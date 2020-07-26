@@ -208,6 +208,9 @@
     <Filter Include="Shaders\DeferredRefractive">
       <UniqueIdentifier>{315719f2-3842-45e3-aadc-8f8ea4e95f2c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\PrimaryDeferredRefractive">
+      <UniqueIdentifier>{3c814670-725f-4f05-bfad-cc4a4eb3a4c5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -708,6 +711,12 @@
     </None>
     <None Include="Shaders\DeferredRefractive\shader.frag">
       <Filter>Shaders\DeferredRefractive</Filter>
+    </None>
+    <None Include="Shaders\PrimaryDeferredRefractive\shader.vert">
+      <Filter>Shaders\PrimaryDeferredRefractive</Filter>
+    </None>
+    <None Include="Shaders\PrimaryDeferredRefractive\shader.frag">
+      <Filter>Shaders\PrimaryDeferredRefractive</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -30,7 +30,9 @@ namespace iTrace {
 			
 			for (int i = 0; i < 5; i++) {
 				ShadowMaps[i] = FrameBufferObject(Vector2i(SHADOWMAP_RES) * 2,GL_R32F);
-				RefractiveShadowMaps[i] = FrameBufferObject(Vector2i(SHADOWMAP_RES) * 2, GL_RGBA8); 
+				RefractiveShadowMaps[i] = FrameBufferObject(Vector2i(SHADOWMAP_RES) * 2, GL_RGBA8,false); 
+				RefractiveShadowMapsDepth[i] = FrameBufferObject(Vector2i(SHADOWMAP_RES) * 2, GL_RGBA8);
+
 				ProjectionMatrices[i] = Core::ShadowOrthoMatrix(Ranges[i], 100.f, 2500.f);
 				ProjectionMatricesRaw[i] = ProjectionMatrices[i]; 
 			}
@@ -274,16 +276,6 @@ namespace iTrace {
 
 			ShadowMaps[ToUpdate].UnBind();
 
-			glClearColor(1.0, 1.0, 1.0, 1.0);
-
-			glDisable(GL_DEPTH_TEST);
-
-			glEnable(GL_BLEND);
-
-			glBlendFunc(GL_DST_COLOR, GL_ZERO);
-
-			RefractiveShadowMaps[ToUpdate].Bind();
-
 			RefractiveShader.Bind();
 
 			glActiveTexture(GL_TEXTURE0);
@@ -294,9 +286,31 @@ namespace iTrace {
 			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockDataTexture());
 
+
+			RefractiveShader.SetUniform("IsPrimary", true); 
+
+
+			RefractiveShadowMapsDepth[ToUpdate].Bind(); 
+
 			World.RenderWorldRefractive(ShadowCamera, RefractiveShader);
 
-			RefractiveShader.UnBind();
+			RefractiveShadowMapsDepth[ToUpdate].UnBind(); 
+
+
+			RefractiveShadowMapsDepth[ToUpdate].BindDepthImage(3);
+
+
+			glClearColor(1.0, 1.0, 1.0, 1.0);
+
+			glDisable(GL_DEPTH_TEST);
+
+			glEnable(GL_BLEND);
+
+			glBlendFunc(GL_DST_COLOR, GL_ZERO);
+
+			RefractiveShadowMaps[ToUpdate].Bind();
+
+			World.RenderWorldRefractive(ShadowCamera, RefractiveShader);
 
 			RefractiveShadowMaps[ToUpdate].UnBind();
 
@@ -306,6 +320,7 @@ namespace iTrace {
 
 			glClearColor(0.0, 0.0, 0.0, 0.0);
 
+			RefractiveShader.UnBind();
 
 
 

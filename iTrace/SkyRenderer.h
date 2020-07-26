@@ -24,7 +24,7 @@ namespace iTrace {
 
 			MultiPassFrameBufferObject SkyIncident; 
 			CubeMultiPassFrameBufferObject SkyCube; 
-			FrameBufferObject ShadowMaps[5], RefractiveShadowMaps[5];
+			FrameBufferObject ShadowMaps[5], RefractiveShadowMaps[5], RefractiveShadowMapsDepth[5];
 			Matrix4f ViewMatrices[5], ProjectionMatrices[5], ProjectionMatricesRaw[5]; 
 			FrameBufferObject TemporaryHemiSphericalShadowMap;
 

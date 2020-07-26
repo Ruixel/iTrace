@@ -7,7 +7,11 @@ in vec3 TexCoord;
 
 uniform sampler1D TextureData; 
 uniform sampler2D Depth; 
+uniform sampler2D PrimaryRefractiveDepth; 
 uniform sampler2DArray DiffuseTextures; //<- really? 
+
+uniform bool IsPrimary; 
+uniform float Bias; 
 
 int GetTextureIdx(int Type, int Side) {
 	return int(texelFetch(TextureData, Type*2+(Side/3), 0)[Side%3]*255.0+0.5); 
@@ -45,6 +49,17 @@ void main() {
 	if(OpaqueDepth < gl_FragCoord.z) 
 		discard; 
 
-	Color = texture(DiffuseTextures, vec3(TC, GetTextureIdx(BlockType, BlockSide))); 
+	if(!IsPrimary) {
+		
+		float RefractiveDepth = texelFetch(PrimaryRefractiveDepth, ivec2(gl_FragCoord), 0).x; 
+		
+		if(RefractiveDepth >= (gl_FragCoord.z))
+			discard; 
+
+	}
+
+	//Color = vec4(1.0); 
+	//if(!IsPrimary)
+		Color = texture(DiffuseTextures, vec3(TC, GetTextureIdx(BlockType, BlockSide))); 
 
 }

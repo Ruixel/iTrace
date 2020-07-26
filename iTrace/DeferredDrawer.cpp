@@ -20,9 +20,11 @@ namespace iTrace {
 			DeferredUnwrapper = Shader("Shaders/DeferredUnwrapper"); 
 			TransparentDeferredManager = Shader("Shaders/DeferredTransparent"); 
 			RefractiveDeferredManager = Shader("Shaders/DeferredRefractive"); 
+			PrimaryRefractiveDeferredManager = Shader("Shaders/PrimaryDeferredRefractive"); 
 			Deferred = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 8, { GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_RGBA16F, GL_R16F,GL_RGBA16F,GL_RGB16F,GL_RGB16F }, false);
 			RawDeferred = FrameBufferObject(Window.GetResolution(), GL_RGBA16F); 
-			DeferredRefractive = FrameBufferObject(Window.GetResolution(), GL_RGBA16F, false); 
+			DeferredRefractive = FrameBufferObject(Window.GetResolution(), GL_RGBA8, false); 
+			PrimaryDeferredRefractive = FrameBufferObject(Window.GetResolution(), GL_RGBA8); 
 			TestStoneTexture = LoadTextureGL("Materials/Stone/Albedo.png"); 
 
 			Noise = LoadTextureGL("Textures/Noise.png",GL_RED); 
@@ -30,7 +32,6 @@ namespace iTrace {
 			RequestBoolean("parallax", false); 
 
 			SetUniforms(Window); 
-
 
 			glGenTextures(1, &RainDrop); 
 			glBindTexture(GL_TEXTURE_2D_ARRAY, RainDrop); 
@@ -158,6 +159,29 @@ namespace iTrace {
 
 			Deferred.UnBind(); 
 
+			glEnable(GL_DEPTH_TEST);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(0));
+
+			RawDeferred.BindDepthImage(1);
+
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockDataTexture());
+
+			glActiveTexture(GL_TEXTURE3);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(1));
+
+			PrimaryDeferredRefractive.Bind(); 
+
+			PrimaryRefractiveDeferredManager.Bind(); 
+
+			World.RenderWorldRefractive(Camera, PrimaryRefractiveDeferredManager); 
+
+			PrimaryRefractiveDeferredManager.UnBind(); 
+
+			PrimaryDeferredRefractive.UnBind(); 
+
 			glClearColor(1.0,1.0,1.0,1.0);
 
 			glDisable(GL_DEPTH_TEST); 
@@ -170,13 +194,10 @@ namespace iTrace {
 
 			RefractiveDeferredManager.Bind(); 
 
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(0));
+			RefractiveDeferredManager.SetUniform("IsPrimary", false); 
+			RefractiveDeferredManager.SetUniform("Bias", -1e-4f); 
 
-			RawDeferred.BindDepthImage(1); 
-
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockDataTexture());
+			PrimaryDeferredRefractive.BindDepthImage(3); 
 
 			World.RenderWorldRefractive(Camera, RefractiveDeferredManager);
 
@@ -231,9 +252,20 @@ namespace iTrace {
 			RefractiveDeferredManager.SetUniform("DiffuseTextures", 0); 
 			RefractiveDeferredManager.SetUniform("Depth", 1);
 			RefractiveDeferredManager.SetUniform("TextureData", 2);
+			RefractiveDeferredManager.SetUniform("PrimaryRefractiveDepth", 3);
 
 
 			RefractiveDeferredManager.UnBind(); 
+
+			PrimaryRefractiveDeferredManager.Bind();
+
+			PrimaryRefractiveDeferredManager.SetUniform("DiffuseTextures", 0);
+			PrimaryRefractiveDeferredManager.SetUniform("Depth", 1);
+			PrimaryRefractiveDeferredManager.SetUniform("TextureData", 2);
+			PrimaryRefractiveDeferredManager.SetUniform("NormalTextures", 3);
+
+
+			PrimaryRefractiveDeferredManager.UnBind();
 
 
 		}
@@ -244,6 +276,7 @@ namespace iTrace {
 			DeferredUnwrapper.Reload("Shaders/DeferredUnwrapper");
 			TransparentDeferredManager.Reload("Shaders/DeferredTransparent"); 
 			RefractiveDeferredManager.Reload("Shaders/DeferredRefractive");
+			PrimaryRefractiveDeferredManager.Reload("Shaders/PrimaryDeferredRefractive");
 
 			SetUniforms(Window); 
 		}

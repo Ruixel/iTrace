@@ -11,10 +11,10 @@ namespace iTrace {
 
 		struct DeferredRenderer {
 
-			Shader DeferredManager, TransparentDeferredManager, DeferredUnwrapper, RefractiveDeferredManager;
+			Shader DeferredManager, TransparentDeferredManager, DeferredUnwrapper, RefractiveDeferredManager, PrimaryRefractiveDeferredManager;
 			FrameBufferObject RawDeferred; 
 			MultiPassFrameBufferObjectPreviousData Deferred; 
-			FrameBufferObject DeferredRefractive; //<- fallback refraction 
+			FrameBufferObject DeferredRefractive, PrimaryDeferredRefractive; //<- fallback refraction 
 			TextureGL Noise;
 			unsigned int RainDrop; 
 
