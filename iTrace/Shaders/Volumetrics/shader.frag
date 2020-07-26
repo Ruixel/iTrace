@@ -218,7 +218,7 @@ void main() {
 
 			DirectDensity = pow(DirectDensity, 4.0); 
 
-			vec3 LightFetch = DirectBasic(Position) * SunColor * 0.0625 * DirectDensity; 
+			vec3 LightFetch = DirectBasic(Position) * SunColor * 0.5 * DirectDensity; 
 
 			
 

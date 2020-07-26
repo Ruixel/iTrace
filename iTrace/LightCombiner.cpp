@@ -66,13 +66,18 @@ namespace iTrace {
 
 			Indirect.SpatialyUpscaled.BindImage(2, 21);
 
-
+			Deferred.PrimaryDeferredRefractive.BindDepthImage(22);
+			Deferred.PrimaryDeferredRefractive.BindImage(0,23);
+			Deferred.PrimaryDeferredRefractive.BindImage(1,24);
 
 			LightCombinerShader.SetUniform("LightDirection", Sky.Orientation);
 			LightCombinerShader.SetUniform("SunColor", Sky.SunColor);
 			LightCombinerShader.SetUniform("CameraPosition", Camera.Position);
 			LightCombinerShader.SetUniform("UseSpec", sf::Keyboard::isKeyPressed(sf::Keyboard::J));
 			LightCombinerShader.SetUniform("NoAlbedo", GetBoolean("noalbedo"));
+			LightCombinerShader.SetUniform("InverseProj", glm::inverse(Camera.Project));
+			LightCombinerShader.SetUniform("InverseView", glm::inverse(Camera.View));
+			LightCombinerShader.SetUniform("IdentityMatrix", Camera.Project * Camera.View); 
 
 			DrawPostProcessQuad();
 
@@ -113,6 +118,10 @@ namespace iTrace {
 
 			LightCombinerShader.SetUniform("RefractiveBlocks", 20);
 			LightCombinerShader.SetUniform("DirectShadow", 21);
+
+			LightCombinerShader.SetUniform("PrimaryRefractionDepth", 22);
+			LightCombinerShader.SetUniform("PrimaryRefractionColor", 23);
+			LightCombinerShader.SetUniform("PrimaryRefractionNormal", 24);
 
 			
 			LightCombinerShader.UnBind();

@@ -91,9 +91,6 @@
     <Filter Include="Shaders\BlurCombiner">
       <UniqueIdentifier>{a5e24855-3de9-42ec-b2f9-e263ebea173f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\Volumetrics">
-      <UniqueIdentifier>{dc9d985e-f09c-4697-91a4-8df56f9c67a8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shaders\ParallaxBakeShader">
       <UniqueIdentifier>{a3f834e6-46c6-4842-96df-9d0abf165737}</UniqueIdentifier>
     </Filter>
@@ -210,6 +207,9 @@
     </Filter>
     <Filter Include="Shaders\PrimaryDeferredRefractive">
       <UniqueIdentifier>{3c814670-725f-4f05-bfad-cc4a4eb3a4c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Volumetrics">
+      <UniqueIdentifier>{dc9d985e-f09c-4697-91a4-8df56f9c67a8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
