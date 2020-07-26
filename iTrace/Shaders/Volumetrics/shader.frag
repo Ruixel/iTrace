@@ -29,6 +29,8 @@ uniform float ScatteringMultiplier;
 uniform float AbsorptionMultiplier; 
 
 uniform sampler2DShadow DirectionalCascades[4]; 
+uniform sampler2D DirectionalRefractive[4]; 
+
 uniform mat4 DirectionMatrices[4]; 
 uniform vec3 SunColor; 
 uniform vec3 LightDirection; 
@@ -91,7 +93,7 @@ ivec2 States[] = ivec2[](
 	ivec2(0, 0),
 	ivec2(1, 0));
 
-float DirectBasic(vec3 Position) {
+vec3 DirectBasic(vec3 Position) {
 
 	vec3 NDC = vec3(-1.0); 
 
@@ -110,9 +112,9 @@ float DirectBasic(vec3 Position) {
 
 	}
 	if(Cascade == -1) 
-		return 0.0; 
+		return vec3(0.0); 
 
-	return texture(DirectionalCascades[Cascade], vec3(NDC.xy * 0.5 + 0.5, (NDC.z * 0.5 + 0.5)-0.00009)); 
+	return texture(DirectionalCascades[Cascade], vec3(NDC.xy * 0.5 + 0.5, (NDC.z * 0.5 + 0.5)-0.00009)) * texture(DirectionalRefractive[Cascade], NDC.xy * 0.5 + 0.5).xyz; 
 
 }
 
@@ -145,8 +147,8 @@ void main() {
 		return; 
 	}
 
-	float SigmaS = 0.3 * 0.0625 * 0.05 *1; 
-	float SigmaA = 0.05 * 0.0625 * 0.05 * 40.0; 
+	float SigmaS = 0.3 * 0.0625 * 0.05 * 5.0; 
+	float SigmaA = 0.05 * 0.0625 * 0.; 
 	float SigmaE = SigmaS + SigmaA; 
 
 	Volumetrics = vec4(0.0,0.0,0.0,1.0); 
@@ -198,6 +200,8 @@ void main() {
 
 	int t = 0; 
 
+
+
 	while(Traversal < ActualDistance) {
 	
 		if(t++ > VOLUMETRIC_STEPS)
@@ -214,7 +218,7 @@ void main() {
 
 			DirectDensity = pow(DirectDensity, 4.0); 
 
-			vec3 LightFetch = DirectBasic(Position) * SunColor * DirectDensity; 
+			vec3 LightFetch = DirectBasic(Position) * SunColor * 0.0625 * DirectDensity; 
 
 			
 
@@ -224,8 +228,8 @@ void main() {
 
 			vec3 SIntegrated = (S - S * Transmittance) / SampleSigmaE; 
 
-			Volumetrics.xyz += SIntegrated * Volumetrics.a; 
-			Volumetrics.a *= Transmittance; 
+			Volumetrics.xyz += SIntegrated; 
+			
 
 		}
 
@@ -233,5 +237,7 @@ void main() {
 		Traversal += StepSize; 
 
 	}
+	Volumetrics.xyz *= 0.5; 
+	Volumetrics.a = 1.0; 
 
 }

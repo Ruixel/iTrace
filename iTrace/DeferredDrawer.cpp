@@ -19,6 +19,7 @@ namespace iTrace {
 			DeferredManager = Shader("Shaders/Deferred"); 
 			DeferredUnwrapper = Shader("Shaders/DeferredUnwrapper"); 
 			TransparentDeferredManager = Shader("Shaders/DeferredTransparent"); 
+			RefractiveDeferredManager = Shader("Shaders/DeferredRefractive"); 
 			Deferred = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 8, { GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_RGBA16F, GL_R16F,GL_RGBA16F,GL_RGB16F,GL_RGB16F }, false);
 			RawDeferred = FrameBufferObject(Window.GetResolution(), GL_RGBA16F); 
 			DeferredRefractive = FrameBufferObject(Window.GetResolution(), GL_RGBA16F, false); 
@@ -157,6 +158,39 @@ namespace iTrace {
 
 			Deferred.UnBind(); 
 
+			glClearColor(1.0,1.0,1.0,1.0);
+
+			glDisable(GL_DEPTH_TEST); 
+
+			glEnable(GL_BLEND); 
+
+			glBlendFunc(GL_DST_COLOR, GL_ZERO);
+
+			DeferredRefractive.Bind(); 
+
+			RefractiveDeferredManager.Bind(); 
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(0));
+
+			RawDeferred.BindDepthImage(1); 
+
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockDataTexture());
+
+			World.RenderWorldRefractive(Camera, RefractiveDeferredManager);
+
+			RefractiveDeferredManager.UnBind(); 
+
+			DeferredRefractive.UnBind(); 
+
+			glEnable(GL_DEPTH_TEST); 
+
+			glDisable(GL_BLEND); 
+
+			glClearColor(0.0, 0.0, 0.0, 0.0);
+
+
 			Profiler::SetPerformance("Deferred unwrapping"); 
 			
 		}
@@ -192,6 +226,16 @@ namespace iTrace {
 
 			TransparentDeferredManager.UnBind(); 
 
+			RefractiveDeferredManager.Bind(); 
+
+			RefractiveDeferredManager.SetUniform("DiffuseTextures", 0); 
+			RefractiveDeferredManager.SetUniform("Depth", 1);
+			RefractiveDeferredManager.SetUniform("TextureData", 2);
+
+
+			RefractiveDeferredManager.UnBind(); 
+
+
 		}
 
 		void DeferredRenderer::ReloadDeferred(Window& Window)
@@ -199,6 +243,8 @@ namespace iTrace {
 			DeferredManager.Reload("Shaders/Deferred");
 			DeferredUnwrapper.Reload("Shaders/DeferredUnwrapper");
 			TransparentDeferredManager.Reload("Shaders/DeferredTransparent"); 
+			RefractiveDeferredManager.Reload("Shaders/DeferredRefractive");
+
 			SetUniforms(Window); 
 		}
 

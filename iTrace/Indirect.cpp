@@ -19,7 +19,7 @@ namespace iTrace {
 
 			
 			for (int x = 0; x < 4; x++) {
-				RawPathTrace[x] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 6, { GL_RGBA16F, GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_R16F,GL_RGBA16F }, false);
+				RawPathTrace[x] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 6, { GL_RGBA16F, GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_RGB16F,GL_RGBA16F }, false);
 				MotionVectors[x] = FrameBufferObject(Window.GetResolution() / 2, GL_RGB16F, false);
 				SpatialyFiltered[x * 2] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 				SpatialyFiltered[x * 2 + 1] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
@@ -31,10 +31,10 @@ namespace iTrace {
 
 			DirectBlockerBuffer = FrameBufferObject(Window.GetResolution() / 8, GL_RG16F, false);
 			TemporalFrameCount = FrameBufferObjectPreviousData(Window.GetResolution() / 2, GL_R16F, false);
-			TemporalyUpscaled = MultiPassFrameBufferObject(Window.GetResolution() / 2, 4, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
+			TemporalyUpscaled = MultiPassFrameBufferObject(Window.GetResolution() / 2, 5, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGB16F }, false);
 			PackedSpatialData = FrameBufferObject(Window.GetResolution() / 2, GL_RGBA16F, false);
 			TemporallyFiltered = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 2, 4, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
-			SpatialyUpscaled = MultiPassFrameBufferObject(Window.GetResolution(), 2, { GL_RGBA16F,GL_RGBA16F }, false);
+			SpatialyUpscaled = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGBA16F,GL_RGBA16F, GL_RGB16F }, false);
 			ProjectedClouds = FrameBufferObjectPreviousData(Vector2i(256), GL_RGBA16F, false); 
 			PreSpatialTemporal = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 4, 4, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 
@@ -259,6 +259,11 @@ namespace iTrace {
 
 			ProjectedClouds.BindImage(30); 
 
+			for (int i = 0; i < 4; i++) {
+				Sky.RefractiveShadowMaps[i].BindImage(i + 31);
+			}
+
+
 			DrawPostProcessQuad();
 
 			IndirectLightShader.UnBind();
@@ -377,6 +382,8 @@ namespace iTrace {
 				SpatialyFiltered[x * 2].BindImage(1, x + 12);
 				SpatialyFiltered[x * 2].BindImage(2, x + 22);
 				Clouds[x].BindImage(0, x + 26);
+				RawPathTrace[x].BindImage(4, x + 30);
+
 
 				MotionVectors[x].BindImage(x + 16); 
 
@@ -484,7 +491,7 @@ namespace iTrace {
 
 				Volumetrics.SetUniform("DirectionMatrices[" + std::to_string(i) + "]", Sky.ProjectionMatrices[i] * Sky.ViewMatrices[i]);
 				Sky.ShadowMaps[i].BindDepthImage(i + 8);
-
+				Sky.RefractiveShadowMaps[i].BindImage(i + 14);
 			}
 
 			ProjectedClouds.BindImage(12);
@@ -705,6 +712,13 @@ namespace iTrace {
 			IndirectLightShader.SetUniform("NormalTextures", 29);
 			IndirectLightShader.SetUniform("ProjectedClouds", 30);
 
+			IndirectLightShader.SetUniform("DirectionalRefractive[0]", 31);
+			IndirectLightShader.SetUniform("DirectionalRefractive[1]", 32);
+			IndirectLightShader.SetUniform("DirectionalRefractive[2]", 33);
+			IndirectLightShader.SetUniform("DirectionalRefractive[3]", 34);
+
+
+
 			IndirectLightShader.UnBind();
 
 			TemporalUpscaler.Bind();
@@ -746,6 +760,11 @@ namespace iTrace {
 			TemporalUpscaler.SetUniform("FramesClouds[1]", 27);
 			TemporalUpscaler.SetUniform("FramesClouds[2]", 28);
 			TemporalUpscaler.SetUniform("FramesClouds[3]", 29);
+
+			TemporalUpscaler.SetUniform("FramesDirect[0]", 30);
+			TemporalUpscaler.SetUniform("FramesDirect[1]", 31);
+			TemporalUpscaler.SetUniform("FramesDirect[2]", 32);
+			TemporalUpscaler.SetUniform("FramesDirect[3]", 33);
 
 			TemporalUpscaler.SetUniform("Resolution", Window.GetResolution() / 4);
 
@@ -843,6 +862,10 @@ namespace iTrace {
 			Volumetrics.SetUniform("DirectionalCascades[3]", 11);
 			Volumetrics.SetUniform("ProjectedClouds", 12); 
 			Volumetrics.SetUniform("CloudDepth", 13);
+			Volumetrics.SetUniform("DirectionalRefractive[0]", 14);
+			Volumetrics.SetUniform("DirectionalRefractive[1]", 15);
+			Volumetrics.SetUniform("DirectionalRefractive[2]", 16);
+			Volumetrics.SetUniform("DirectionalRefractive[3]", 17);
 
 			Volumetrics.UnBind(); 
 
@@ -920,7 +943,7 @@ namespace iTrace {
 			PackedSpatialData.BindImage(3);
 			TemporallyFiltered.BindImage(1, 4);
 			TemporallyFiltered.BindImage(2, 5);
-			TemporalyUpscaled.BindImage(2, 6);
+			TemporalyUpscaled.BindImage(4, 6);
 
 
 			DrawPostProcessQuad(); 

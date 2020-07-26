@@ -202,6 +202,7 @@ namespace iTrace {
 				std::vector<unsigned char> ConstructMip(std::vector<unsigned char> Data, unsigned char Res); 
 				void Draw(Shader & RenderToShader, Camera& Camera); //draws chunk data to  
 				void DrawTransparent(Shader& RenderToShader, Camera& Camera);
+				void DrawRefractive(Shader& RenderToShader, Camera& Camera); 
 				void Generate(std::vector<Chunk*> NeighbooringChunks);
 				void UpdateMeshData(std::vector<Chunk*> NeighbooringChunks); 
 				void UpdateMeshData(std::vector<Chunk*> NeighbooringChunks,int SubX, int SubY, BLOCK_RENDER_TYPE RenderType);

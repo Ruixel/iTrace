@@ -30,6 +30,7 @@ namespace iTrace {
 			
 			for (int i = 0; i < 5; i++) {
 				ShadowMaps[i] = FrameBufferObject(Vector2i(SHADOWMAP_RES) * 2,GL_R32F);
+				RefractiveShadowMaps[i] = FrameBufferObject(Vector2i(SHADOWMAP_RES) * 2, GL_RGBA8); 
 				ProjectionMatrices[i] = Core::ShadowOrthoMatrix(Ranges[i], 100.f, 2500.f);
 				ProjectionMatricesRaw[i] = ProjectionMatrices[i]; 
 			}
@@ -101,7 +102,7 @@ namespace iTrace {
 
 		}
 
-		void SkyRendering::RenderSky(Window& Window, Camera& Camera, WorldManager& World)
+		void SkyRendering::RenderSky(Window& Window, Camera& Camera, WorldManager& World, Shader& RefractiveShader)
 		{
 
 		
@@ -111,7 +112,7 @@ namespace iTrace {
 			if(Window.GetFrameCount()%2)
 				UpdateHemisphericalShadowMap(Window, Camera, World); 
 			else 
-				UpdateShadowMap(Window, Camera, World);
+				UpdateShadowMap(Window, Camera, World, RefractiveShader);
 
 			glDisable(GL_DEPTH_TEST); 
 
@@ -215,7 +216,7 @@ namespace iTrace {
 
 			SkyColor = (Atmospheric::GetSkyColor(Orientation, Vector3f(0.0, 1.0, 0.0)));
 		}
-		void SkyRendering::UpdateShadowMap(Window& Window, Camera& Camera, WorldManager& World)
+		void SkyRendering::UpdateShadowMap(Window& Window, Camera& Camera, WorldManager& World, Shader& RefractiveShader)
 		{
 
 			iTrace::Camera ShadowCamera; 
@@ -250,7 +251,7 @@ namespace iTrace {
 			ShadowDeferredPlayer.SetUniform("CameraPosition", Camera.Position); 
 			ShadowDeferredPlayer.SetUniform("IdentityMatrix", ShadowCamera.Project * ShadowCamera.View); 
 
-			DrawPostProcessCube(); 
+			//DrawPostProcessCube(); 
 
 			ShadowDeferredPlayer.UnBind();
 
@@ -272,6 +273,41 @@ namespace iTrace {
 			ShadowTransparentDeferred.UnBind();
 
 			ShadowMaps[ToUpdate].UnBind();
+
+			glClearColor(1.0, 1.0, 1.0, 1.0);
+
+			glDisable(GL_DEPTH_TEST);
+
+			glEnable(GL_BLEND);
+
+			glBlendFunc(GL_DST_COLOR, GL_ZERO);
+
+			RefractiveShadowMaps[ToUpdate].Bind();
+
+			RefractiveShader.Bind();
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(0));
+
+			ShadowMaps[ToUpdate].BindDepthImage(1);
+
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockDataTexture());
+
+			World.RenderWorldRefractive(ShadowCamera, RefractiveShader);
+
+			RefractiveShader.UnBind();
+
+			RefractiveShadowMaps[ToUpdate].UnBind();
+
+			glEnable(GL_DEPTH_TEST);
+
+			glDisable(GL_BLEND);
+
+			glClearColor(0.0, 0.0, 0.0, 0.0);
+
+
+
 
 		}
 		void SkyRendering::UpdateHemisphericalShadowMap(Window& Window, Camera& Camera, WorldManager& World)

@@ -30,6 +30,7 @@ namespace iTrace {
 			void GenerateWorld(Camera& Camera); 
 			void RenderWorld(Camera& Camera, Shader & RenderToShader);
 			void RenderWorldTransparent(Camera& Camera, Shader& RenderToShader); 
+			void RenderWorldRefractive(Camera& Camera, Shader& RenderToShader); 
 
 			void AddLightBlock(Vector3i Location, Vector3i & OriginLocation, std::vector<unsigned char> &Data, int Distance, Vector3i* Min = nullptr, Vector3i* Max = nullptr);
 			void AddLightSource(Vector3i Location, Vector3f Color, Vector3i* Min = nullptr, Vector3i* Max = nullptr);

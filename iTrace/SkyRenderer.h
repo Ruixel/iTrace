@@ -11,7 +11,7 @@ namespace iTrace {
 	namespace Rendering {
 
 		const float Ranges[5] = { 7.5, 30.0, 90.0, 300.0,150.0 };
-		const int SHADOWMAP_RES = 1024; 
+		const int SHADOWMAP_RES = 512; 
 		const unsigned char UpdateQueue[] = { 0,1,0,2,0,1,0,2,0,1,0,3,4 };
 		const int YSplits = 3; 
 		const int XSplits[] = { 24, 16, 8 }; 
@@ -24,7 +24,7 @@ namespace iTrace {
 
 			MultiPassFrameBufferObject SkyIncident; 
 			CubeMultiPassFrameBufferObject SkyCube; 
-			FrameBufferObject ShadowMaps[5];
+			FrameBufferObject ShadowMaps[5], RefractiveShadowMaps[5];
 			Matrix4f ViewMatrices[5], ProjectionMatrices[5], ProjectionMatricesRaw[5]; 
 			FrameBufferObject TemporaryHemiSphericalShadowMap;
 
@@ -38,7 +38,7 @@ namespace iTrace {
 			unsigned int HemiSphericalShadowFBO, HemiSphericalShadowMapDepthBuffer; 
 
 			void PrepareSkyRenderer(Window & Window); 
-			void RenderSky(Window& Window, Camera & Camera, WorldManager & World); 
+			void RenderSky(Window& Window, Camera & Camera, WorldManager & World, Shader& RefractiveShader);
 			void ReloadSky(); 
 
 
@@ -55,7 +55,7 @@ namespace iTrace {
 			Vector3f SkyColor; 
 		private: 
 
-			void UpdateShadowMap(Window & Window, Camera& Camera, WorldManager& World);
+			void UpdateShadowMap(Window & Window, Camera& Camera, WorldManager& World, Shader& RefractiveShader);
 			void UpdateHemisphericalShadowMap(Window& Window, Camera& Camera, WorldManager& World); 
 			void CreateDirectionMatrices(); 
 

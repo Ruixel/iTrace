@@ -62,6 +62,11 @@ namespace iTrace {
 			glActiveTexture(GL_TEXTURE19); 
 			glBindTexture(GL_TEXTURE_CUBE_MAP, Sky.SkyCube.Texture[0]); 
 			
+			Deferred.DeferredRefractive.BindImage(20);
+
+			Indirect.SpatialyUpscaled.BindImage(2, 21);
+
+
 
 			LightCombinerShader.SetUniform("LightDirection", Sky.Orientation);
 			LightCombinerShader.SetUniform("SunColor", Sky.SunColor);
@@ -106,6 +111,10 @@ namespace iTrace {
 
 			LightCombinerShader.SetUniform("SkyCube", 19);
 
+			LightCombinerShader.SetUniform("RefractiveBlocks", 20);
+			LightCombinerShader.SetUniform("DirectShadow", 21);
+
+			
 			LightCombinerShader.UnBind();
 		}
 

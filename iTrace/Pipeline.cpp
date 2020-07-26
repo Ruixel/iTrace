@@ -404,6 +404,12 @@ namespace iTrace {
 
 #endif
 
+
+//		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &units);
+
+	//	std::cout << units << '\n'; 
+	//	std::cin.get(); 
+
 		GetGlobalWeatherManager().PrepareWeather(); 
 
 		RequestBoolean("freefly", true);
@@ -725,7 +731,7 @@ namespace iTrace {
 			
 			Profiler::SetPerformance("Pre-render step");
 
-			Sky.RenderSky(Window, Camera, World);
+			Sky.RenderSky(Window, Camera, World, Deferred.RefractiveDeferredManager);
 
 			Profiler::SetPerformance("Sky render step");
 

@@ -70,7 +70,7 @@ namespace iTrace {
 				Chunk::AddBlock(Chunk::BlockType("leaves", { 51 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Asphalt", { 52 }, true, false, false, SoundType::STONE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("melon", { 53 }, true, false, false, SoundType::STONE)); //CC0, good 
-				Chunk::AddBlock(Chunk::BlockType("Jelly", { 54 }, true, false, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE)); //CC0, good 
+				Chunk::AddBlock(Chunk::BlockType("Jelly", { 54 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Gold block", { 55 }, true, false, false, SoundType::STONE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Hop", { 56 }, true, false, false, SoundType::STONE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Diamond block", { 57 }, true, false, false, SoundType::STONE)); //CC0, good 
@@ -379,6 +379,17 @@ namespace iTrace {
 			for (int x = 0; x < (CHUNK_RENDER_DISTANCE * 2 + 1); x++) {
 				for (int y = 0; y < (CHUNK_RENDER_DISTANCE * 2 + 1); y++) {
 					Chunks[x][y]->DrawTransparent(RenderToShader, Camera);
+
+				}
+
+			}
+		}
+
+		void iTrace::Rendering::WorldManager::RenderWorldRefractive(Camera& Camera, Shader& RenderToShader)
+		{
+			for (int x = 0; x < (CHUNK_RENDER_DISTANCE * 2 + 1); x++) {
+				for (int y = 0; y < (CHUNK_RENDER_DISTANCE * 2 + 1); y++) {
+					Chunks[x][y]->DrawRefractive(RenderToShader, Camera);
 
 				}
 

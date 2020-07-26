@@ -6,6 +6,8 @@ layout(location = 0) out vec4 IndirectDiffuse;
 layout(location = 1) out vec4 Volumetrics;
 layout(location = 2) out vec4 IndirectSpecular;
 layout(location = 3) out vec4 Clouds;
+layout(location = 4) out vec3 Direct;
+
 
 uniform sampler2D FramesNormal[4]; 
 uniform sampler2D FramesWorldPos[4]; 
@@ -13,6 +15,8 @@ uniform sampler2D FramesIndirectDiffuse[4];
 uniform sampler2D FramesVolumetric[4]; 
 uniform sampler2D FramesIndirectSpecular[4]; 
 uniform sampler2D FramesClouds[4]; 
+uniform sampler2D FramesDirect[4]; 
+
 
 uniform sampler2D MotionVectors[4]; 
 uniform sampler2D WorldPos; 
@@ -167,7 +171,7 @@ void main() {
 			Volumetrics = texelFetch(FramesVolumetric[2], Pixel, 0); 
 			IndirectSpecular = texelFetch(FramesIndirectSpecular[2], Pixel, 0); 
 			Clouds = texelFetch(FramesClouds[2], Pixel, 0); 
-
+			Direct = texelFetch(FramesDirect[2], Pixel, 0).xyz; 
 
 		}
 	}
@@ -236,6 +240,8 @@ void main() {
 			Volumetrics = texelFetch(FramesVolumetric[3], Pixel, 0); 
 			IndirectSpecular = texelFetch(FramesIndirectSpecular[3], Pixel, 0); 
 			Clouds = texelFetch(FramesClouds[3], Pixel, 0); 
+			Direct = texelFetch(FramesDirect[3], Pixel, 0).xyz; 
+
 		}
 	}
 	else if(State == 2) {
@@ -303,6 +309,7 @@ void main() {
 			Volumetrics = texelFetch(FramesVolumetric[0], Pixel, 0); 
 			IndirectSpecular = texelFetch(FramesIndirectSpecular[0], Pixel, 0); 
 			Clouds = texelFetch(FramesClouds[0], Pixel, 0); 
+			Direct = texelFetch(FramesDirect[0], Pixel, 0).xyz; 
 
 
 		}
@@ -369,6 +376,7 @@ void main() {
 			Volumetrics = texelFetch(FramesVolumetric[1], Pixel, 0); 
 			IndirectSpecular = texelFetch(FramesIndirectSpecular[1], Pixel, 0); 
 			Clouds = texelFetch(FramesClouds[1], Pixel, 0); 
+			Direct = texelFetch(FramesDirect[1], Pixel, 0).xyz; 
 
 
 		}
@@ -413,6 +421,7 @@ void main() {
 		Volumetrics = texelFetch(FramesVolumetric[CurrentFrame], BestPixel , 0); 
 		IndirectSpecular = texelFetch(FramesIndirectSpecular[CurrentFrame], BestPixel, 0); 
 		Clouds = texelFetch(FramesClouds[CurrentFrame], BestPixel, 0); 
+		Direct = texelFetch(FramesDirect[CurrentFrame], BestPixel, 0).xyz; 
 	}
 
 }

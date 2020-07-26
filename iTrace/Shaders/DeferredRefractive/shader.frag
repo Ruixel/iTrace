@@ -42,9 +42,9 @@ void main() {
 
 	float OpaqueDepth = texelFetch(Depth, ivec2(gl_FragCoord), 0).x ; 
 
-	if(OpaqueDepth < gl_FragDepth) 
+	if(OpaqueDepth < gl_FragCoord.z) 
 		discard; 
 
-	Color = texture(DiffuseTextures, vec3(TC, BlockType)); 
+	Color = texture(DiffuseTextures, vec3(TC, GetTextureIdx(BlockType, BlockSide))); 
 
 }

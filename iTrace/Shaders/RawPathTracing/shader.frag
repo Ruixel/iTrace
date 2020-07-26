@@ -12,7 +12,7 @@ layout(location = 0) out vec4 IndirectDiffuse;
 layout(location = 1) out vec4 Normal;
 layout(location = 2) out vec3 WorldPos;
 layout(location = 3) out vec4 IndirectSpecular;
-layout(location = 4) out float Direct;
+layout(location = 4) out vec3 Direct;
 layout(location = 5) out vec4 Detail;
 
 
@@ -54,6 +54,7 @@ uniform vec3 CameraPosition;
 uniform int FrameCount;
 
 uniform sampler2DShadow DirectionalCascades[4]; 
+uniform sampler2D DirectionalRefractive[4]; 
 uniform mat4 DirectionMatrices[4]; 
 uniform vec3 SunColor; 
 uniform vec3 SkyColor; 
@@ -149,7 +150,7 @@ float GradientNoise(vec2 ScreenPos) {
 
 float PenumShifts[4] = float[4](1.0, 0.25, 0.0833333, 0.025); 
 
-float DirectHQ(vec3 Position, float Penumbra, vec2 ScreenPos, float SmoothNess) {
+vec3 DirectHQ(vec3 Position, float Penumbra, vec2 ScreenPos, float SmoothNess) {
 		
 	//first, find the correct shadow cascade! 
 
@@ -173,9 +174,9 @@ float DirectHQ(vec3 Position, float Penumbra, vec2 ScreenPos, float SmoothNess) 
 	}
 
 	if(Cascade == -1) 
-		return 0.0; 
+		return vec3(0.0); 
 
-	float Shadow = 0.0; 
+	vec3 Shadow = vec3(0.0); 
 
 	float Noise = hash(ivec2(ScreenPos),0,12) * 2.4; 
 
@@ -188,7 +189,14 @@ float DirectHQ(vec3 Position, float Penumbra, vec2 ScreenPos, float SmoothNess) 
 
 		ShadowCoord = clamp(ShadowCoord, vec2(0.0), vec2(1.0)); 
 
-		Shadow += texture(DirectionalCascades[Cascade], vec3(ShadowCoord.xy,(NDC.z*0.5+0.5) -0.000018 * clamp(Penumbra*100.0,1.0,50.0))); 
+		vec3 ShadowCapture = vec3(texture(DirectionalCascades[Cascade], vec3(ShadowCoord.xy,(NDC.z*0.5+0.5) -0.000018 * clamp(Penumbra*100.0,1.0,50.0)))); 
+
+		if(ShadowCapture.x > 0.01) 
+			ShadowCapture *= texture(DirectionalRefractive[Cascade], vec2(ShadowCoord.xy)).xyz; 
+
+		Shadow += ShadowCapture; 
+
+
 
 	}
 
@@ -198,7 +206,7 @@ float DirectHQ(vec3 Position, float Penumbra, vec2 ScreenPos, float SmoothNess) 
 
 //useful for indirect bounce purposes (as quality isn't going to be super relevant) 
 
-float DirectBasic(vec3 Position) {
+vec3 DirectBasic(vec3 Position) {
 
 	vec3 NDC = vec3(-1.0); 
 
@@ -217,12 +225,12 @@ float DirectBasic(vec3 Position) {
 
 	}
 	if(Cascade == -1) 
-		return 0.0; 
+		return vec3(0.0); 
 
 
 
 
-	return texture(DirectionalCascades[Cascade], vec3(NDC.xy * 0.5 + 0.5, (NDC.z * 0.5 + 0.5)-0.00009)); 
+	return texture(DirectionalCascades[Cascade], vec3(NDC.xy * 0.5 + 0.5, (NDC.z * 0.5 + 0.5)-0.00009))* texture(DirectionalRefractive[Cascade], NDC.xy * 0.5 + 0.5).xyz; 
 
 }
 

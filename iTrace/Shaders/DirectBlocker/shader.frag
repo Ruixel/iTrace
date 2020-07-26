@@ -60,7 +60,7 @@ float Penumbra(int Cascade, float Noise, vec3 NDC, int Samples, float RootSample
 	
 		vec2 SampleUV = (NDC.xy) * 0.5 + 0.5 + MAXPENUM * VogelDisk(i, Samples, RootSamples, Noise * 2.4) * PenumShifts[Cascade] * PenumShifts[Cascade];  
 		SampleUV = clamp(SampleUV, vec2(0.01), vec2(0.99)); 
-		float Shadow = texelFetch(DirectionalCascades[Cascade], ivec2(SampleUV * 2048.0), 0).x; 
+		float Shadow = texelFetch(DirectionalCascades[Cascade], ivec2(SampleUV * 1024.0), 0).x; 
 
 		if(Shadow < (NDC.z * 0.5 + 0.5)-0.00009) {
 			AverageBlockerDepth += Shadow; 

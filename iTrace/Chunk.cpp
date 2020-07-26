@@ -181,6 +181,16 @@ namespace iTrace {
 				}
 			}
 
+			void Chunk::DrawRefractive(Shader& RenderToShader, Camera& Camera)
+			{
+				RenderToShader.SetUniform("IdentityMatrix", Camera.Project * Camera.View * ModelMatrix);
+				for (int x = 0; x < 4; x++) {
+					for (int y = 0; y < 4; y++) {
+						MeshDataRefractive.Draw(x, y);
+					}
+				}
+			}
+
 			void Chunk::Generate(std::vector<Chunk*> NeighbooringChunks)
 			{
 

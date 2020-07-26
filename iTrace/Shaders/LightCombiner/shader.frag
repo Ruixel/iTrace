@@ -26,6 +26,8 @@ uniform sampler2D Clouds;
 uniform sampler2D Particles; 
 uniform sampler2D ParticleDepth; 
 uniform sampler2D Depth; 
+uniform sampler2D RefractiveBlocks; 
+uniform sampler2D DirectShadow; 
 
 uniform bool NoAlbedo; 
 
@@ -187,7 +189,7 @@ void main() {
 		vec3 DiffuseColor = mix(AlbedoFetch.xyz,vec3(0.0),AlbedoFetch.w); 		
 
 
-		float Shadow = IndirectSpecular.w; 
+		vec3 Shadow = texture(DirectShadow, TexCoord).xyz; 
 
 	//	vec3 Direct = Shadow * max(dot(LightDirection, HighfreqNormalSample.xyz),0.0);
 	//	vec3 DirectSpecular = 10.0 * Shadow * pow(max(dot(LightDirection, SpecDir),0.0),1024.0); 
@@ -214,7 +216,13 @@ void main() {
 	}
 	vec4 Volumetrics = texture(Volumetrics, TexCoord); 
 
-	Lighting.xyz = mix(Lighting.xyz, Volumetrics.xyz,1.0-Volumetrics.w);
 
 	Lighting.xyz *= Multiplier; 
+
+	vec3 Refractive = texture(RefractiveBlocks, TexCoord).xyz; 
+
+	Lighting.xyz *= Refractive;
+	Glow.xyz *= Refractive; 
+	Lighting.xyz += Volumetrics.xyz; 
+
 }
