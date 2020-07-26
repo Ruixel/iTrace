@@ -54,9 +54,9 @@ namespace iTrace {
 			Deferred.Deferred.BindImage(0, 0); 
 			Deferred.Deferred.BindImage(2, 1);
 			Sky.SkyIncident.BindImage(1, 2); 
-			Combined.CombinedLighting.BindImage(0,3); 
+			Combined.CombinedRefraction.BindImage(0,3);
 			Indirect.TemporallyFiltered.BindImage(1, 4); 
-			Combined.CombinedLighting.BindImage(1, 5);
+			Combined.CombinedRefraction.BindImage(1, 5);
 			Indirect.TemporallyFiltered.BindImage(3, 6);
 
 
@@ -126,9 +126,9 @@ namespace iTrace {
 
 			DoFPrepShader.Bind(); 
 
-			Combined.CombinedLighting.BindImage(0, 0);
+			Combined.CombinedRefraction.BindImage(0, 0);
 			GlowBuffer[2][1].BindImage(1);
-			Deferred.RawDeferred.BindDepthImage(2);
+			Combined.CombinedRefraction.BindImage(2, 2);
 			DoFPrepShader.SetUniform("Aperture", Aperture);
 			DoFPrepShader.SetUniform("ImageDistance", ImageDistance);
 			DoFPrepShader.SetUniform("FocusPoint", FocusPoint);

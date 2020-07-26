@@ -211,6 +211,9 @@
     <Filter Include="Shaders\Volumetrics">
       <UniqueIdentifier>{dc9d985e-f09c-4697-91a4-8df56f9c67a8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\RefractiveCombiner">
+      <UniqueIdentifier>{3f965085-4e54-4c22-b375-d76cc565fe5d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -717,6 +720,12 @@
     </None>
     <None Include="Shaders\PrimaryDeferredRefractive\shader.frag">
       <Filter>Shaders\PrimaryDeferredRefractive</Filter>
+    </None>
+    <None Include="Shaders\RefractiveCombiner\shader.vert">
+      <Filter>Shaders\RefractiveCombiner</Filter>
+    </None>
+    <None Include="Shaders\RefractiveCombiner\shader.frag">
+      <Filter>Shaders\RefractiveCombiner</Filter>
     </None>
   </ItemGroup>
 </Project>

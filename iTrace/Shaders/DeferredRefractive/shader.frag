@@ -61,5 +61,5 @@ void main() {
 	//Color = vec4(1.0); 
 	//if(!IsPrimary)
 		Color = texture(DiffuseTextures, vec3(TC, GetTextureIdx(BlockType, BlockSide))); 
-
+		Color.xyz = pow(Color.xyz, vec3(2.2)); 
 }

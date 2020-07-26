@@ -114,90 +114,6 @@ vec3 GetPointSpecularShading(vec3 InNormal, vec3 LightDirection,vec3 Incident, v
 
 
 
-//takes in origin + direction and returns analytical traversal for a ray within that block 
-
-float AnalyticalTraversal(vec3 Direction, vec3 Origin) {
-
-
-	vec3 BlockPosition = floor(Origin); //<- assumes one block is one unit! 
-	vec3 BlockPositionCeil = BlockPosition + 1; 
-
-
-
-	//the 2 y planes 
-
-	float Y = (BlockPosition.y-Origin.y) / Direction.y; 
-
-	if(Y < 0.01) 
-		Y = (BlockPositionCeil.y-Origin.y ) / Direction.y; 
-
-	
-
-	//the 2 x planes 
-
-	float X = (BlockPosition.x-Origin.x) / Direction.x; 
-	if(X < 0.01) 
-		X = ( BlockPositionCeil.x-Origin.x) / Direction.x; 
-	//the 2 z planes 
-
-	float Z = ( BlockPosition.z-Origin.z) / Direction.z; 
-	if(Z < 0.01) 
-		Z = (BlockPositionCeil.z-Origin.z) / Direction.z; 
-
-	if(Y < 0.0) 
-		Y = 10000.0; 
-
-	if(X < 0.0) 
-		X = 10000.0; 
-
-	if(Z < 0.0) 
-		Z = 10000.0; 
-
-	float t = min(X,min(Y,Z)); 
-
-	return t; 
-
-}
-
-void ManageRefraction(inout vec2 TC, inout vec3 Multiplier, float Depth) {
-	
-	float RefractiveDepth = texelFetch(PrimaryRefractionDepth, ivec2(gl_FragCoord), 0).x; 
-	
-	if(RefractiveDepth < Depth) {
-		
-		
-
-		vec3 Normal = texture(PrimaryRefractionNormal, TC).xyz; 
-
-		vec3 WorldPosition = GetWorldPosition(RefractiveDepth, TC); 
-		
-		vec3 Incident = normalize(WorldPosition - CameraPosition); 
-
-		vec3 RayDir = refract(Incident, Normal, 1.0/1.33); 
-
-		vec3 NewPosition = WorldPosition + RayDir * 0.2; 
-
-		float t = AnalyticalTraversal(RayDir, WorldPosition - Normal * 0.01); 
-
-		vec3 PrimaryColor = texture(PrimaryRefractionColor, TC).xyz;; 
-		//PrimaryColor = mix(vec3(1.0), pow(PrimaryColor,vec3(5.0)),t/sqrt(3)); 
-		
-
-
-
-		vec4 Clip = IdentityMatrix * vec4(NewPosition, 1.0);
-		Clip.xyz /= Clip.w; 
-
-
-		TC = Clip.xy * 0.5 + 0.5; 
-
-		Multiplier *= PrimaryColor * texture(RefractiveBlocks, TC).xyz;  
-
-
-
-	}
-
-}
 
 void ManageDirect(vec3 WorldPos, vec3 BasicNormal, vec3 Normal, float Roughness, vec3 F0, vec3 Incident, out vec3 DirectDiffuse, out vec3 DirectSpecular) {
 
@@ -260,7 +176,7 @@ void main() {
 
 	}
 	
-	ManageRefraction(TexCoord, Multiplier, DepthSample); 
+	Multiplier *= texture(RefractiveBlocks, TexCoord).xyz; 
 
 	vec4 NormalFetch = textureLod(Normal, TexCoord,0.0); 
 

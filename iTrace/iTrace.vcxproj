@@ -283,6 +283,8 @@
     <None Include="Shaders\RainBaker\shader.vert" />
     <None Include="Shaders\RawPathTracing\shader.frag" />
     <None Include="Shaders\RawPathTracing\shader.vert" />
+    <None Include="Shaders\RefractiveCombiner\shader.frag" />
+    <None Include="Shaders\RefractiveCombiner\shader.vert" />
     <None Include="Shaders\RTMotionVectors\shader.frag" />
     <None Include="Shaders\RTMotionVectors\shader.vert" />
     <None Include="Shaders\SecondarySoundTracing\shader.frag" />

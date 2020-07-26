@@ -39,7 +39,7 @@ namespace iTrace {
 			CompositorShader.SetUniform("zfar", Camera.zfar);
 			CompositorShader.SetUniform("DoGlow", GetBoolean("hdrpostprocess"));
 
-			Combined.CombinedLighting.BindImage(0,0); 
+			Combined.CombinedRefraction.BindImage(0,0); 
 			Deferred.Deferred.BindDepthImage(1); 
 			Glow.GlowBuffer[2][1].BindImage(2); 
 			Glow.DoFBuffer.BindImage(3);

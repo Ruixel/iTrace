@@ -11,9 +11,9 @@ namespace iTrace {
 
 		struct LightCombiner {
 
-			Shader LightCombinerShader; 
+			Shader LightCombinerShader, RefractiveCombiner; 
 
-			MultiPassFrameBufferObject CombinedLighting; 
+			MultiPassFrameBufferObject CombinedLighting, CombinedRefraction; 
 
 			void PrepareLightCombiner(Window& Window); 
 			void CombineLighting(Window& Window, Camera & Camera, LightManager& Indirect, DeferredRenderer& Deferred, SkyRendering& Sky, ParticleSystem & Particles); 

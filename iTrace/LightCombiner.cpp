@@ -12,7 +12,9 @@ namespace iTrace {
 		{
 
 			CombinedLighting = MultiPassFrameBufferObject(Window.GetResolution(), 2, { GL_RGB16F,GL_RGB16F }, false);
+			CombinedRefraction = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGB16F, GL_RGB16F, GL_R32F }, false); 
 			LightCombinerShader = Shader("Shaders/LightCombiner"); 
+			RefractiveCombiner = Shader("Shaders/RefractiveCombiner"); 
 
 			RequestBoolean("noalbedo", false); 
 
@@ -84,6 +86,30 @@ namespace iTrace {
 			LightCombinerShader.UnBind(); 
 
 			CombinedLighting.UnBind(); 
+
+			RefractiveCombiner.Bind(); 
+
+			CombinedRefraction.Bind(); 
+
+			CombinedLighting.BindImage(0, 0); 
+			CombinedLighting.BindImage(1, 1);
+			Deferred.RawDeferred.BindDepthImage(2);
+
+			Deferred.PrimaryDeferredRefractive.BindDepthImage(3);
+			Deferred.PrimaryDeferredRefractive.BindImage(0, 4);
+			Deferred.PrimaryDeferredRefractive.BindImage(1, 5);
+
+			RefractiveCombiner.SetUniform("InverseProj", glm::inverse(Camera.Project));
+			RefractiveCombiner.SetUniform("InverseView", glm::inverse(Camera.View));
+			RefractiveCombiner.SetUniform("IdentityMatrix", Camera.Project * Camera.View);
+			RefractiveCombiner.SetUniform("CameraPosition", Camera.Position);
+
+			DrawPostProcessQuad(); 
+
+			CombinedRefraction.UnBind(); 
+
+			RefractiveCombiner.UnBind(); 
+
 		}
 
 		void LightCombiner::SetUniforms(Window& Window)
@@ -125,12 +151,26 @@ namespace iTrace {
 
 			
 			LightCombinerShader.UnBind();
+
+			RefractiveCombiner.Bind(); 
+
+			RefractiveCombiner.SetUniform("CombinedLighting",0); 
+			RefractiveCombiner.SetUniform("CombinedGlow", 1);
+
+			RefractiveCombiner.SetUniform("Depth", 2);
+
+			RefractiveCombiner.SetUniform("PrimaryRefractionDepth", 3);
+			RefractiveCombiner.SetUniform("PrimaryRefractionColor", 4);
+			RefractiveCombiner.SetUniform("PrimaryRefractionNormal", 5);
+
+			RefractiveCombiner.UnBind(); 
+
 		}
 
 		void LightCombiner::ReloadLightCombiner(Window& Window)
 		{
 			LightCombinerShader.Reload("Shaders/LightCombiner");
-
+			RefractiveCombiner.Reload("Shaders/RefractiveCombiner");
 			SetUniforms(Window);
 		}
 
