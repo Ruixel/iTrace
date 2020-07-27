@@ -18,12 +18,14 @@ void main() {
 
 	float L = length(NormalFetch.xyz); 
 	if(L > 0.25 && L < 1.75) {
-		LightingGlow = texture(Glow, TexCoord).xyz; 
+		//LightingGlow = texture(Glow, TexCoord).xyz; 
 	}	
 	else {
 		//LightingGlow = vec3(0.0); 
-		LightingGlow = mix(vec3(0.0), texture(SkyReigh, TexCoord).xyz, pow(texture(Clouds,TexCoord).w,1.0)); 
+		//LightingGlow = mix(vec3(0.0), texture(SkyReigh, TexCoord).xyz, pow(texture(Clouds,TexCoord).w,1.0)); 
 	}
+
+	LightingGlow = texture(Glow, TexCoord).xyz; 
 
 	LightingGlow = mix(vec3(0.0), LightingGlow, texture(Volumetrics, TexCoord).a); 
 

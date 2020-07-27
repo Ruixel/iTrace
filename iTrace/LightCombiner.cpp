@@ -71,6 +71,8 @@ namespace iTrace {
 			Deferred.PrimaryDeferredRefractive.BindDepthImage(22);
 			Deferred.PrimaryDeferredRefractive.BindImage(0,23);
 			Deferred.PrimaryDeferredRefractive.BindImage(1,24);
+			Sky.SkyIncident.BindImage(1, 25);
+
 
 			LightCombinerShader.SetUniform("LightDirection", Sky.Orientation);
 			LightCombinerShader.SetUniform("SunColor", Sky.SunColor);
@@ -98,11 +100,13 @@ namespace iTrace {
 			Deferred.PrimaryDeferredRefractive.BindDepthImage(3);
 			Deferred.PrimaryDeferredRefractive.BindImage(0, 4);
 			Deferred.PrimaryDeferredRefractive.BindImage(1, 5);
+			Indirect.TemporallyFiltered.BindImage(1, 6);
 
 			RefractiveCombiner.SetUniform("InverseProj", glm::inverse(Camera.Project));
 			RefractiveCombiner.SetUniform("InverseView", glm::inverse(Camera.View));
 			RefractiveCombiner.SetUniform("IdentityMatrix", Camera.Project * Camera.View);
 			RefractiveCombiner.SetUniform("CameraPosition", Camera.Position);
+
 
 			DrawPostProcessQuad(); 
 
@@ -148,6 +152,7 @@ namespace iTrace {
 			LightCombinerShader.SetUniform("PrimaryRefractionDepth", 22);
 			LightCombinerShader.SetUniform("PrimaryRefractionColor", 23);
 			LightCombinerShader.SetUniform("PrimaryRefractionNormal", 24);
+			LightCombinerShader.SetUniform("SkyReigh", 25);
 
 			
 			LightCombinerShader.UnBind();
@@ -162,6 +167,7 @@ namespace iTrace {
 			RefractiveCombiner.SetUniform("PrimaryRefractionDepth", 3);
 			RefractiveCombiner.SetUniform("PrimaryRefractionColor", 4);
 			RefractiveCombiner.SetUniform("PrimaryRefractionNormal", 5);
+			RefractiveCombiner.SetUniform("Volumetrics", 6);
 
 			RefractiveCombiner.UnBind(); 
 

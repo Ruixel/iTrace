@@ -26,6 +26,12 @@ namespace iTrace {
 		{
 			{
 				Chunk::AddBlock(Chunk::BlockType());
+				Chunk::AddBlock(Chunk::BlockType("Green glass", { 59 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE)); //CC0, good 
+				Chunk::AddBlock(Chunk::BlockType("Red glass", { 60 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE)); //CC0, good 
+				Chunk::AddBlock(Chunk::BlockType("blue glass", { 61 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE)); //CC0, good 
+				Chunk::AddBlock(Chunk::BlockType("Jelly", { 54 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE)); //CC0, good 
+
+
 				Chunk::AddBlock(Chunk::BlockType("Stone", { 0,0,0,0,0,0 }, true, false, false, SoundType::STONE)); //CC0, good
 				Chunk::AddBlock(Chunk::BlockType("Dirt", { 1,1,1,1,1,1 }, true, false, false, SoundType::DIRT));  //CC0, good
 				Chunk::AddBlock(Chunk::BlockType("Grass", { 3,3,3,3,2,1 }, true, false, false, SoundType::GRASS)); //CC0, good
@@ -70,11 +76,11 @@ namespace iTrace {
 				Chunk::AddBlock(Chunk::BlockType("leaves", { 51 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Asphalt", { 52 }, true, false, false, SoundType::STONE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("melon", { 53 }, true, false, false, SoundType::STONE)); //CC0, good 
-				Chunk::AddBlock(Chunk::BlockType("Jelly", { 54 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Gold block", { 55 }, true, false, false, SoundType::STONE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Hop", { 56 }, true, false, false, SoundType::STONE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Diamond block", { 57 }, true, false, false, SoundType::STONE)); //CC0, good 
-				Chunk::AddBlock(Chunk::BlockType("Metal test", { 58 }, true, false, false, SoundType::METAL)); //CC0, good 
+				Chunk::AddBlock(Chunk::BlockType("Metal test", { 58 }, true, false, false, SoundType::METAL)); //CC0, good (50)
+				
 
 				Chunk::AddTexture("stone", 0.75);
 				Chunk::AddTexture("Dirt", 0.4);
@@ -130,11 +136,14 @@ namespace iTrace {
 				Chunk::AddTexture("leaves", 0.0);
 				Chunk::AddTexture("Asphalt", 0.125);
 				Chunk::AddTexture("Melon", 0.125);
-				Chunk::AddTexture("Jelly", 0.125);
+				Chunk::AddTexture("obsidian", 0.125);
 				Chunk::AddTexture("Gold block", 0.0625);
 				Chunk::AddTexture("Hop", 0.25);
 				Chunk::AddTexture("Diamond block MC", 0.25);
 				Chunk::AddTexture("Metal", 0.125);
+				Chunk::AddTexture("Green glass", 0.125);
+				Chunk::AddTexture("red glass", 0.125);
+				Chunk::AddTexture("blue glass", 0.125);
 
 
 				Chunk::GetTextureArrayList(0);

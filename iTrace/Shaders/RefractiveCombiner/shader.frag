@@ -13,6 +13,7 @@ uniform sampler2D RefractiveBlocks;
 uniform sampler2D PrimaryRefractionDepth; 
 uniform sampler2D PrimaryRefractionColor; 
 uniform sampler2D PrimaryRefractionNormal; 
+uniform sampler2D Volumetrics; 
 
 uniform mat4 IdentityMatrix;
 uniform mat4 InverseView; 
@@ -21,7 +22,7 @@ uniform vec3 CameraPosition;
 
 const bool ChromaticAbberation = true; 
 const bool HitLocationDepth = true; //<- if you want to use the surface location or the hit location depth for the DoF (refraction) 
-const vec3 CAMultiplier = vec3(1.03, 1.0, 1.06); //<- multipliers for chromatic abberation 
+const vec3 CAMultiplier = vec3(1.02, 1.0, 1.04); //<- multipliers for chromatic abberation 
 
 
 
@@ -153,9 +154,9 @@ void main() {
 
 
 		if(ChromaticAbberation) {
-			vec3 RayDirR = refract(Incident, Normal, 1.0/(1.15*CAMultiplier.r)); 
-			vec3 RayDirG = refract(Incident, Normal, 1.0/(1.15*CAMultiplier.g)); 
-			vec3 RayDirB = refract(Incident, Normal, 1.0/(1.15*CAMultiplier.b)); 
+			vec3 RayDirR = refract(Incident, Normal, 1.0/(1.3*CAMultiplier.r)); 
+			vec3 RayDirG = refract(Incident, Normal, 1.0/(1.3*CAMultiplier.g)); 
+			vec3 RayDirB = refract(Incident, Normal, 1.0/(1.3*CAMultiplier.b)); 
 
 
 			//todo: add option for these traversals to be the same, improving performance
@@ -194,7 +195,7 @@ void main() {
 		
 		}
 		else {
-			vec3 RayDir = refract(Incident, Normal, 1.0/1.15); 
+			vec3 RayDir = refract(Incident, Normal, 1.0/1.3); 
 			
 			float Traversal = AnalyticalTraversal(RayDir, WorldPosition - Normal * 0.01); 
 	
@@ -226,4 +227,6 @@ void main() {
 		DofDepth = DepthSample; 
 
 	}
+	vec4 Volumetrics = texture(Volumetrics, InTexCoord); 
+	Lighting.xyz += Volumetrics.xyz; 
 }

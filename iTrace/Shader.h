@@ -4,7 +4,7 @@
 
 namespace iTrace {
 	namespace Rendering {
-		unsigned int LoadShader(unsigned int ShaderType, const std::string& File, unsigned int& Buffer, unsigned int BaseID, bool ReCreate = true);
+		unsigned int LoadShader(unsigned int ShaderType, const std::string& File, unsigned int& Buffer, unsigned int BaseID, bool ReCreate = true, std::string Inject = "");
 
 		struct Shader {
 			unsigned int VertexShader = 0;
@@ -16,9 +16,9 @@ namespace iTrace {
 
 			unsigned int ShaderID = 0;
 
-			Shader(const std::string& vertex, const std::string& fragment);
+			Shader(const std::string& vertex, const std::string& fragment, std::string Inject, int _x);
 			Shader(const std::string& vertex, const std::string& geometry, const std::string& fragment);
-			Shader(const std::string& Directory, bool HasGeometryShader = false);
+			Shader(const std::string& Directory, bool HasGeometryShader = false, std::string Inject = "");
 			Shader();
 			void Bind();
 			void UnBind();
@@ -47,10 +47,10 @@ namespace iTrace {
 			
 			}
 
-			void Reload(const std::string& vertex, const std::string& fragment);
+			void Reload(const std::string& vertex, const std::string& fragment, std::string Inject, int _x);
 			void Reload(const std::string& vertex, const std::string& fragment, const std::string& geometry);
 
-			void Reload(const std::string& Directory);
+			void Reload(const std::string& Directory, std::string Inject = "");
 			void Reload(const std::string& Directory, bool HasGeometryShader);
 
 			~Shader();

@@ -3,6 +3,13 @@
 in vec2 TexCoord;
 
 
+#ifndef HAS_INJECTION
+
+vec3 Multiplier[] = vec3[](vec3(0.0),vec3(1.0)); 
+int RefractiveCount = 2; 
+
+#endif 
+
 //idea: Denoise lighting as a spherical harmonic. 
 //Very useful because we can reproject the denoised diffuse 
 //for specular lighting. We can also denoise using a low-frequency 
@@ -288,14 +295,17 @@ float GetEmissiveStrenght(int Type) {
 	return texelFetch(BlockData, Type, 0).x; 
 }
 
+vec3 Colors[4] = vec3[4](vec3(1.0), vec3(0.0,1.0,0.0), vec3(1.0,0.0,0.0), vec3(0.0,0.0,1.0)); 
 
-bool RawTraceOld(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, inout vec3 Normal, inout vec2 TexCoord, inout vec3 Position, int Steps) {
+bool RawTraceOld(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, inout vec3 Normal, inout vec2 TexCoord, inout vec3 Position, int Steps, inout vec3 RefractiveColor) {
 
 	Position = Origin;
 
 	vec3 Clamped = vec3(RayDirection.x > 0.0 ? 1.0 : 0.0, RayDirection.y > 0.0 ? 1.0 : 0.0, RayDirection.z > 0.0 ? 1.0 : 0.0);
 
 	vec3 NextPlane = floor(Position + Clamped);
+
+	RefractiveColor = vec3(1.0); 
 
 	for (int Step = 0; Step < Steps; Step++) {
 
@@ -305,7 +315,7 @@ bool RawTraceOld(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face
 
 		int SideHit = 0;
 
-
+		if(Step != 0) {
 		if (Next.x < min(Next.y, Next.z)) {
 			Position += RayDirection * Next.x;
 			Position.x = NextPlane.x;
@@ -323,6 +333,7 @@ bool RawTraceOld(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face
 			Position.z = NextPlane.z;
 			NextPlane.z += sign(RayDirection.z);
 			SideHit = 2;
+		}
 		}
 
 		vec3 TexelCoord = (NextPlane - Clamped);
@@ -366,11 +377,27 @@ bool RawTraceOld(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face
 			Block = int(floor(texelFetch(Voxels, ivec3(TexelCoord.zyx),0) * 255.0 + .9));
 			Face = Side;
 
+			vec3 RefrColor = Multiplier[clamp(Block,0,RefractiveCount-1)]; 
 
-			if (Block != 0)
-				return true;
+
+			float PowFactor = 1.0; 
+
+			
+
+			float distFactor = clamp(distance(TexCoord, vec2(0.5)) * 2.0,0.0,1.0); 
+
+			PowFactor = 1.0 + 8.0 * distFactor * distFactor; 
+
+
+			RefractiveColor *= pow(RefrColor,vec3(PowFactor)); 
+
+			if(Block >= RefractiveCount-1) 
+				return true; 
 		}
 		else return false;
+
+		
+
 	}
 
 	//}
@@ -862,7 +889,6 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 	float TraversalDirection = GetTraversal((TC.xy), Direction, uint(ParallaxData.x+.1), uint(ParallaxData.y+.1)-1u,DirectionProjected,ParallaxData.z); 
 
 
-
 	if((TraversalDirection+0.00390625) < ParallaxData.w * (1.0-pow(abs(DirectionProjected.z),4.0))) {
 		
 		vec2 ProjectedTC = TC.xy + DirectionProjected.xy * TraversalDirection;
@@ -896,8 +922,10 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 	bool ParallaxHit = Hit; 
 
+	vec3 Color  = vec3(1.0); 
+
 	if(!Hit)
-		Hit = RawTraceOld(Direction, Origin - vec3(PositionBias.x, 0, PositionBias.y), Block, Face, OutNormal, TexCoord, Position, Specular ? 128 : 64);
+		Hit = RawTraceOld(Direction, Origin - vec3(PositionBias.x, 0, PositionBias.y), Block, Face, OutNormal, TexCoord, Position, Specular ? 128 : 64,Color);
 
 	if(!Hit) {
 		//Hit = RawTrace(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 256);
@@ -940,7 +968,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 		}
 
-		Diffuse.xyz = BlockColor * Emissive;  
+		Diffuse.xyz = 2.0 * BlockColor * Emissive;  
 
 
 
@@ -999,7 +1027,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 		DirectDensity = pow(DirectDensity, 4.0); 
 
-		Diffuse.xyz += BlockColor * HemiSpherical; 
+		Diffuse.xyz += HemiSpherical * BlockColor; 
 
 		Diffuse.xyz += DirectBasic(Position) * max(dot(OutNormal, LightDirection), 0.0) * SunColor * BlockColor * DirectMultiplier * DirectDensity; 
 
@@ -1007,7 +1035,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 		
 		//return LightingData.xyz; 
 
-		Diffuse.xyz += 1.0 * (LightingData.xyz) * (BlockColor); 
+		Diffuse.xyz += 0.0 * (LightingData.xyz) * (BlockColor); 
 
 		//idea: if specular and roughness < treshhold, consider applying some super basic ambient light.
 
@@ -1016,6 +1044,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 		Diffuse.w = pow(min(distance(Origin, Position), 4.0), 1.0);
 		Detail.w = Diffuse.w; 
 		Detail.xyz = BlockColor; 
+		Diffuse.xyz *= Color; 
 	}
 	else {
 		//GI: 
@@ -1034,6 +1063,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 		Diffuse.w = 4.0; 
 		Detail = Diffuse * vec4(0.1,0.1,0.1,1.0); 
+		Diffuse.xyz *= Color; 
 	}		
 
 
@@ -1176,8 +1206,8 @@ void main() {
 	vec3 Direction = cosWeightedRandomHemisphereDirection(Normal.xyz, hash);
 
 	vec3 SpecularDirection = GetSpecularRayDirection(reflect(Incident, Normal.xyz), Normal.xyz, Incident, RawNormal.w, Pixel);
-	vec4 Specular = GetRayShading(WorldPos + Normal.xyz * 0.0025, SpecularDirection, Normal.xyz, true, ParallaxData,TC,LowFrequencyNormal, Detail); 
-	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.0025, Direction,Normal.xyz, false, ParallaxData,TC,LowFrequencyNormal,Detail); 
+	vec4 Specular = GetRayShading(WorldPos + Normal.xyz * 0.025, SpecularDirection, Normal.xyz, true, ParallaxData,TC,LowFrequencyNormal, Detail); 
+	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.025, Direction,Normal.xyz, false, ParallaxData,TC,LowFrequencyNormal,Detail); 
 
 	float L = length(Normal.xyz); 
 

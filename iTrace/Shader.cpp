@@ -9,7 +9,7 @@
 #define GLOBAL_SHADER_DEFINITIONS "#define double highp float\n"
 
 
-unsigned int iTrace::Rendering::LoadShader(unsigned int ShaderType, const std::string& File, unsigned int& Buffer, unsigned int BaseID, bool ReCreate) {
+unsigned int iTrace::Rendering::LoadShader(unsigned int ShaderType, const std::string& File, unsigned int& Buffer, unsigned int BaseID, bool ReCreate, std::string Inject) {
 	std::string source = ""; //all the shader code
 	std::ifstream file(File);
 
@@ -29,6 +29,7 @@ unsigned int iTrace::Rendering::LoadShader(unsigned int ShaderType, const std::s
 		if (source.size() == 0) {
 			source += Line + '\n';
 			source += GLOBAL_SHADER_DEFINITIONS;
+			source += Inject + '\n'; 
 		}
 		else if (Line[0] == '#' && Line[1] == 'i' && Line[2] == 'n') {
 			char Id[100];
@@ -101,9 +102,9 @@ unsigned int iTrace::Rendering::LoadShader(unsigned int ShaderType, const std::s
 	return BaseID;
 }
 
-iTrace::Rendering::Shader::Shader(const std::string& vertex, const std::string& fragment) :
+iTrace::Rendering::Shader::Shader(const std::string& vertex, const std::string& fragment, std::string Inject, int _x) :
 	VertexShader(LoadShader(GL_VERTEX_SHADER, vertex, VertexBuffer, VertexShader)),
-	FragmentShader(LoadShader(GL_FRAGMENT_SHADER, fragment, FragmentBuffer, FragmentShader)),
+	FragmentShader(LoadShader(GL_FRAGMENT_SHADER, fragment, FragmentBuffer, FragmentShader, true, Inject)),
 	ShaderID(glCreateProgram()) {
 	glAttachShader(ShaderID, VertexShader);
 	glAttachShader(ShaderID, FragmentShader);
@@ -122,11 +123,11 @@ iTrace::Rendering::Shader::Shader(const std::string& vertex, const std::string& 
 	glUseProgram(ShaderID);
 }
 
-iTrace::Rendering::Shader::Shader(const std::string& Directory, bool HasGeometryShader) {
+iTrace::Rendering::Shader::Shader(const std::string& Directory, bool HasGeometryShader, std::string Inject) {
 	if (HasGeometryShader)
 		* this = Shader(Directory + "/shader.vert", Directory + "/shader.geom", Directory + "/shader.frag");
 	else
-		*this = Shader(Directory + "/shader.vert", Directory + "/shader.frag");
+		*this = Shader(Directory + "/shader.vert", Directory + "/shader.frag", Inject, -1);
 }
 
 iTrace::Rendering::Shader::Shader() :
@@ -206,7 +207,7 @@ void iTrace::Rendering::Shader::SetUniformImageArray(const std::string& Name, in
 
 }
 
-void iTrace::Rendering::Shader::Reload(const std::string& vertex, const std::string& fragment) {
+void iTrace::Rendering::Shader::Reload(const std::string& vertex, const std::string& fragment, std::string Inject, int _x) {
 
 
 	glDetachShader(ShaderID, VertexShader);
@@ -221,7 +222,7 @@ void iTrace::Rendering::Shader::Reload(const std::string& vertex, const std::str
 
 
 	VertexShader = LoadShader(GL_VERTEX_SHADER, vertex, VertexBuffer, VertexShader, true);
-	FragmentShader = LoadShader(GL_FRAGMENT_SHADER, fragment, FragmentBuffer, FragmentShader, true);
+	FragmentShader = LoadShader(GL_FRAGMENT_SHADER, fragment, FragmentBuffer, FragmentShader, true, Inject);
 
 	glAttachShader(ShaderID, VertexShader);
 	glAttachShader(ShaderID, FragmentShader);
@@ -244,9 +245,9 @@ void iTrace::Rendering::Shader::Reload(const std::string& vertex, const std::str
 	ShaderID = glCreateProgram();
 
 
-	VertexShader = LoadShader(GL_VERTEX_SHADER, vertex, VertexBuffer, VertexShader, true);
-	GeometryShader = LoadShader(GL_GEOMETRY_SHADER, geometry, GeometryBuffer, GeometryShader, true);
-	FragmentShader = LoadShader(GL_FRAGMENT_SHADER, fragment, FragmentBuffer, FragmentShader, true);
+	VertexShader = LoadShader(GL_VERTEX_SHADER, vertex, VertexBuffer, VertexShader, true, "");
+	GeometryShader = LoadShader(GL_GEOMETRY_SHADER, geometry, GeometryBuffer, GeometryShader, true, "");
+	FragmentShader = LoadShader(GL_FRAGMENT_SHADER, fragment, FragmentBuffer, FragmentShader, true, "");
 
 	glAttachShader(ShaderID, VertexShader);
 	glAttachShader(ShaderID, GeometryShader);
@@ -255,8 +256,8 @@ void iTrace::Rendering::Shader::Reload(const std::string& vertex, const std::str
 	glUseProgram(ShaderID);
 }
 
-void iTrace::Rendering::Shader::Reload(const std::string& Directory) {
-	Reload(Directory + "/shader.vert", Directory + "/shader.frag");
+void iTrace::Rendering::Shader::Reload(const std::string& Directory, std::string Inject) {
+	Reload(Directory + "/shader.vert", Directory + "/shader.frag", Inject, -1);
 }
 
 void iTrace::Rendering::Shader::Reload(const std::string& Directory, bool HasGeometryShader) {

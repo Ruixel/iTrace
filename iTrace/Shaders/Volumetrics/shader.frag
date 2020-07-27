@@ -20,6 +20,7 @@ uniform sampler2D BasicBlueNoise;
 uniform sampler2D CloudDepth; 
 uniform samplerCube Sky; 
 uniform sampler2D Normal; 
+uniform sampler2D PrimaryRefractiveDepth; 
 uniform sampler2D Wind; 
 uniform mat4 IncidentMatrix; 
 uniform float Time; 
@@ -30,6 +31,8 @@ uniform float AbsorptionMultiplier;
 
 uniform sampler2DShadow DirectionalCascades[4]; 
 uniform sampler2D DirectionalRefractive[4]; 
+uniform sampler2DShadow DirectionalRefractiveDepth[4]; 
+
 
 uniform mat4 DirectionMatrices[4]; 
 uniform vec3 SunColor; 
@@ -37,6 +40,9 @@ uniform vec3 LightDirection;
 
 uniform vec3 CameraPosition; 
 uniform int Frame; 
+
+uniform float zNear; 
+uniform float zFar; 
 
 //the max distance for the volumetrics (useful for the sky!) 
 const float VOLUMETRIC_MAX_DISTANCE = 200.0; 
@@ -56,14 +62,12 @@ vec2 hash2() {
 	return clamp(texelFetch(BasicBlueNoise, ivec2(Pixel + ivec2((State++) * 217))%256, 0).xy,0.0,0.99); 
 }
 
-
 float PhaseFunction() {
 	return 1.0 / (4.0 * 3.1415); 
 }
 
 float GetDensity(vec3 WorldPosition) {
 	 
-
 	//try a new density function: 
 	
 
@@ -74,13 +78,7 @@ float GetDensity(vec3 WorldPosition) {
 	return dens; 
 
 	//~^-^~
-	 
-
-
-
-
 	
-
 	return 10 * pow(.5 * (1.0 - clamp((WorldPosition.y - 70.0) * 0.005, 0.0, 1.0)),3.0);// * pow(texture(Wind, (WorldPosition.xz *.001 + Time * .001)).x,2.0); 
 
 	return .3 * pow(texture(Wind, (WorldPosition.xz *.1 + Time * .1) * .05).x,2.0); 
@@ -114,7 +112,10 @@ vec3 DirectBasic(vec3 Position) {
 	if(Cascade == -1) 
 		return vec3(0.0); 
 
-	return texture(DirectionalCascades[Cascade], vec3(NDC.xy * 0.5 + 0.5, (NDC.z * 0.5 + 0.5)-0.00009)) * texture(DirectionalRefractive[Cascade], NDC.xy * 0.5 + 0.5).xyz; 
+	
+	vec3 ShadowSamplerCoordinate = vec3(NDC.xy * 0.5 + 0.5, (NDC.z * 0.5 + 0.5)-0.00009); 
+
+	return texture(DirectionalCascades[Cascade], ShadowSamplerCoordinate) * mix(texture(DirectionalRefractive[Cascade], NDC.xy * 0.5 + 0.5).xyz,vec3(1.0), texture(DirectionalRefractiveDepth[Cascade], ShadowSamplerCoordinate)); 
 
 }
 
@@ -138,7 +139,10 @@ vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 
 }
 
-
+float LinearDepth(float z)
+{
+    return 2.0 * zNear * zFar / (zFar + zNear - (z * 2.0 - 1.0) * (zFar - zNear));
+} 
 
 void main() {
 	
@@ -179,11 +183,22 @@ void main() {
 
 	Vector /= ActualDistance; 
 
-	float L = length(NormalSample); 
-	if(L < 0.75 || L > 1.25) {
+	float L = length(NormalSample);
+	
+
+
+
+	float RefractiveDepth = LinearDepth(texelFetch(PrimaryRefractiveDepth, Pixel * 2, 0).x); 
+	
+	if(ActualDistance > RefractiveDepth && RefractiveDepth < VOLUMETRIC_MAX_DISTANCE) {
+		ActualDistance = RefractiveDepth; 
+		Vector = normalize(vec3(IncidentMatrix * vec4(TexCoord * 2.0 - 1.0, 1.0, 1.0)));
+	}
+	else if(L < 0.75 || L > 1.25) {
 		Vector = normalize(vec3(IncidentMatrix * vec4(TexCoord * 2.0 - 1.0, 1.0, 1.0)));
 		ActualDistance = texelFetch(CloudDepth, ivec2(gl_FragCoord.xy), 0).x; 
 	}
+	
  
 	ActualDistance = min(ActualDistance, VOLUMETRIC_MAX_DISTANCE); 
 
@@ -218,9 +233,7 @@ void main() {
 
 			DirectDensity = pow(DirectDensity, 4.0); 
 
-			vec3 LightFetch = DirectBasic(Position) * SunColor * 0.5 * DirectDensity; 
-
-			
+			vec3 LightFetch = DirectBasic(Position) * SunColor  * DirectDensity; 
 
 			vec3 S = SampleSigmaS * LightFetch; 
 

@@ -246,8 +246,6 @@ namespace iTrace {
 
 			ShadowDeferred.UnBind();
 
-			
-
 			ShadowDeferredPlayer.Bind(); 
 
 			ShadowDeferredPlayer.SetUniform("CameraPosition", Camera.Position); 
@@ -286,9 +284,7 @@ namespace iTrace {
 			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_1D, Chunk::GetBlockDataTexture());
 
-
 			RefractiveShader.SetUniform("IsPrimary", true); 
-
 
 			RefractiveShadowMapsDepth[ToUpdate].Bind(); 
 

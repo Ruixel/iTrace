@@ -288,6 +288,9 @@ void main() {
 	HighFreqNormal.xyz = normalize(TBN * (normalize(texture(NormalTextures, vec3(TC.xy, TextureIdx)).xyz * 2.0 - 1.0)));
 	HighFreqNormal.w = texture(RoughnessTextures, vec3(TC, TextureIdx)).x;	
 	
+	//HighFreqNormal.xyz = Normal.xyz; 
+	//HighFreqNormal.w = 0.0; 
+
 	SimpleLighting = texture(LightData,(WorldPos.xyz - vec3(PositionBias.x, 0.0, PositionBias.y) + Normal.xyz * .5).zyx / vec3(384.0,128.0,384.0)).xyz; 
 	
 	_TC.xy = fract(TC);

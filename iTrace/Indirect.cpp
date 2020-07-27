@@ -12,6 +12,11 @@ namespace iTrace {
 
 		void LightManager::PrepareIndirectLightingHandler(Window& Window)
 		{
+			
+
+			std::cout << "Injection code: " << Chunk::GetInjectionCode() << '\n'; 
+
+
 			RequestBoolean("raytracing", true); 
 			RequestBoolean("volumetrics", false);
 			RequestBoolean("spatial", true);
@@ -29,6 +34,8 @@ namespace iTrace {
 
 			}
 
+
+
 			DirectBlockerBuffer = FrameBufferObject(Window.GetResolution() / 8, GL_RG16F, false);
 			TemporalFrameCount = FrameBufferObjectPreviousData(Window.GetResolution() / 2, GL_R16F, false);
 			TemporalyUpscaled = MultiPassFrameBufferObject(Window.GetResolution() / 2, 5, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGB16F }, false);
@@ -38,7 +45,7 @@ namespace iTrace {
 			ProjectedClouds = FrameBufferObjectPreviousData(Vector2i(256), GL_RGBA16F, false); 
 			PreSpatialTemporal = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 4, 4, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 
-			IndirectLightShader = Shader("Shaders/RawPathTracing");
+			IndirectLightShader = Shader("Shaders/RawPathTracing", false, Chunk::GetInjectionCode());
 			TemporalUpscaler = Shader("Shaders/TemporalUpscaler");
 			SpatialFilter = Shader("Shaders/SpatialFilter"); 
 			SpatialUpscaler = Shader("Shaders/SpatialUpscaler"); 
@@ -492,17 +499,22 @@ namespace iTrace {
 				Volumetrics.SetUniform("DirectionMatrices[" + std::to_string(i) + "]", Sky.ProjectionMatrices[i] * Sky.ViewMatrices[i]);
 				Sky.ShadowMaps[i].BindDepthImage(i + 8);
 				Sky.RefractiveShadowMaps[i].BindImage(i + 14);
+				Sky.RefractiveShadowMapsDepth[i].BindDepthImage(i + 18);
+
 			}
 
 			ProjectedClouds.BindImage(12);
 			Clouds[Window.GetFrameCount()%4].BindImage(1,13);
-
+			Deferred.PrimaryDeferredRefractive.BindDepthImage(22); 
 
 			Volumetrics.SetUniform("LightDirection", Sky.Orientation);
 			Volumetrics.SetUniform("SunColor", Sky.SunColor);
 
 			Volumetrics.SetUniform("ScatteringMultiplier", Weather.VolumetricsScatteringMultiplier);
 			Volumetrics.SetUniform("AbsorptionMultiplier", Weather.VolumetricsAbsorptionMultiplier);
+
+			Volumetrics.SetUniform("zNear", Camera.znear); 
+			Volumetrics.SetUniform("zFar", Camera.zfar);
 
 			DrawPostProcessQuad(); 
 
@@ -660,7 +672,7 @@ namespace iTrace {
 
 		void LightManager::ReloadIndirect(Window& Window)
 		{
-			IndirectLightShader.Reload("Shaders/RawPathTracing");
+			IndirectLightShader.Reload("Shaders/RawPathTracing", Chunk::GetInjectionCode());
 			TemporalUpscaler.Reload("Shaders/TemporalUpscaler");
 			SpatialFilter.Reload("Shaders/SpatialFilter");
 			SpatialUpscaler.Reload("Shaders/SpatialUpscaler");
@@ -866,6 +878,11 @@ namespace iTrace {
 			Volumetrics.SetUniform("DirectionalRefractive[1]", 15);
 			Volumetrics.SetUniform("DirectionalRefractive[2]", 16);
 			Volumetrics.SetUniform("DirectionalRefractive[3]", 17);
+			Volumetrics.SetUniform("DirectionalRefractiveDepth[0]", 18);
+			Volumetrics.SetUniform("DirectionalRefractiveDepth[1]", 19);
+			Volumetrics.SetUniform("DirectionalRefractiveDepth[2]", 20);
+			Volumetrics.SetUniform("DirectionalRefractiveDepth[3]", 21);
+			Volumetrics.SetUniform("PrimaryRefractiveDepth", 22);
 
 			Volumetrics.UnBind(); 
 

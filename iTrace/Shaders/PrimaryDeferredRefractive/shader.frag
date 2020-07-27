@@ -89,6 +89,6 @@ void main() {
 
 	mat3 TBN = mat3(Tangent, Bitangent, Normal); 
 
-	Normal.xyz = normalize(TBN * (texture(NormalTextures, vec3(TC.xy, TextureIdx)).xyz * 2.0 - 1.0)); 
+	Normal.xyz = normalize(mix(Normal.xyz,normalize(TBN * (texture(NormalTextures, vec3(TC.xy, TextureIdx)).xyz * 2.0 - 1.0)),0.3)); 
 
 }

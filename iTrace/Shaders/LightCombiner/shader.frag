@@ -31,6 +31,7 @@ uniform sampler2D DirectShadow;
 uniform sampler2D PrimaryRefractionDepth; 
 uniform sampler2D PrimaryRefractionColor; 
 uniform sampler2D PrimaryRefractionNormal; 
+uniform sampler2D SkyReigh; 
 
 uniform bool NoAlbedo; 
 
@@ -233,13 +234,12 @@ void main() {
 	}
 	else {
 		vec4 CloudSample = texture(Clouds, TexCoord); 
-		Lighting = mix(texture(Sky, TexCoord),CloudSample,pow(1-CloudSample.w,2.0)); 
+		Lighting = mix(texture(Sky, TexCoord),CloudSample,pow(1-CloudSample.w,1.0)); 
+		Glow = mix(texture(SkyReigh, TexCoord).xyz, vec3(0.0), 1-CloudSample.w); 
 	}
 	vec4 Volumetrics = texture(Volumetrics, TexCoord); 
 
-	Glow.xyz = vec3(0.0); 
 	Lighting.xyz *= Multiplier; 
-
-	Lighting.xyz += Volumetrics.xyz; 
+	Glow.xyz *= Multiplier; 
 
 }

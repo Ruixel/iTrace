@@ -41,6 +41,7 @@ namespace iTrace {
 				return BlockExtraDataTexture;
 			}
 
+
 			void ResizeAndSaveImage(const std::string& InputFile, const std::string& OutPutFile, int OutPutResolution) {
 
 				sf::Image BaseImage;
@@ -177,6 +178,38 @@ namespace iTrace {
 			{
 				TextureDirectories.push_back(TextureDir(Directory, ParallaxStrenght));
 			}
+			void CalculateAverageColor(const sf::Image& Image, std::string Directory, bool GammaCorrect = true) {
+
+				Vector3d AverageColor = Vector3i(0); //<- this may actually be a case where floating point precision is not enough 
+				int Pixels = Image.getSize().x * Image.getSize().y;
+				Pixels = max(Pixels, 1); 
+
+				for (int x = 0; x < Image.getSize().x; x++) {
+					for (int y = 0; y < Image.getSize().y; y++) {
+
+						auto Pixel = Image.getPixel(x, y); 
+
+						Vector3d LocalColor =
+							Vector3d(Pixel.r, Pixel.g, Pixel.b) / 255.0; 
+
+						if (GammaCorrect)
+							LocalColor = glm::pow(LocalColor, Vector3d(2.2)); 
+
+						AverageColor += LocalColor; 
+						
+
+					}
+				}
+				
+				AverageColor /= Vector3d(Pixels);
+
+				std::ofstream OutFile(Directory); 
+				
+				OutFile << AverageColor.r << ' ' << AverageColor.y << ' ' << AverageColor.z << '\n'; 
+				OutFile.close(); 
+				
+			}
+
 			void GenerateBlockTextureData()
 			{
 
@@ -364,6 +397,33 @@ namespace iTrace {
 							GL_UNSIGNED_BYTE,
 							PixelData.data());
 
+						if (idx == 0) {
+
+							std::string Path = FullPath + "average.c"; 
+
+							if (!FileExists(Path)) {
+								CalculateAverageColor(LoadingImage, Path); //<- create the average color value 
+							}
+
+							//load file 
+
+							std::ifstream File;
+							File.open(Path);
+
+							std::string Line = "";
+
+							std::getline(File, Line);
+
+							Vector3f Average;
+
+							std::istringstream LineStream(Line);
+
+							LineStream >> Average.x >> Average.y >> Average.z;
+
+							Directory.AlbedoAverage = Average;
+
+						}
+						
 					}
 
 					glGenerateMipmap(GL_TEXTURE_2D_ARRAY);

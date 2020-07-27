@@ -61,6 +61,7 @@ namespace iTrace {
 				float ParallaxStrenght = 0.0f; 
 				std::array<int, static_cast<int>(TextureExtension::SIZE)> Extensions = {-1,-1, -1, -1};
 				Vector3f EmissiveAverage = Vector3f(0.0); 
+				Vector3f AlbedoAverage = Vector3f(0.0); 
 
 				TextureDir(std::string BaseDir, float ParallaxStrenght) :
 					BaseDirectory(BaseDir), ParallaxStrenght(ParallaxStrenght) {
@@ -118,6 +119,7 @@ namespace iTrace {
 			unsigned int GetBlockDataTexture(); 
 			unsigned int GetTextureExtensionData(); 
 			unsigned int GetBlockExtraDataTexture();
+			std::string GetInjectionCode(); 
 
 			TextureDir GetTextureData(unsigned char Idx);
 		

@@ -239,10 +239,10 @@ namespace iTrace {
 					int Dist = Height - MyY;
 
 					if (Dist == 1)
-						return (BiomeNoise > 0.7 ? 20 : BiomeNoise > 0.3 ? 3 : 31); //snow
+						return (BiomeNoise > 0.7 ? 24 : BiomeNoise > 0.3 ? 7 : 35); 
 					else if (Dist < 4)
-						return 2; //dirt
-					return 1; //stone 
+						return 6; //dirt
+					return 5; //stone 
 
 				};
 
@@ -350,11 +350,11 @@ namespace iTrace {
 									int HeightDiff = y - HeightBaseTree;
 
 									if (RelativeX == 2 && RelativeZ == 2 && HeightDiff <= 3)
-										BlockType = 27; 
+										BlockType = 31; 
 
 									for (int TreeH = 0; TreeH < 3; TreeH++) {
 										if ((((RelativeX == TreeH || RelativeX == 4-TreeH) && (RelativeZ >= TreeH && RelativeZ <= 4-TreeH)) || ((RelativeZ == TreeH || RelativeZ == 4 - TreeH) && (RelativeX >= TreeH && RelativeX <= 4 - TreeH))) && HeightDiff == 2+TreeH) {
-											BlockType = 42; 
+											BlockType = 46; 
 										}
 									}
 
@@ -986,6 +986,38 @@ namespace iTrace {
 				glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glBindTexture(GL_TEXTURE_3D, 0);*/
 			}
+
+			std::string GetInjectionCode()
+			{
+				auto Colors = std::vector<Vector3f>(1, Vector3f(1.0)); 
+				
+				for (int i = 1; i < 14; i++) {
+				
+					auto& Type = Types[i]; 
+
+					if (Type.RenderType != BLOCK_RENDER_TYPE::REFRACTIVE)
+						break; 
+
+					Colors.push_back(GetTextureData(Type.TexIds[0]).AlbedoAverage); 
+
+				}
+
+				Colors.push_back(Vector3f(1.0)); 
+
+				std::string Line1 = "vec3 Multiplier[] = vec3[]("; 
+
+				for (auto& Color : Colors) {
+					Line1 += "vec3(" + std::to_string(Color.r) + "," + std::to_string(Color.g) + "," + std::to_string(Color.b) + "),"; 
+				}
+				Line1.pop_back(); 
+				Line1 += ");"; 
+
+				std::string Line2 = "int RefractiveCount = " + std::to_string(Colors.size()) + ";"; 
+
+				return Line1 + "\n" + Line2 + "\n#define HAS_INJECTION"; 
+
+			}
+
 
 			void Chunk::SetBlock(unsigned char x, unsigned char y, unsigned char z, unsigned char type)
 			{
