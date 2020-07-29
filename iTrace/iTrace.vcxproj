@@ -147,6 +147,7 @@
     <ClInclude Include="AtmosphereRenderer.h" />
     <ClInclude Include="BooleanCommands.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CausticBaker.h" />
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="CinematicCamera.h" />
     <ClInclude Include="CommandManager.h" />
@@ -186,6 +187,7 @@
   <ItemGroup>
     <ClCompile Include="BooleanCommands.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CausticBaker.cpp" />
     <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="CinematicCamera.cpp" />
     <ClCompile Include="CommandManager.cpp" />
@@ -231,6 +233,8 @@
     <None Include="Shaders\BlurHorizontal\shader.vert" />
     <None Include="Shaders\BlurVertical\shader.frag" />
     <None Include="Shaders\BlurVertical\shader.vert" />
+    <None Include="Shaders\CausticBaker\shader.frag" />
+    <None Include="Shaders\CausticBaker\shader.vert" />
     <None Include="Shaders\Checkerboarder\shader.frag" />
     <None Include="Shaders\Checkerboarder\shader.vert" />
     <None Include="Shaders\CloudProjection\shader.frag" />

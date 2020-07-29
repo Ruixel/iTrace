@@ -177,7 +177,7 @@ void main() {
 
 	}
 	
-	Multiplier *= texture(RefractiveBlocks, TexCoord).xyz; 
+	//Multiplier *= texture(RefractiveBlocks, TexCoord).xyz; 
 
 	vec4 NormalFetch = textureLod(Normal, TexCoord,0.0); 
 
@@ -239,7 +239,6 @@ void main() {
 	}
 	vec4 Volumetrics = texture(Volumetrics, TexCoord); 
 
-	Lighting.xyz *= Multiplier; 
-	Glow.xyz *= Multiplier; 
+//	Glow.xyz *= Multiplier; 
 
 }

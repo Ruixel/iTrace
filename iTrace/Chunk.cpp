@@ -160,6 +160,7 @@ namespace iTrace {
 					return; 
 
 				RenderToShader.SetUniform("IdentityMatrix", Camera.Project * Camera.View * ModelMatrix);
+				RenderToShader.SetUniform("ModelMatrix", ModelMatrix);
 
 				for (int x = 0; x < 4; x++) {
 					for (int y = 0; y < 4; y++) {
@@ -174,6 +175,8 @@ namespace iTrace {
 			void Chunk::DrawTransparent(Shader& RenderToShader, Camera& Camera)
 			{
 				RenderToShader.SetUniform("IdentityMatrix", Camera.Project * Camera.View * ModelMatrix);
+				RenderToShader.SetUniform("ModelMatrix", ModelMatrix);
+
 				for (int x = 0; x < 4; x++) {
 					for (int y = 0; y < 4; y++) {
 						MeshDataTransparent.Draw(x, y);
@@ -184,6 +187,8 @@ namespace iTrace {
 			void Chunk::DrawRefractive(Shader& RenderToShader, Camera& Camera)
 			{
 				RenderToShader.SetUniform("IdentityMatrix", Camera.Project * Camera.View * ModelMatrix);
+				RenderToShader.SetUniform("ModelMatrix", ModelMatrix);
+
 				for (int x = 0; x < 4; x++) {
 					for (int y = 0; y < 4; y++) {
 						MeshDataRefractive.Draw(x, y);

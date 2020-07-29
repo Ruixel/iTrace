@@ -3,6 +3,7 @@ layout(location=0) in vec4 RawPos;
 layout(location=1) in vec3 RawTexCoord;
 
 uniform mat4 IdentityMatrix; 
+uniform mat4 ModelMatrix; 
 
 uniform float Time; 
 
@@ -32,4 +33,7 @@ void main(void) {
 //	Pos.xyz += GetWave(Pos.xyz); 
 	TexCoord = RawTexCoord; 
 	gl_Position = IdentityMatrix * vec4(Pos.xyz ,1.0); 
+
+	Pos.xyz = vec3(ModelMatrix * vec4(Pos.xyz,1.0)); 
+
 }

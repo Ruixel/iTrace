@@ -119,6 +119,7 @@ namespace iTrace {
 			unsigned int GetBlockDataTexture(); 
 			unsigned int GetTextureExtensionData(); 
 			unsigned int GetBlockExtraDataTexture();
+			unsigned int GetCausticTextureArray(); 
 			std::string GetInjectionCode(); 
 
 			TextureDir GetTextureData(unsigned char Idx);

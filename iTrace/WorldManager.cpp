@@ -136,7 +136,7 @@ namespace iTrace {
 				Chunk::AddTexture("leaves", 0.0);
 				Chunk::AddTexture("Asphalt", 0.125);
 				Chunk::AddTexture("Melon", 0.125);
-				Chunk::AddTexture("obsidian", 0.125);
+				Chunk::AddTexture("Jelly", 0.125);
 				Chunk::AddTexture("Gold block", 0.0625);
 				Chunk::AddTexture("Hop", 0.25);
 				Chunk::AddTexture("Diamond block MC", 0.25);

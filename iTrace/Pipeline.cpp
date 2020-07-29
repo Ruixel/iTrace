@@ -5,6 +5,7 @@
 #include <iostream>
 #include "Weather.h"
 #include "RainDropBaker.h"
+#include "CausticBaker.h"
 
 #ifdef _WIN32 or _WIN64
 
@@ -397,6 +398,8 @@ namespace iTrace {
 	void Pipeline::PreparePipeline(Camera& Camera, Window& Window)
 	{
 
+
+
 #ifdef _WIN32 or _WIN64
 
 		//HWND hwnd = Window.GetRawWindow()->getSystemHandle();
@@ -426,6 +429,9 @@ namespace iTrace {
 		Core::PrepareHaltonSequence();
 		PreparePostProcess();
 
+		std::string Directory = "C:/Users/te17hw8/source/repos/iTrace/iTrace/Materials/Jelly/";
+		CausticBaker Caustics;
+		Caustics.BakeCausticMap(Directory + "Albedo.png", Directory + "Normal.png", Directory + "Caustic");
 
 		World.PrepareWorldManger();
 		RenderItemRequests();
@@ -480,6 +486,9 @@ namespace iTrace {
 
 		RainBaker Baker;
 		Baker.BakeRain();
+
+
+		 
 
 	}
 

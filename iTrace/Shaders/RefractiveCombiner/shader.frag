@@ -5,6 +5,7 @@ layout(location = 0) out vec4 Lighting;
 layout(location = 1) out vec3 Glow; 
 layout(location = 2) out float DofDepth; //<- depth used for DoF 
 
+
 uniform sampler2D CombinedLighting; 
 uniform sampler2D CombinedGlow; 
 
@@ -13,6 +14,7 @@ uniform sampler2D RefractiveBlocks;
 uniform sampler2D PrimaryRefractionDepth; 
 uniform sampler2D PrimaryRefractionColor; 
 uniform sampler2D PrimaryRefractionNormal; 
+uniform sampler2D PrimaryRefractionNormalLF; 
 uniform sampler2D Volumetrics; 
 
 uniform mat4 IdentityMatrix;
@@ -20,7 +22,7 @@ uniform mat4 InverseView;
 uniform mat4 InverseProj; 
 uniform vec3 CameraPosition; 
 
-const bool ChromaticAbberation = true; 
+const bool ChromaticAbberation = false; 
 const bool HitLocationDepth = true; //<- if you want to use the surface location or the hit location depth for the DoF (refraction) 
 const vec3 CAMultiplier = vec3(1.02, 1.0, 1.04); //<- multipliers for chromatic abberation 
 
@@ -52,7 +54,7 @@ float AnalyticalTraversal(vec3 Direction, vec3 Origin) {
 
 	float Y = (BlockPosition.y-Origin.y) / Direction.y; 
 
-	if(Y < 0.01) 
+	if(Y < 0.0) 
 		Y = (BlockPositionCeil.y-Origin.y ) / Direction.y; 
 
 	
@@ -60,12 +62,12 @@ float AnalyticalTraversal(vec3 Direction, vec3 Origin) {
 	//the 2 x planes 
 
 	float X = (BlockPosition.x-Origin.x) / Direction.x; 
-	if(X < 0.01) 
+	if(X < 0.0) 
 		X = ( BlockPositionCeil.x-Origin.x) / Direction.x; 
 	//the 2 z planes 
 
 	float Z = ( BlockPosition.z-Origin.z) / Direction.z; 
-	if(Z < 0.01) 
+	if(Z < 0.0) 
 		Z = (BlockPositionCeil.z-Origin.z) / Direction.z; 
 
 	if(Y < 0.0) 
@@ -147,6 +149,7 @@ void main() {
 		vec3 ColorSample = pow(texture(PrimaryRefractionColor, TC).xyz,vec3(2.2)); 
 
 		vec3 Normal = texture(PrimaryRefractionNormal, TC).xyz; 
+		vec3 LFNormal = texture(PrimaryRefractionNormalLF, TC).xyz; 
 
 		vec3 WorldPosition = GetWorldPosition(RefractiveDepth, TC); 
 		
@@ -192,12 +195,13 @@ void main() {
 			else 
 				DofDepth = RefractiveDepth; 
 
+			//Lighting = vec3(
 		
 		}
 		else {
-			vec3 RayDir = refract(Incident, Normal, 1.0/1.3); 
+			vec3 RayDir = refract(Incident, Normal, 1.0/1.1); 
 			
-			float Traversal = AnalyticalTraversal(RayDir, WorldPosition - Normal * 0.01); 
+			float Traversal = AnalyticalTraversal(RayDir, (WorldPosition - LFNormal * 0.04) + RayDir * 0.001); 
 	
 			TC = TCFromWorldPos(WorldPosition + RayDir * Traversal); 
 
@@ -211,14 +215,22 @@ void main() {
 			else 
 				DofDepth = RefractiveDepth; 
 
+			//Lighting.xyz = vec3(Traversal); 
 
+			ColorSample = pow(ColorSample / 2.0, vec3(Traversal*2.0)) * 2.0; 
+			ColorSample = clamp(ColorSample, vec3(0.0), vec3(1.0));  
+			
 		}
 
-
-
+		ColorSample *= texture(RefractiveBlocks, InTexCoord).xyz; 
+		//Lighting.xyz = ColorSample; 
 		Lighting.xyz *= ColorSample; 
 
 		Glow.xyz *= ColorSample; 
+
+
+
+
 	}
 	else {
 	

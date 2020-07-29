@@ -1,7 +1,8 @@
 #version 330
 
-out vec4 Color; 
-out vec3 Normal; //<- used for analytical interrefraction later 
+layout(location = 0) out vec4 Color; 
+layout(location = 1) out vec3 Normal; //<- used for analytical interrefraction later 
+layout(location = 2) out vec3 LFNormal; 
 
 in vec4 Pos; 
 in vec3 TexCoord;
@@ -81,6 +82,8 @@ void main() {
 	//-> now, do normal mapping (yeah yeah its not fast) 
 
 	Normal.xyz = BlockNormals[BlockSide]; 
+
+	LFNormal.xyz = BlockNormals[BlockSide]; 
 
 	vec3 Tangent = BlockTangents[BlockSide]; 
 

@@ -214,6 +214,9 @@
     <Filter Include="Shaders\RefractiveCombiner">
       <UniqueIdentifier>{3f965085-4e54-4c22-b375-d76cc565fe5d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\CausticBaker">
+      <UniqueIdentifier>{baa010b7-4e95-4a64-99a9-b7175cfe1d11}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -330,6 +333,9 @@
     <ClInclude Include="CrosshairDrawer.h">
       <Filter>Header Files\UI</Filter>
     </ClInclude>
+    <ClInclude Include="CausticBaker.h">
+      <Filter>Header Files\Baker</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">
@@ -436,6 +442,9 @@
     </ClCompile>
     <ClCompile Include="TextureBaker.cpp">
       <Filter>Source Files\World</Filter>
+    </ClCompile>
+    <ClCompile Include="CausticBaker.cpp">
+      <Filter>Source Files\Baker</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -726,6 +735,12 @@
     </None>
     <None Include="Shaders\RefractiveCombiner\shader.frag">
       <Filter>Shaders\RefractiveCombiner</Filter>
+    </None>
+    <None Include="Shaders\CausticBaker\shader.vert">
+      <Filter>Shaders\CausticBaker</Filter>
+    </None>
+    <None Include="Shaders\CausticBaker\shader.frag">
+      <Filter>Shaders\CausticBaker</Filter>
     </None>
   </ItemGroup>
 </Project>

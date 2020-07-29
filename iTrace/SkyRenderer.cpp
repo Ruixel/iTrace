@@ -296,6 +296,12 @@ namespace iTrace {
 			RefractiveShadowMapsDepth[ToUpdate].BindDepthImage(3);
 
 
+			RefractiveShader.SetUniform("IsShadow", true);
+			RefractiveShader.SetUniform("zNear", 100.0f); 
+			RefractiveShader.SetUniform("zFar", 2500.0f);
+			RefractiveShader.SetUniform("CameraPos", Camera.Position + Orientation * 500.0f); 
+
+
 			glClearColor(1.0, 1.0, 1.0, 1.0);
 
 			glDisable(GL_DEPTH_TEST);
@@ -303,6 +309,9 @@ namespace iTrace {
 			glEnable(GL_BLEND);
 
 			glBlendFunc(GL_DST_COLOR, GL_ZERO);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetCausticTextureArray());
 
 			RefractiveShadowMaps[ToUpdate].Bind();
 
@@ -314,9 +323,13 @@ namespace iTrace {
 
 			glDisable(GL_BLEND);
 
+
 			glClearColor(0.0, 0.0, 0.0, 0.0);
 
 			RefractiveShader.UnBind();
+
+			RefractiveShader.SetUniform("IsShadow", false);
+
 
 
 

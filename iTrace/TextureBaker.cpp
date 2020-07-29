@@ -2,6 +2,7 @@
 #include <fstream>
 #include <filesystem>
 #include "ParallaxBaker.h"
+#include "CausticBaker.h"
 #include <sstream>
 
 namespace iTrace {
@@ -13,6 +14,7 @@ namespace iTrace {
 
 			std::vector<TextureDir> TextureDirectories;
 			std::array<unsigned int, static_cast<int>(TextureType::SIZE)> TextureArrays;
+			unsigned int CausticTextureArray; //<- works a lot differnt compared to the regular textures, so it should not be part of the array 
 			unsigned int BlockDataTexture, TextureExtensionData, BlockExtraDataTexture;
 
 
@@ -41,6 +43,9 @@ namespace iTrace {
 				return BlockExtraDataTexture;
 			}
 
+			unsigned int GetCausticTextureArray() {
+				return CausticTextureArray; 
+			}
 
 			void ResizeAndSaveImage(const std::string& InputFile, const std::string& OutPutFile, int OutPutResolution) {
 
@@ -230,6 +235,7 @@ namespace iTrace {
 
 				glGenTextures(1, &TextureExtensionData);
 				glGenTextures(1, &BlockExtraDataTexture);
+				glGenTextures(1, &CausticTextureArray); 
 
 				glGenTextures(1, &BlockDataTexture);
 				glBindTexture(GL_TEXTURE_1D, BlockDataTexture);
@@ -290,6 +296,8 @@ namespace iTrace {
 					return FileNameNoDot;
 
 				};
+
+				int CausticTextureCount = 4; //<- we know there are only 4 refractive blocks. this is hacky... 
 
 				auto GenTextureArray = [&](int idx, int format, int bytesperpixel, Vector4i FillingColor) {
 
@@ -429,6 +437,8 @@ namespace iTrace {
 					glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
 					glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+
 
 				};
 
@@ -729,6 +739,9 @@ namespace iTrace {
 
 				}
 
+				
+
+
 				glGenTextures(static_cast<int>(TextureType::SIZE), TextureArrays.data());
 
 				GenTextureArray(0, GL_RGB, 3, Vector4i(255));
@@ -784,7 +797,83 @@ namespace iTrace {
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 				glBindTexture(GL_TEXTURE_1D, 0);
 
-				//Identify and generate parallax maps! 
+				//used for generating caustic data 
+
+				{
+
+					glBindTexture(GL_TEXTURE_2D_ARRAY, CausticTextureArray);
+
+					glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, TEXTURE_RES, TEXTURE_RES, CausticTextureCount, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+					glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+					glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+					glTexParameteri(GL_TEXTURE_2D_ARRAY,
+						GL_TEXTURE_MIN_FILTER,
+						GL_LINEAR_MIPMAP_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D_ARRAY,
+						GL_TEXTURE_MAG_FILTER,
+						GL_LINEAR_MIPMAP_LINEAR);
+
+					glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+					glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+					glFinish();
+
+					glBindTexture(GL_TEXTURE_2D_ARRAY, CausticTextureArray);
+
+
+					CausticBaker CausticBaker;
+					bool NeededCaustic = false;
+
+					for (int i = 1; i < CausticTextureCount+1; i++) {
+						auto& Block = GetBlock(i); 
+
+
+
+						std::string Directory = "Materials/" + TextureDirectories[Block.TexIds[0]].BaseDirectory + "/";
+						std::string FileCaustic = Directory + "Caustic_level0.png"; 
+
+						if (!FileExists(FileCaustic)) {
+
+							CausticBaker.BakeCausticMap(Directory + "Albedo.png", Directory + "Normal.png", Directory + "Caustic");
+							
+						}
+
+
+						for (int mip = 0; mip < 5; mip++) {
+
+							std::string FilePath = Directory + "Caustic_level" + std::to_string(mip) + ".png";
+
+
+
+							sf::Image LoadingImage;
+							LoadingImage.loadFromFile(FilePath);
+
+							auto RawPixelData = LoadingImage.getPixelsPtr();
+							auto PixelData = std::vector<unsigned char>(LoadingImage.getSize().x * LoadingImage.getSize().y * 3, 255);
+
+							for (int pixel = 0; pixel < LoadingImage.getSize().x * LoadingImage.getSize().y; pixel++) {
+								for (int color = 0; color < 3; color++)
+									PixelData[pixel * 3 + color] = RawPixelData[pixel * 4 + color];
+							}
+
+							glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+								mip,
+								0, 0, i-1,
+								LoadingImage.getSize().x, LoadingImage.getSize().y, 1,
+								GL_RGB,
+								GL_UNSIGNED_BYTE,
+								PixelData.data());
+
+						}
+						
+
+					}
+
+					glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+
+				}
 
 			}
 			
