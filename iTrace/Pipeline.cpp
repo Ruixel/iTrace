@@ -430,8 +430,8 @@ namespace iTrace {
 		PreparePostProcess();
 
 		std::string Directory = "C:/Users/te17hw8/source/repos/iTrace/iTrace/Materials/Jelly/";
-		CausticBaker Caustics;
-		Caustics.BakeCausticMap(Directory + "Albedo.png", Directory + "Normal.png", Directory + "Caustic");
+		//CausticBaker Caustics;
+		//Caustics.BakeCausticMap(Directory + "Albedo.png", Directory + "Normal.png", Directory + "Caustic");
 
 		World.PrepareWorldManger();
 		RenderItemRequests();
@@ -767,17 +767,19 @@ namespace iTrace {
 
 			if (ShowGUI) {
 
-				Text.PrepareTextDrawing();
 				
+
+				Inventory.DrawInventory(Window);
+
+				Crosshair.DrawCrosshair();
+
+				Text.PrepareTextDrawing();
+
 				Commands.DrawCommandText(&Text, Window);
 
 				Profiler::DrawProfiling(Window, Text);
 
 				Text.EndTextDrawing();
-
-				Inventory.DrawInventory(Window);
-
-				Crosshair.DrawCrosshair();
 
 			}
 

@@ -10,6 +10,8 @@ iTrace::Rendering::TextSystem::TextSystem(const std::string & FontFile)
 
 void iTrace::Rendering::TextSystem::DisplayText(const std::string & Text, Window & Window, float Size, Vector2f Position, Vector3f Color)
 {
+
+	glDisable(GL_BLEND); 
 	
 	glUniform2f(glGetUniformLocation(FontShader.ShaderID, "Size"), Size, Size*1.4*(float(Window.GetResolution().x) / float(Window.GetResolution().y)));
 	
@@ -22,4 +24,6 @@ void iTrace::Rendering::TextSystem::DisplayText(const std::string & Text, Window
 		DrawPostProcessQuad(); 
 		i++; 
 	}
+
+	
 }

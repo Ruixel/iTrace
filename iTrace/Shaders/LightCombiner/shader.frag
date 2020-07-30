@@ -75,6 +75,23 @@ vec3 Fresnel(vec3 Incident, vec3 Normal, vec3 Specular, float Roughness) {
 	return Specular + (max(vec3(pow(1-Roughness,3.0)) - Specular,vec3(0.0))) * pow(max(1.0 - clamp(dot(Incident,Normal),0.0,1.0),0.0), 5.0);
 }
 
+vec3 SHToIrridiance(vec4 shY, vec2 CoCg, vec3 N)
+{
+    float d = dot(shY.xyz, N);
+    float Y = 2.0 * (1.023326 * d + 0.886226 * shY.w);
+    Y = max(Y, 0.0);
+
+	CoCg *= Y * 0.282095 / (shY.w + 1e-6);
+
+    float   T       = Y - CoCg.y * 0.5;
+    float   G       = CoCg.y + T;
+    float   B       = T - CoCg.x * 0.5;
+    float   R       = B + CoCg.x;
+
+    return max(vec3(R, G, B), vec3(0.0));
+
+}
+
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
     double a = roughness*roughness;
@@ -196,7 +213,7 @@ void main() {
 		vec4 IndirectDiffuse = texture(Indirect, TexCoord); 
 		vec4 IndirectSpecular = texture(IndirectSpecular, TexCoord); 
 
-		float Roughness = HighfreqNormalSample.w; 
+		float Roughness = NormalFetch.w; 
 
 		vec4 AlbedoFetch = texture(Albedo, TexCoord); 
 
@@ -209,7 +226,12 @@ void main() {
 		vec3 DiffuseColor = mix(AlbedoFetch.xyz,vec3(0.0),AlbedoFetch.w); 		
 
 
-		vec3 Shadow = texture(DirectShadow, TexCoord).xyz; 
+		vec4 Shadow = texture(DirectShadow, TexCoord); 
+
+		vec2 ShCoCg = vec2(IndirectSpecular.w, Shadow.w); 
+		vec4 SHy = IndirectDiffuse; 
+
+		IndirectDiffuse.xyz = SHToIrridiance(SHy, ShCoCg, HighfreqNormalSample.xyz); 
 
 	//	vec3 Direct = Shadow * max(dot(LightDirection, HighfreqNormalSample.xyz),0.0);
 	//	vec3 DirectSpecular = 10.0 * Shadow * pow(max(dot(LightDirection, SpecDir),0.0),1024.0); 
@@ -218,18 +240,20 @@ void main() {
 
 		ManageDirect(WorldPosFetch, NormalFetch.xyz,normalize(HighfreqNormalSample.xyz), max(Roughness,0.03), F0, -Incident, Direct, DirectSpecular); 
 
-		Direct *= Shadow; 
-		DirectSpecular *= Shadow;    
+		Direct *= Shadow.xyz; 
+		DirectSpecular *= Shadow.xyz;    
 
 		vec3 Kd = 1 - SpecularColor; //for energy conservation, Specular + Diffuse <= 1, so ensure this is the case! 
 
-		Lighting.xyz = DiffuseColor * ((IndirectDiffuse.xyz * Kd + Direct)) + SpecularColor * (IndirectSpecular.xyz) + DirectSpecular + AlbedoFetch.xyz * NormalFetch.www;
-		//Lighting.xyz =  DiffuseColor * ((IndirectDiffuse.xyz + Direct) * IndirectDiffuse.www ); 
-		Glow.xyz = DirectSpecular * pow(1.0-Roughness,5.0) + AlbedoFetch.xyz * NormalFetch.www; 
-		//Glow.xyz = vec3(0.); 
-		//Lighting.xyz = IndirectSpecular.xyz; 
-		//Lighting.xyz = vec3(Shadow); 
 
+
+
+
+
+
+
+		Lighting.xyz = DiffuseColor * ((IndirectDiffuse.xyz * Kd + Direct)) + SpecularColor * (IndirectSpecular.xyz) + DirectSpecular + AlbedoFetch.xyz * HighfreqNormalSample.www;
+		Glow.xyz = DirectSpecular * pow(1.0-Roughness,5.0) + AlbedoFetch.xyz * HighfreqNormalSample.www; 
 
 	}
 	else {

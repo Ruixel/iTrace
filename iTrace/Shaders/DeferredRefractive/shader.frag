@@ -139,9 +139,6 @@ void main() {
 
 		float Lod = clamp(Distance-1.0,0.0,4.0); 
 
-		
-
-
 		TextureLookUp = textureLod(DiffuseTextures, vec3(TC, BlockType-1), Lod).xyz; 
 
 
@@ -149,13 +146,11 @@ void main() {
 
 	float Traversal = AnalyticalTraversal(-Incident,Pos.xyz - Normal*0.01); 
 
-	Color.xyz = vec3(Traversal); 
-
 	Color.xyz = pow(TextureLookUp / 2.0, vec3(Traversal*2.0)) * 2.0; 
 	Color.xyz = clamp(Color.xyz, vec3(0.0), vec3(1.0));  
 
-	if(dot(Incident, Normal) < 0.0) 
-		Color = vec4(1.0); 
+	//if(dot(Incident, Normal) < 0.0) 
+	//	Color = vec4(1.0); 
 				Color.a = 1.0; 
 
 }

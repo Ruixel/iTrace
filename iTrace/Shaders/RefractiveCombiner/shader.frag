@@ -156,7 +156,7 @@ void main() {
 		vec3 Incident = normalize(WorldPosition - CameraPosition); 
 
 
-		if(ChromaticAbberation) {
+		if(ChromaticAbberation) { //<- temporarily removed 
 			vec3 RayDirR = refract(Incident, Normal, 1.0/(1.3*CAMultiplier.r)); 
 			vec3 RayDirG = refract(Incident, Normal, 1.0/(1.3*CAMultiplier.g)); 
 			vec3 RayDirB = refract(Incident, Normal, 1.0/(1.3*CAMultiplier.b)); 
@@ -204,6 +204,11 @@ void main() {
 			float Traversal = AnalyticalTraversal(RayDir, (WorldPosition - LFNormal * 0.04) + RayDir * 0.001); 
 	
 			TC = TCFromWorldPos(WorldPosition + RayDir * Traversal); 
+			float DepthFetchHere = texelFetch(Depth, ivec2(TC * textureSize(Depth, 0).xy),0).x; 
+
+			if(DepthFetchHere < RefractiveDepth) 
+				TC = InTexCoord; 
+
 
 			Glow = texture(CombinedGlow, TC).xyz;
 			Lighting = texture(CombinedLighting, TC); 
@@ -222,12 +227,11 @@ void main() {
 			
 		}
 
-		ColorSample *= texture(RefractiveBlocks, InTexCoord).xyz; 
+		ColorSample *= texture(RefractiveBlocks, TC).xyz; 
 		//Lighting.xyz = ColorSample; 
 		Lighting.xyz *= ColorSample; 
 
 		Glow.xyz *= ColorSample; 
-
 
 
 

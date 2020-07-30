@@ -80,7 +80,9 @@ namespace iTrace {
 				Chunk::AddBlock(Chunk::BlockType("Hop", { 56 }, true, false, false, SoundType::STONE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Diamond block", { 57 }, true, false, false, SoundType::STONE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Metal test", { 58 }, true, false, false, SoundType::METAL)); //CC0, good (50)
-				
+				Chunk::AddBlock(Chunk::BlockType("Red concrete", { 62 }, true, false, false, SoundType::STONE)); //CC0, good (50)
+				Chunk::AddBlock(Chunk::BlockType("Blue concrete", { 63 }, true, false, false, SoundType::STONE)); //CC0, good (50)
+
 
 				Chunk::AddTexture("stone", 0.75);
 				Chunk::AddTexture("Dirt", 0.4);
@@ -92,10 +94,10 @@ namespace iTrace {
 				Chunk::AddTexture("Leather old", 0.2f);
 				Chunk::AddTexture("Fabric", 0.3f);
 				Chunk::AddTexture("Obsidian", 0.7f);
-				Chunk::AddTexture("Concrete", 0.6f);
+				Chunk::AddTexture("Concrete RTX", 0.6f);
 				Chunk::AddTexture("Green glowstone", 0.25f);
 				Chunk::AddTexture("Iron bars", 0.2f);
-				Chunk::AddTexture("Lamp", 0.2f);
+				Chunk::AddTexture("Lamp RTX", 0.2f);
 				Chunk::AddTexture("Lantern", 0.05f);
 				Chunk::AddTexture("red", 0.4);
 				Chunk::AddTexture("green", 0.4);
@@ -142,8 +144,10 @@ namespace iTrace {
 				Chunk::AddTexture("Diamond block MC", 0.25);
 				Chunk::AddTexture("Metal", 0.125);
 				Chunk::AddTexture("Green glass", 0.125);
-				Chunk::AddTexture("red glass", 0.125);
-				Chunk::AddTexture("blue glass", 0.125);
+				Chunk::AddTexture("red glass RTX", 0.125);
+				Chunk::AddTexture("blue glass RTX", 0.125);
+				Chunk::AddTexture("red concrete RTX", 0.125);
+				Chunk::AddTexture("blue concrete RTX", 0.125);
 
 
 				Chunk::GetTextureArrayList(0);
@@ -231,7 +235,7 @@ namespace iTrace {
 
 				Vector2i Distance = (Vector2i(CenterX, CenterY) * CHUNK_SIZE + CHUNK_SIZE / 2) - Vector2i(Camera.Position.x, Camera.Position.z);
 				
-				std::cout << "Distance: " << Distance.x << ' ' << Distance.y << '\n'; 
+				//std::cout << "Distance: " << Distance.x << ' ' << Distance.y << '\n'; 
 
 				auto UpdateWorld = [&]() {
 					for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
@@ -456,12 +460,82 @@ namespace iTrace {
 
 		}
 
+		void WorldManager::AddLightBlock(unsigned char WaveLength, Vector3i Location, Vector3i& OriginLocation, std::vector<unsigned char>& Data, std::vector<float>& Energy, float EnergyMultiplier, int Distance, Vector3i* Min, Vector3i* Max)
+		{
+
+			const int BoundingBox = LONGESTLIGHT * 2 + 1;
+
+			Vector3i DataLocation = Location - OriginLocation;
+
+
+			int Index = DataLocation.x * BoundingBox * BoundingBox + DataLocation.y * BoundingBox + DataLocation.z; 
+			Data[Index] = Distance;
+			
+			float InverseLaw = 1.0 / float(9.0 + Distance * Distance * Distance); 
+
+			Energy[Index] = InverseLaw * EnergyMultiplier;
+
+
+
+			if (Distance > LONGESTLIGHT)
+				return;
+
+
+			for (int x = 0; x < 6; x++) {
+
+				Vector3i NewPosition = Location + Vector3i(Chunk::BlockNormals[x]);
+
+				int t = GetBlock(NewPosition + Vector3i(BiasX, 0, BiasY));
+
+				if (t != -1) {
+
+					Vector3i DataLocationNew = NewPosition - OriginLocation;
+					if (GetBlock(DataLocationNew + Vector3i(BiasX, 0, BiasY)) != -1) {
+
+
+						int TypeIdx = t;
+
+						auto& Type = Chunk::GetBlock(TypeIdx);
+
+						if (TypeIdx == 0 || Type.RenderType == Chunk::BLOCK_RENDER_TYPE::REFRACTIVE) {
+
+							float EnergyMultiplierNext = EnergyMultiplier; 
+
+							if (TypeIdx != 0)
+								EnergyMultiplierNext *= Chunk::GetTextureData(Type.TexIds[0]).AlbedoAverage[WaveLength]; 
+
+							float EnergyNext = (1.0 / (9.0 + (Distance + 1) * (Distance + 1) * (Distance + 1))) * EnergyMultiplierNext;
+
+							if (Energy[DataLocationNew.x * BoundingBox * BoundingBox + DataLocationNew.y * BoundingBox + DataLocationNew.z] < EnergyNext) {
+
+								AddLightBlock(WaveLength, NewPosition, OriginLocation, Data, Energy, EnergyMultiplierNext, Distance + 1, Min, Max);
+
+								if (Min != nullptr && Max != nullptr) {
+									*Min = glm::min(*Min, Location);
+									*Max = glm::max(*Max, Location);
+								}
+							}
+						}
+					}
+				}
+
+
+			}
+
+
+		}
+
 		void WorldManager::AddLightSource(Vector3i Location, Vector3f Color, Vector3i * Min, Vector3i * Max)
 		{
 
+			std::cout << "Light source function called!\n"; 
+
 			int BoundingBox = LONGESTLIGHT * 2 + 1;
 
-			auto Data = std::vector<unsigned char>(BoundingBox * BoundingBox * BoundingBox, LONGESTLIGHT + 1);
+			int BoundSize = BoundingBox * BoundingBox * BoundingBox; 
+
+			std::vector<unsigned char> Data[3] = { std::vector<unsigned char>(BoundSize, LONGESTLIGHT + 1),std::vector<unsigned char>(BoundSize, LONGESTLIGHT + 1),std::vector<unsigned char>(BoundSize, LONGESTLIGHT + 1)};
+			std::vector<float> Energy[3] = { std::vector<float>(BoundSize, 0.0), std::vector<float>(BoundSize, 0.0), std::vector<float>(BoundSize,0.0) }; 
 
 			Vector3i OriginLocation = Location - Vector3i(LONGESTLIGHT);
 
@@ -475,9 +549,17 @@ namespace iTrace {
 
 					auto& Type = Chunk::GetBlock(TypeIdx);
 
-					if (TypeIdx == 0) {
+					
 
-						AddLightBlock(NewPosition, OriginLocation, Data, 1, Min, Max);
+					if (TypeIdx == 0 || Type.RenderType == Chunk::BLOCK_RENDER_TYPE::REFRACTIVE) {
+
+						Vector3f Multiplier = Vector3f(1.0); 
+
+						if (TypeIdx != 0)
+							Multiplier *= Chunk::GetTextureData(Type.TexIds[0]).AlbedoAverage; 
+
+						for(int i = 0; i < 3; i++)
+							AddLightBlock(i, NewPosition, OriginLocation, Data[i], Energy[i], Multiplier[i], 1, Min, Max);
 
 					}
 
@@ -492,11 +574,17 @@ namespace iTrace {
 				for (int y = 0; y < BoundingBox; y++) {
 					for (int z = 0; z < BoundingBox; z++) {
 
-						//Data[x * BoundingBox * BoundingBox + y * BoundingBox + z] != LONGESTLIGHT+1
+						int Index = x * BoundingBox * BoundingBox + y * BoundingBox + z; 
 
-						auto CurrentData = Data[x * BoundingBox * BoundingBox + y * BoundingBox + z];
+						Vector3f Energies = {
+							Energy[0][Index],
+							Energy[1][Index],
+							Energy[2][Index]
+						}; 
 
-						if (CurrentData != LONGESTLIGHT + 1) {
+						//std::cout << Energies << '\n'; 
+
+						if (Energies.x > 0.0 || Energies.y > 0.0 || Energies.z > 0.0) {
 
 							Vector3i BlockPos = OriginLocation + Vector3i(x, y, z);
 							Vector2i ChunkIdx; 
@@ -506,15 +594,10 @@ namespace iTrace {
 
 							if (t != -1) {
 
-
 								Vector3i RelativeBlockPos = BlockPos % CHUNK_SIZE; 
 
-
-								Chunks[ChunkIdx.x][ChunkIdx.y]->BlockLighting[RelativeBlockPos.x * CHUNK_SIZE * CHUNK_SIZE + RelativeBlockPos.y * CHUNK_SIZE + RelativeBlockPos.z] += Vector4f(Color / (9.0f + Vector3f(CurrentData * CurrentData * CurrentData)), 0.0);
-
-
-
-
+								Chunks[ChunkIdx.x][ChunkIdx.y]->BlockLighting
+									[RelativeBlockPos.x * CHUNK_SIZE * CHUNK_SIZE + RelativeBlockPos.y * CHUNK_SIZE + RelativeBlockPos.z] += Vector4f(Color * Energies, 0.0);
 
 							}
 						}
@@ -674,7 +757,11 @@ namespace iTrace {
 				AddLightSource(Vector3i(Sources) - Vector3i(BiasX, 0, BiasY), -GetBlockEmissiveColor(Sources.w));
 			}
 
-			SetBlock(LocationBlock, NewBlockType, true); 
+			std::cout << "Adding block at: " << LocationBlock << '\n'; 
+
+			auto RenderType = static_cast<int>(Chunk::GetBlock(GetBlock(LocationBlock)).RenderType); 
+
+			SetBlock(LocationBlock, NewBlockType, true, RenderType);
 
 			//Chunk->SetBlock(LocationBlock.x, LocationBlock.y, LocationBlock.z, NewBlockType);
 
@@ -682,7 +769,7 @@ namespace iTrace {
 				AddLightSource(Vector3i(Sources) - Vector3i(BiasX, 0, BiasY), GetBlockEmissiveColor(Sources.w), &Min, &Max);
 			}
 
-			SetBlock(LocationBlock, NewBlockType, true); //<- hacky 
+			SetBlock(LocationBlock, NewBlockType, true, RenderType); //<- hacky 
 
 			UpdateChunkTexture(Min, Max, true);
 
@@ -820,7 +907,7 @@ namespace iTrace {
 
 		}
 
-		bool Rendering::WorldManager::SetBlock(Vector3i Position, unsigned char Type, bool Update)
+		bool Rendering::WorldManager::SetBlock(Vector3i Position, unsigned char Type, bool Update, int _overRideType)
 		{
 			Vector3i RelativeBlockPosition = Position - Vector3i(Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->X, 0, Chunks[CHUNK_RENDER_DISTANCE][CHUNK_RENDER_DISTANCE]->Y) * CHUNK_SIZE;
 

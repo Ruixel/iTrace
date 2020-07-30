@@ -144,6 +144,8 @@ float LinearDepth(float z)
     return 2.0 * zNear * zFar / (zFar + zNear - (z * 2.0 - 1.0) * (zFar - zNear));
 } 
 
+uniform ivec2 PositionBias; 
+
 void main() {
 	
 	if(!DoVolumetrics) {
@@ -233,7 +235,9 @@ void main() {
 
 			DirectDensity = pow(DirectDensity, 4.0); 
 
-			vec3 LightFetch = DirectBasic(Position) * SunColor  * DirectDensity; 
+			vec3 LightFetch = DirectBasic(Position) * 0.25 * SunColor * DirectDensity; 
+
+			LightFetch += textureLod(ChunkLighting, (Position.xyz - vec3(PositionBias.x, 0.0, PositionBias.y)).zyx / vec3(384.0,128.0,384.0), 0.0).xyz; 
 
 			vec3 S = SampleSigmaS * LightFetch; 
 

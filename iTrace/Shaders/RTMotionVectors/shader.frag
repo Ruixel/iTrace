@@ -27,7 +27,7 @@ vec3 FindBestPixel(vec2 Coord, vec3 CurrentWorldPos, vec3 PreviousWorldPos, vec3
 	if(true) {
 
 	
-	float zBased =  -1000.0 * max(abs(CurrentSimpleLight.x - PreviousSimpleLight.x)-0.02,0.0) - 1000.0 * max(abs(CurrentSimpleLight.y - PreviousSimpleLight.y)-0.02,0.0) - 1000.0 * max(abs(CurrentSimpleLight.z - PreviousSimpleLight.z)-0.02,0.0); 
+	float zBased =  -4000.0 * max(abs(CurrentSimpleLight.x - PreviousSimpleLight.x)-0.02,0.0) - 1000.0 * max(abs(CurrentSimpleLight.y - PreviousSimpleLight.y)-0.02,0.0) - 1000.0 * max(abs(CurrentSimpleLight.z - PreviousSimpleLight.z)-0.02,0.0); 
 	float DistanceSquared = -int(dot(Vector, Vector) * 100.0) + min(dot(CurrentNormal, PreviousNormal)*10.0,0.0); 
 
 	return vec3(Coord + vec2(1.0) * DistanceSquared,zBased); 

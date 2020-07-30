@@ -84,7 +84,7 @@ namespace iTrace {
 				bool IsEmissive = false; 
 				bool IsMetallic = false; 
 				float EmissiveStrength = 0.0; 
-				BLOCK_RENDER_TYPE RenderType; 
+				BLOCK_RENDER_TYPE RenderType = BLOCK_RENDER_TYPE::OPAQUE; 
 
 				SoundType SoundMaterialType = SoundType::NONE; 
 
@@ -167,6 +167,10 @@ namespace iTrace {
 				}
 
 				void Draw(unsigned char SubX, unsigned char SubY) {
+
+					if (Vertices[SubX][SubY] == 0)
+						return; 
+
 					glBindVertexArray(ChunkVAOs[SubX][SubY]); 
 					glDrawElements(GL_TRIANGLES, Vertices[SubX][SubY], GL_UNSIGNED_INT, nullptr);
 					glBindVertexArray(0);

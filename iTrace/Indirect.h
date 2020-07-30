@@ -15,12 +15,12 @@ namespace iTrace {
 				TemporalUpscaler,SpatialPacker, SpatialFilter, 
 				SpatialUpscaler, TemporalFilter, FrameCount, Volumetrics, 
 				DirectBlocker, CloudRenderer, CloudProjection, CheckerboardUpscaler,
-				PreSpatialTemporalFilter; 
-
-			MultiPassFrameBufferObject RawPathTrace[4], TemporalyUpscaled, SpatialyFiltered[8], SpatialyUpscaled, Clouds[4], Checkerboarder[4];
+				PreSpatialTemporalFilter, SpatialFilterFinal; 
+			//																	- gives out 2 4d floats, 1 float-	 - gives out 3 4d floats -
+			MultiPassFrameBufferObject RawPathTrace[4], TemporalyUpscaled, SpatialyFilteredTemporary[2],			SpatialyFiltered[4], SpatialyUpscaled, Clouds[4], Checkerboarder[4];
 			FrameBufferObject MotionVectors[4], PackedData, DirectBlockerBuffer, PackedSpatialData;
-			MultiPassFrameBufferObjectPreviousData TemporallyFiltered, PreSpatialTemporal;
-			FrameBufferObjectPreviousData TemporalFrameCount, ProjectedClouds;
+			MultiPassFrameBufferObjectPreviousData TemporallyFiltered;
+			FrameBufferObjectPreviousData TemporalFrameCount, ProjectedClouds, PreSpatialTemporal;
 			FrameBufferObject VolumetricFBO[4];
 
 			TextureGL WindNoise, SimplifiedBlueNoise, WeatherMap, Turbulence, Cirrus; 

@@ -2,17 +2,9 @@
 
 in vec2 TexCoord; 
 
-layout(location = 0) out vec4 TemporallyFilteredDiffuse; 
-layout(location = 1) out vec4 TemporallyFilteredSpecular;
-layout(location = 2) out vec4 TemporallyFilteredDetail; 
-layout(location = 3) out vec4 LSVGFDiffuse; //<- L-SVGF tricked diffuse SVGF(Diffuse / Detail) * Detail
+layout(location = 0) out vec4 Detail; 
 
-uniform sampler2D CurrentDiffuse; 
-uniform sampler2D CurrentSpecular; 
 uniform sampler2D CurrentDetail; 
-
-uniform sampler2D PreviousDiffuse; 
-uniform sampler2D PreviousSpecular;
 uniform sampler2D PreviousDetail; 
 
 uniform sampler2D SpatialDenoiseData; 
@@ -29,6 +21,10 @@ ivec2 States[] = ivec2[](
 	ivec2(0, 0),
 	ivec2(1, 0));
 
+float Luminance(vec3 x) {
+	return dot(x, vec3(0.2126, 0.7152,0.0722)); 
+}
+
 float GetRoughness(inout vec3 Normal) {
 
 	float L = length(Normal); 
@@ -39,7 +35,7 @@ float GetRoughness(inout vec3 Normal) {
 	return Roughness; 
 }
 
-float Kernel[4] = float[](0.60933016268,0.80238141513,0.904644388297,1.0); 
+float Kernel[4] = float[](0.0,1.0/3.0,2.0/3.0,1.0); 
 
 void main() {
 
@@ -55,9 +51,11 @@ void main() {
 	
 	ivec2 Pixel = ivec2(gl_FragCoord.xy); 
 
-	TemporallyFilteredDetail = texelFetch(CurrentDetail, Pixel, 0); 
+	Detail = texelFetch(CurrentDetail, Pixel, 0); 
 
-	if(FrameCount < 4.0) {
+	vec4 BaseDetail = Detail; 
+
+	if(true) {
 		
 		ivec2 HighResPixel = Pixel * 2 + States[SubFrame];
 
@@ -67,8 +65,8 @@ void main() {
 
 		float TotalWeight = 1.0; 
 
-		for(int x = -1; x <= 1; x++) {
-			for(int y = -1; y <= 1; y++) {
+		for(int x = -2; x <= 2; x++) {
+			for(int y = -2; y <= 2; y++) {
 				
 				ivec2 PixelOffet = Pixel + ivec2(x,y); 
 				ivec2 PixelOffsetHighRes = HighResPixel + ivec2(x,y)*2; 
@@ -85,29 +83,29 @@ void main() {
 				float Weight = NormalWeight;  
 
 				Weight /= pow(1.0 + 3.0 * abs(CurrentPacked.w - BasePacked.w), 4.0); 
+				float BaseKernelWeight = Kernel[3-abs(x)] * Kernel[3-abs(y)]; 
+				Weight *= BaseKernelWeight; 
 
-				TemporallyFilteredDetail += CurrentDetail * Weight; 
+				Detail += CurrentDetail * Weight; 
 				TotalWeight += Weight; 
 
 
 			}
 		}
 
-		TemporallyFilteredDetail /= TotalWeight; 
+		Detail /= TotalWeight; 
 
 	}
 
 	//temporally filter the signals -> 
 
-	float MixFactor = min(FrameCount / (FrameCount+1.0),0.95); //<- should be enough to guide the spatial filter without impossible ghosting 
+	float MixFactor = min(FrameCount / (FrameCount+1.0),0.99); //<- should be enough to guide the spatial filter without impossible ghosting 
 
-	TemporallyFilteredDiffuse = mix(texture(CurrentDiffuse, TexCoord), texture(PreviousDiffuse, TexCoord+MotionVectors), MixFactor); 
-	TemporallyFilteredSpecular = mix(texture(CurrentSpecular, TexCoord), texture(PreviousSpecular, TexCoord+MotionVectors), MixFactor); 
-	TemporallyFilteredDetail = mix(TemporallyFilteredDetail, texture(PreviousDetail, TexCoord+MotionVectors), MixFactor); 
+	vec4 PreviousDetail = texture(PreviousDetail, TexCoord+MotionVectors); 
 
+	Detail = mix(Detail, PreviousDetail, MixFactor); 
+	Detail.y = mix(BaseDetail.y, PreviousDetail.y, min(MixFactor,0.9)); 
 	//-> convert detail + raw diffuse into L-SVGF friendly signal 
 
-	LSVGFDiffuse = TemporallyFilteredDiffuse; 
-	//LSVGFDiffuse.xyz = LSVGFDiffuse.xyz / (TemporallyFilteredDetail.xyz * TemporallyFilteredDetail.w); 
 
 }

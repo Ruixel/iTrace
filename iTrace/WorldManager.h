@@ -33,6 +33,8 @@ namespace iTrace {
 			void RenderWorldRefractive(Camera& Camera, Shader& RenderToShader); 
 
 			void AddLightBlock(Vector3i Location, Vector3i & OriginLocation, std::vector<unsigned char> &Data, int Distance, Vector3i* Min = nullptr, Vector3i* Max = nullptr);
+			void AddLightBlock(unsigned char WaveLength, Vector3i Location, Vector3i& OriginLocation, std::vector<unsigned char>& Data, std::vector<float> &Energy, float EnergyMultiplier, int Distance, Vector3i* Min = nullptr, Vector3i* Max = nullptr);
+
 			void AddLightSource(Vector3i Location, Vector3f Color, Vector3i* Min = nullptr, Vector3i* Max = nullptr);
 			void SpreadSkyLight(Vector2i Coordinate); 
 
@@ -42,7 +44,7 @@ namespace iTrace {
 			Vector3i TraceBlock(Vector3f Origin, Vector3f Direction, unsigned short Distance, int& Side, Vector2i & ChunkPos, int &TypeIdx); 
 
 			int GetBlock(Vector3i Position, Vector2i * ChunkPos=nullptr); //<- returns -1 if block is outside of loaded chunks 
-			bool SetBlock(Vector3i Position, unsigned char Type, bool Update = false); 
+			bool SetBlock(Vector3i Position, unsigned char Type, bool Update = false, int _overRideType = -1); 
 
 
 			bool CastBlock(Camera Camera, Chunk::BLOCK_ACTION Action, unsigned short Distance, unsigned char Block);

@@ -198,7 +198,7 @@ void main() {
 	
 	vec3 c = (FirstAlbedo + SecondAlbedo) / 2.0; 
 
-	float Dist = distance(FinalPoint.xy, vec2(0.5)) * 2.0; 
+	float Dist = distance(FinalPoint.xy, OriginFinalLight.xy) * 2.0; 
 
 	c /= 0.5 * (1.0 + Dist * Dist * 9.0); 
 

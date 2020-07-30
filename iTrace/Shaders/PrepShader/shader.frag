@@ -28,5 +28,4 @@ void main() {
 	LightingGlow = texture(Glow, TexCoord).xyz; 
 
 	LightingGlow = mix(vec3(0.0), LightingGlow, texture(Volumetrics, TexCoord).a); 
-
 }

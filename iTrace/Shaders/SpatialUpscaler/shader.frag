@@ -4,7 +4,7 @@ in vec2 TexCoord;
 
 layout(location = 0) out vec4 IndirectDiffuse;
 layout(location = 1) out vec4 IndirectSpecular;
-layout(location = 2) out vec3 OutDirect; 
+layout(location = 2) out vec4 OutDirect; 
 
 uniform float znear; 
 uniform float zfar; 
@@ -111,6 +111,7 @@ void main() {
 	}
 
 	IndirectDiffuse = texture(Lighting, BestTC); 
-	IndirectSpecular.xyz = texture(Specular, BestTC).xyz; 
-	OutDirect = texture(Direct, BestShadowTC).xyz; 
+	IndirectSpecular = texture(Specular, BestTC); 
+	OutDirect.xyz = texture(Direct, BestShadowTC).xyz;
+	OutDirect.w = texture(Direct, BestTC).w; 
 }

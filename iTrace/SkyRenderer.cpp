@@ -67,6 +67,7 @@ namespace iTrace {
 					NULL);
 
 			}
+			 
 
 			glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 			glFinish();
