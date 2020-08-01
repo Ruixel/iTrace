@@ -126,7 +126,7 @@ void main() {
 	IndirectSpecular = mix(CurrentSpecularSample, PreviousSpecular, min(MixFactor, SpecularTrustFactor)); 
 	Clouds = mix(CurrentClouds, PreviousClouds,MixFactorClouds);  
 	Direct.xyz = CurrentDirect.xyz; 
-
+	//Direct.xyz = mix(CurrentDirect.xyz, PreviousDirect.xyz, min(MixFactor,0.75)); 
 	Direct.w = mix(CurrentDirect.w, PreviousDirect.w, MixFactor); 
 	IndirectSpecular.w = mix(CurrentSpecularSample.w, PreviousSpecular.w, MixFactor); 
 

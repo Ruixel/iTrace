@@ -729,6 +729,10 @@ namespace iTrace {
 			IndirectLightShader.SetUniform("DirectionalCascades[1]", 20);
 			IndirectLightShader.SetUniform("DirectionalCascades[2]", 21);
 			IndirectLightShader.SetUniform("DirectionalCascades[3]", 22);
+			IndirectLightShader.SetUniform("DirectionalCascadesRaw[0]", 19);
+			IndirectLightShader.SetUniform("DirectionalCascadesRaw[1]", 20);
+			IndirectLightShader.SetUniform("DirectionalCascadesRaw[2]", 21);
+			IndirectLightShader.SetUniform("DirectionalCascadesRaw[3]", 22);
 			IndirectLightShader.SetUniform("SkyNoMie", 23);
 			IndirectLightShader.SetUniform("BlockerData", 24);
 			IndirectLightShader.SetUniform("DisplacementTextures", 25);

@@ -296,6 +296,7 @@ void main() {
 	_TC.xy = fract(TC);
 	_TC.z = TextureIdx; 
 
+
 	HandleWeather(TBN, Normal.xyz, BetterWorldPos.xyz, WorldPos.xyz, HighFreqNormal.xyz, HighFreqNormal.w, Albedo.w, Albedo.xyz); 
 
 }

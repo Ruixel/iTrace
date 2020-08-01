@@ -246,15 +246,8 @@ void main() {
 		vec3 Kd = 1 - SpecularColor; //for energy conservation, Specular + Diffuse <= 1, so ensure this is the case! 
 
 
-
-
-
-
-
-
 		Lighting.xyz = DiffuseColor * ((IndirectDiffuse.xyz * Kd + Direct)) + SpecularColor * (IndirectSpecular.xyz) + DirectSpecular + AlbedoFetch.xyz * HighfreqNormalSample.www;
 		Glow.xyz = DirectSpecular * pow(1.0-Roughness,5.0) + AlbedoFetch.xyz * HighfreqNormalSample.www; 
-
 	}
 	else {
 		vec4 CloudSample = texture(Clouds, TexCoord); 

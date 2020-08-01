@@ -62,6 +62,7 @@ uniform vec3 CameraPosition;
 uniform int FrameCount;
 
 uniform sampler2DShadow DirectionalCascades[4]; 
+uniform sampler2D DirectionalCascadesRaw[4]; 
 uniform sampler2D DirectionalRefractive[4]; 
 uniform mat4 DirectionMatrices[4]; 
 uniform vec3 SunColor; 
@@ -877,7 +878,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 	vec3 Color  = vec3(1.0); 
 
 	if(!Hit)
-		Hit = RawTraceOld(Direction, Origin - vec3(PositionBias.x, 0, PositionBias.y), Block, Face, OutNormal, TexCoord, Position, Specular ? 128 : 64,Color);
+		Hit = RawTraceOld(Direction, Origin - vec3(PositionBias.x, 0, PositionBias.y), Block, Face, OutNormal, TexCoord, Position, Specular ? 64 : 64,Color);
 
 	if(!Hit) {
 		//Hit = RawTrace(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 256);
@@ -1148,7 +1149,7 @@ void main() {
 	Incident /= IncidentLength; 
 
 	Direct.xyz = DirectHQ(WorldPos,max(Penum,0.007),vec2(Pixel) / 2, SmoothNessFactor); 
-	Direct.xyz *= ScreenSpaceTraceShadows(WorldPos + Normal.xyz * mix(0.01,0.1,clamp(IncidentLength/30.0,0.0,1.0)), normalize(LightDirection), 0.3,9) * DirectDensity; 
+//	Direct.xyz *= ScreenSpaceTraceShadows(WorldPos + Normal.xyz * mix(0.01,0.1,clamp(IncidentLength/30.0,0.0,1.0)), normalize(LightDirection), 0.3,9) * DirectDensity; 
 
 
 
@@ -1206,4 +1207,8 @@ void main() {
 	ShCg = SHCoCg.y; 
 	Normal.xyz = LowFrequencyNormal.xyz; 
 	
+	vec2 RawTC = vec2(Pixel) / vec2(textureSize(TCData, 0).xy); 
+
+	//Direct.xyz = pow(texelFetch(DirectionalCascadesRaw[0], ivec2(RawTC * textureSize(DirectionalCascadesRaw[0],0)),0).xxx,vec3(1000.0)); 
+
 }

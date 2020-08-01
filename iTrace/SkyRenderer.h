@@ -13,6 +13,10 @@ namespace iTrace {
 		const float Ranges[5] = { 7.5, 30.0, 90.0, 300.0,150.0 };
 		const int SHADOWMAP_RES = 512; 
 		const unsigned char UpdateQueue[] = { 0,1,0,2,0,1,0,2,0,1,0,3,4 };
+
+		const unsigned char NewUpdateQueue[] = { 1,2,1,1,2,1,3,1,4 }; 
+
+
 		const int YSplits = 3; 
 		const int XSplits[] = { 24, 16, 8 }; 
 		const int TotalSplits = 48; 
@@ -55,7 +59,7 @@ namespace iTrace {
 			Vector3f SkyColor; 
 		private: 
 
-			void UpdateShadowMap(Window & Window, Camera& Camera, WorldManager& World, Shader& RefractiveShader);
+			void UpdateShadowMap(Window & Window, Camera& Camera, WorldManager& World, Shader& RefractiveShader, int Update);
 			void UpdateHemisphericalShadowMap(Window& Window, Camera& Camera, WorldManager& World); 
 			void CreateDirectionMatrices(); 
 

@@ -142,6 +142,7 @@ namespace iTrace {
 		void PreparePostProcess();
 		void DrawPostProcessQuad();
 		void DrawPostProcessCube();
+		void DrawPlayerModel(); 
 		void DrawWaterQuad();
 		void DrawPostProcessQuadInstanced(unsigned int InstanceCount);
 

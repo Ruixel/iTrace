@@ -170,6 +170,7 @@
     <ClInclude Include="ParallaxBaker.h" />
     <ClInclude Include="Particles.h" />
     <ClInclude Include="Pipeline.h" />
+    <ClInclude Include="PlayerModel.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="RainDropBaker.h" />
     <ClInclude Include="Shader.h" />

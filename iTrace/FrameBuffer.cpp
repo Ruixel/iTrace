@@ -226,69 +226,71 @@ void iTrace::Rendering::MultiPassFrameBufferObject::UnBind()
 	glBindFramebuffer(GL_FRAMEBUFFER, NULL);
 }
 
-unsigned int PPQuadVBO, PPQuadVAO, PPCubeVBO, PPCubeVAO, WaterVAO, WaterVBO;
+unsigned int PPQuadVBO, PPQuadVAO, PPCubeVBO, PPCubeVAO, WaterVAO, WaterVBO, PlayerVAO, PlayerVBO;
 
-void iTrace::Rendering::PreparePostProcess() {
-	float vertices[] = {
+float vertices[] = {
 		-1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
 		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
 		1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
 		1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-	};
+};
 
-	float WaterVertices[] = {
-		-100.0f, 40.0f, 100.0f, 0.0f, 1.0f, 0.0, 1.0,0.0,
-		-100.0f, 40.0f, -100.0f, 0.0f, 0.0f, 0.0, 1.0,0.0,
-		100.0f, 40.0f, 100.0f, 1.0f, 1.0f, 0.0, 1.0, 0.0,
-		100.0f, 40.0f,-100.0f, 1.0f, 0.0f, 0.0, 1.0, 0.0
-	};
+float WaterVertices[] = {
+	-100.0f, 40.0f, 100.0f, 0.0f, 1.0f, 0.0, 1.0,0.0,
+	-100.0f, 40.0f, -100.0f, 0.0f, 0.0f, 0.0, 1.0,0.0,
+	100.0f, 40.0f, 100.0f, 1.0f, 1.0f, 0.0, 1.0, 0.0,
+	100.0f, 40.0f,-100.0f, 1.0f, 0.0f, 0.0, 1.0, 0.0
+};
 
-	float CubeVertices[] = {
-		// back face
+float CubeVertices[] = {
+	// back face
 
-		//	VERTEX				NORMAL				TEX COORD
-		-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-		 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-		 1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
-		 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-		-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-		-1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
-		// front face
-		-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-		 1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
-		 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-		 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-		-1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
-		-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-		// left face
-		-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-		-1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
-		-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-		-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-		-1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-		-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-		// right face
-		 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-		 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-		 1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
-		 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-		 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-		 1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
-		// bottom face
-		-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-		 1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
-		 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-		 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-		-1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-		-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-		// top face
-		-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-		 1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-		 1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
-		 1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-		-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-		-1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
-	};
+	//	VERTEX				NORMAL				TEX COORD
+	-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+	 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+	 1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
+	 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+	-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+	-1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+	// front face
+	-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+	 1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+	 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+	 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+	-1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+	-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+	// left face
+	-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+	-1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+	-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+	-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+	-1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+	-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+	// right face
+	 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+	 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+	 1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
+	 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+	 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+	 1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
+	// bottom face
+	-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+	 1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+	 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+	 1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+	-1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+	-1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+	// top face
+	-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+	 1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+	 1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
+	 1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+	-1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+	-1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
+};
+
+void iTrace::Rendering::PreparePostProcess() {
+	
 
 	glGenVertexArrays(1, &PPQuadVAO);
 	glGenBuffers(1, &PPQuadVBO);
@@ -334,6 +336,68 @@ void iTrace::Rendering::PreparePostProcess() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
+	std::vector<float> PlayerVertexData = std::vector<float>(0);
+
+	auto AddCube = [&](Vector3f Origin, Vector3f Size) {
+		for (int Tri = 0; Tri < 288; Tri += 8) {
+
+			int _idx = Tri;
+
+			Vector3f Vertex = Vector3f(CubeVertices[_idx++], CubeVertices[_idx++], CubeVertices[_idx++]);
+			Vector3f Normal = Vector3f(CubeVertices[_idx++], CubeVertices[_idx++], CubeVertices[_idx++]);
+			Vector2f TexCoord = Vector2f(CubeVertices[_idx++], CubeVertices[_idx++]);
+
+			Vertex = Vertex * Size + Origin;
+
+			PlayerVertexData.push_back(Vertex.x);
+			PlayerVertexData.push_back(Vertex.y);
+			PlayerVertexData.push_back(Vertex.z);
+			PlayerVertexData.push_back(Normal.x);
+			PlayerVertexData.push_back(Normal.y);
+			PlayerVertexData.push_back(Normal.z);
+			PlayerVertexData.push_back(TexCoord.x);
+			PlayerVertexData.push_back(TexCoord.y);
+
+
+
+		}
+	}; 
+
+	//LEGS: 
+	AddCube(Vector3f(0.014693, 0.302329, 0.176809), Vector3f(0.1,0.3,0.1));
+	AddCube(Vector3f(0.014693, 0.302329, -0.176809), Vector3f(0.1, 0.3, 0.1));
+
+	//BODY: 
+	AddCube(Vector3f(0.025274, 0.988038,0.0), Vector3f(0.203, 0.4, 0.326));
+
+	//ARMS: 
+
+	AddCube(Vector3f(0.014693, 0.718496, 0.436037), Vector3f(0.121, 0.522, 0.121));
+	AddCube(Vector3f(0.014693, 0.718496, -0.436037), Vector3f(0.121, 0.522, 0.121));
+
+	//HEAD: 
+
+	AddCube(Vector3f(0.0, 1.56763, 0.0), Vector3f(0.177));
+
+
+	glGenVertexArrays(1, &PlayerVAO);
+	glGenBuffers(1, &PlayerVBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, PlayerVBO);
+	glBufferData(GL_ARRAY_BUFFER, PlayerVertexData.size() * sizeof(float), PlayerVertexData.data(), GL_STATIC_DRAW);
+	// link vertex attributes
+	glBindVertexArray(PlayerVAO);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+
+
 
 }
 
@@ -345,6 +409,13 @@ void iTrace::Rendering::DrawPostProcessQuad() {
 void iTrace::Rendering::DrawPostProcessCube() {
 	glBindVertexArray(PPCubeVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+}
+
+void iTrace::Rendering::DrawPlayerModel()
+{
+	glBindVertexArray(PlayerVBO);
+	glDrawArrays(GL_TRIANGLES, 0, 216);
 	glBindVertexArray(0);
 }
 

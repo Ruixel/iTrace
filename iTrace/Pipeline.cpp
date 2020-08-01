@@ -474,10 +474,14 @@ namespace iTrace {
 		SoundEffect ForestEffect = SoundEffect("Forest", "Ambience", Vector3f(0.0), SoundEffectType::LOOP, true, true); 
 		SoundEffect RainEffect = SoundEffect("Rain", "Ambience", Vector3f(0.0), SoundEffectType::LOOP, true, true);
 		SoundEffect ThunderEffect = SoundEffect("Thunder", "Ambience", Vector3f(0.0), SoundEffectType::SPLIT, true, true, 6, 15.0);
+		SoundEffect MusicSound = SoundEffect("MUSIC", "MUSIC", Vector3f(0.0), SoundEffectType::SINGLE, false, true); 
+
 
 		SoundEffects.AddSoundEffect(ForestEffect, Sounds);
 		SoundEffects.AddSoundEffect(RainEffect, Sounds);
 		SoundEffects.AddSoundEffect(ThunderEffect, Sounds);
+		SoundEffects.AddSoundEffect(MusicSound, Sounds); 
+
 
 		SoundEffects.GetSoundEffect("Forest").SetVolume(0.0); 
 		SoundEffects.GetSoundEffect("Rain").SetVolume(0.0);
@@ -600,6 +604,9 @@ namespace iTrace {
 							//Sounds.AddSoundInstance(SoundInstance(Camera.Position, 1.0), "MusicInstance", "Music");
 							//SoundEffects.GetSoundEffect("Thunder").Play(rand()%6); 
 
+							SoundEffects.GetSoundEffect("Music").Origin = -Camera.Position; 
+							SoundEffects.GetSoundEffect("Music").Play(); 
+
 							break;
 						}
 					}
@@ -651,13 +658,13 @@ namespace iTrace {
 
 			if (!Commands.Active && Active) {
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-					Sky.Direction.x += .015 * Window.GetFrameTime() * ShadowMultiplier;
+					Sky.Direction.x += .15 * Window.GetFrameTime() * ShadowMultiplier;
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-					Sky.Direction.x -= .015 * Window.GetFrameTime() * ShadowMultiplier;
+					Sky.Direction.x -= .15 * Window.GetFrameTime() * ShadowMultiplier;
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-					Sky.Direction.y += .015 * Window.GetFrameTime() * ShadowMultiplier;
+					Sky.Direction.y += .15 * Window.GetFrameTime() * ShadowMultiplier;
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-					Sky.Direction.y -= .015 * Window.GetFrameTime() * ShadowMultiplier;
+					Sky.Direction.y -= .15 * Window.GetFrameTime() * ShadowMultiplier;
 
 
 				Sky.UpdateDirection();

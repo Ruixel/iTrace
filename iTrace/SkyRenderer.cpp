@@ -13,6 +13,8 @@ namespace iTrace {
 			Pos.z -= (sin(RotationY * (PI / 180.)) * cos(RotationX * (PI / 180.))) * Speed;
 		}
 
+		float DegreesY = 0.0f; 
+
 		void SkyRendering::PrepareSkyRenderer(Window& Window)
 		{
 			SkyIncident = MultiPassFrameBufferObject(Window.GetResolution() / 16, 2, { GL_RGB16F, GL_RGB16F }, false, false);
@@ -112,10 +114,14 @@ namespace iTrace {
 
 			glEnable(GL_DEPTH_TEST); 
 
-			if(Window.GetFrameCount()%2)
-				UpdateHemisphericalShadowMap(Window, Camera, World); 
+			if (Window.GetFrameCount() % 2) {
+				if ((Window.GetFrameCount() / 2) % 2)
+					UpdateHemisphericalShadowMap(Window, Camera, World);
+				else
+					UpdateShadowMap(Window, Camera, World, RefractiveShader, NewUpdateQueue[(Window.GetFrameCount() / 4) % 9]); 
+			}
 			else 
-				UpdateShadowMap(Window, Camera, World, RefractiveShader);
+				UpdateShadowMap(Window, Camera, World, RefractiveShader, 0);
 
 			glDisable(GL_DEPTH_TEST); 
 
@@ -219,12 +225,10 @@ namespace iTrace {
 
 			SkyColor = (Atmospheric::GetSkyColor(Orientation, Vector3f(0.0, 1.0, 0.0)));
 		}
-		void SkyRendering::UpdateShadowMap(Window& Window, Camera& Camera, WorldManager& World, Shader& RefractiveShader)
+		void SkyRendering::UpdateShadowMap(Window& Window, Camera& Camera, WorldManager& World, Shader& RefractiveShader, int ToUpdate)
 		{
 
 			iTrace::Camera ShadowCamera; 
-
-			int ToUpdate = UpdateQueue[(Window.GetFrameCount()/2) % 13];
 			
 			if (ToUpdate != 4)
 				ViewMatrices[ToUpdate] = Core::ViewMatrix(Camera.Position + Orientation * 500.0f, Vector3f(Direction.x, Direction.y, 0.));
@@ -238,6 +242,111 @@ namespace iTrace {
 			ShadowCamera.Project = ProjectionMatrices[ToUpdate]; 
 			ShadowCamera.View = ViewMatrices[ToUpdate]; 
 			
+			Vector3f Origins[6] = {
+				Vector3f(0.014693, 0.302329, 0.176809),
+				Vector3f(0.014693, 0.302329, -0.176809),
+				Vector3f(0.025274, 0.988038,0.0),
+				Vector3f(0.014693, 0.718496, 0.436037),
+				Vector3f(0.014693, 0.718496, -0.436037),
+				Vector3f(0.0, 1.56763, 0.0)
+			}; 
+
+			Vector3f Scales[6] = {
+				Vector3f(0.1,0.3,0.1),
+				Vector3f(0.1,0.3,0.1),
+				Vector3f(0.203, 0.4, 0.326),
+				Vector3f(0.121, 0.522, 0.121),
+				Vector3f(0.121, 0.522, 0.121),
+				Vector3f(0.177)
+			}; 
+
+
+
+			auto DrawPlayer = [&](Matrix4f BaseMatrix, int Part) {
+				
+				DegreesY = -(Camera.Rotation.y + 90.0); 
+
+				Vector3f BasePosition = (Camera.Position - Vector3f(0.0, 1.5, 0.0)); 
+
+				Matrix4f ModelMatrixBase = Matrix4f(0.0);
+				Vector2f Axis = Vector2f(0.0);
+				switch (Part) {
+				case 0: 
+					ModelMatrixBase = glm::translate(Matrix4f(1.0f), Vector3f(BasePosition.x, BasePosition.y, BasePosition.z));
+					ModelMatrixBase = glm::rotate(ModelMatrixBase, glm::radians(DegreesY), { 0, 1, 0 });
+					ModelMatrixBase = glm::translate(ModelMatrixBase, Origins[Part]);
+					ModelMatrixBase = glm::scale(ModelMatrixBase, Scales[Part]);
+					break; 
+				case 1:
+					ModelMatrixBase = glm::translate(Matrix4f(1.0f), Vector3f(BasePosition.x, BasePosition.y, BasePosition.z));
+					ModelMatrixBase = glm::rotate(ModelMatrixBase, glm::radians(DegreesY), { 0, 1, 0 });
+					ModelMatrixBase = glm::translate(ModelMatrixBase, Origins[Part]);
+					ModelMatrixBase = glm::scale(ModelMatrixBase, Scales[Part]);
+					break;
+				case 2:
+					ModelMatrixBase = glm::translate(Matrix4f(1.0f), Vector3f(BasePosition.x, BasePosition.y, BasePosition.z));
+					ModelMatrixBase = glm::rotate(ModelMatrixBase, glm::radians(DegreesY), { 0, 1, 0 });
+					ModelMatrixBase = glm::translate(ModelMatrixBase, Origins[Part]);
+					ModelMatrixBase = glm::scale(ModelMatrixBase, Scales[Part]);
+					break;
+				case 3:
+					ModelMatrixBase = glm::translate(Matrix4f(1.0f), Vector3f(BasePosition.x, BasePosition.y, BasePosition.z));
+
+					ModelMatrixBase = glm::rotate(ModelMatrixBase, glm::radians(DegreesY), { 0, 1, 0 });
+					ModelMatrixBase = glm::translate(ModelMatrixBase, Vector3f(0.0, 1.14, 0.0));
+
+					ModelMatrixBase = glm::rotate(ModelMatrixBase, glm::radians(-sin(Window.GetTimeOpened() * 1.34f) * 5.0f), { 0.0,0.0,1.0 });
+					ModelMatrixBase = glm::translate(ModelMatrixBase, -Vector3f(0.0, 1.14, 0.0));
+
+					ModelMatrixBase = glm::translate(ModelMatrixBase, Origins[Part]);
+					ModelMatrixBase = glm::scale(ModelMatrixBase, Scales[Part]);
+					break;
+				case 4:
+
+					ModelMatrixBase = glm::translate(Matrix4f(1.0f), Vector3f(BasePosition.x, BasePosition.y, BasePosition.z));
+					
+					
+					ModelMatrixBase = glm::rotate(ModelMatrixBase, glm::radians(DegreesY), { 0, 1, 0 });
+
+					ModelMatrixBase = glm::translate(ModelMatrixBase, Vector3f(0.0,1.14,0.0));
+
+					Axis.x = cos(glm::radians(Camera.Rotation.y + 90.0)); 
+					Axis.y = sin(glm::radians(Camera.Rotation.y + 90.0)); 
+
+					ModelMatrixBase = glm::rotate(ModelMatrixBase, glm::radians(sin(Window.GetTimeOpened()*1.34f) * 5.0f), { 0.0,0.0,1.0 });
+					ModelMatrixBase = glm::translate(ModelMatrixBase, -Vector3f(0.0, 1.14, 0.0));
+
+					ModelMatrixBase = glm::translate(ModelMatrixBase, Origins[Part]);
+					ModelMatrixBase = glm::scale(ModelMatrixBase, Scales[Part]);
+
+					break;
+				case 5:
+					ModelMatrixBase = glm::translate(Matrix4f(1.0f), Vector3f(BasePosition.x, BasePosition.y, BasePosition.z));
+
+					ModelMatrixBase = glm::rotate(ModelMatrixBase, glm::radians(DegreesY), { 0, 1, 0 });
+					ModelMatrixBase = glm::translate(ModelMatrixBase, Vector3f(0.0, 1.58365, 0.0));
+
+					ModelMatrixBase = glm::rotate(ModelMatrixBase, glm::radians((Camera.Rotation.x)), { 0.0,0.0,1.0 });
+
+					ModelMatrixBase = glm::translate(ModelMatrixBase, -Vector3f(0.0, 1.58365, 0.0));
+
+
+					ModelMatrixBase = glm::translate(ModelMatrixBase, Origins[Part]);
+					ModelMatrixBase = glm::scale(ModelMatrixBase, Scales[Part]);
+					break;
+				}
+				
+
+				ShadowDeferredPlayer.SetUniform("IdentityMatrix", BaseMatrix * ModelMatrixBase); 
+
+				DrawPostProcessCube(); 
+
+			}; 
+
+
+
+
+
 
 			ShadowMaps[ToUpdate].Bind();
 
@@ -250,9 +359,9 @@ namespace iTrace {
 			ShadowDeferredPlayer.Bind(); 
 
 			ShadowDeferredPlayer.SetUniform("CameraPosition", Camera.Position); 
-			ShadowDeferredPlayer.SetUniform("IdentityMatrix", ShadowCamera.Project * ShadowCamera.View); 
 
-			//DrawPostProcessCube(); 
+			for(int i = 0; i < 6; i++)
+				DrawPlayer(ShadowCamera.Project * ShadowCamera.View, i);
 
 			ShadowDeferredPlayer.UnBind();
 
@@ -337,7 +446,7 @@ namespace iTrace {
 		}
 		void SkyRendering::UpdateHemisphericalShadowMap(Window& Window, Camera& Camera, WorldManager& World)
 		{
-			int ToUpdate = (Window.GetFrameCount()/2) % TotalSplits;
+			int ToUpdate = (Window.GetFrameCount()/4) % TotalSplits;
 
 			glEnable(GL_DEPTH_TEST);
 

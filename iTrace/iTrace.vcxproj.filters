@@ -336,6 +336,9 @@
     <ClInclude Include="CausticBaker.h">
       <Filter>Header Files\Baker</Filter>
     </ClInclude>
+    <ClInclude Include="PlayerModel.h">
+      <Filter>Header Files\World</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">
