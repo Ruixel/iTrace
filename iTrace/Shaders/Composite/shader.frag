@@ -1,8 +1,13 @@
-#version 330
+#version 430 core
 #extension GL_ARB_bindless_texture : enable
 
 in vec2 TexCoord; 
 layout(location = 0) out vec4 Lighting;
+
+layout(binding = 0, std140) buffer AVGColorBuffer {
+	vec4 AverageColor; 
+};
+
 
 //base data: 
 uniform sampler2D CombinedLighting; 
@@ -15,6 +20,10 @@ uniform sampler2D Lensflare;
 
 //upscaling tricksteries! 
 uniform sampler2D LensDirt; 
+
+uniform sampler2D PreviousComposite; 
+
+uniform ivec2 FocusPoint; 
 
 uniform float znear; 
 uniform float zfar; 
@@ -47,6 +56,25 @@ vec3 RRTAndODTFit(vec3 v)
     return a / b;
 }
 
+float RRTAndODTFit(float v) {
+	float a = v * (v + 0.0245786f) - 0.000090537f;
+    float b = v * (0.983729f * v + 0.4329510f) + 0.238081f;
+    return a / b;
+}
+
+float ODTtoRRT(float v) {
+	
+	float f1 = 0.4329510f * v - 0.0245786f; 
+	float f2 = 4.0 * (0.983729f*v-1) * (0.238081f*v+0.000090537f); 
+	float f3 = 0.4329510f * v; 
+	float f4 = 0.0245786f; 
+
+	return (-sqrt(f1*f1 - f2) - f3 + f4) / (2.0 * (0.983729f*v-1)); 
+
+}
+
+
+
 vec3 ACESFitted(vec3 Color, float Exposure)
 {
     Color.rgb *= Exposure;
@@ -54,6 +82,7 @@ vec3 ACESFitted(vec3 Color, float Exposure)
     Color.rgb = ACESInputMat * Color.rgb;
     Color.rgb = RRTAndODTFit(Color.rgb);
     Color.rgb = ACESOutputMat * Color.rgb;
+
     Color.rgb = clamp(Color.rgb, 0.0, 1.0);
     Color.rgb = pow( Color.rgb, vec3( 0.45 ) );
 
@@ -107,9 +136,14 @@ void main() {
 	Lighting.xyz = mix(DofFetch.xyz,Lighting.xyz,pow(1.0-min(DofFetch.w/2.0,1.0),2.0)); 
 
 
-    Lighting.xyz = ACESFitted(Lighting.xyz, 1.0); 
 
-    int DitherAddon = (int(gl_FragCoord.x)%2) * 2 + (int(gl_FragCoord.y)%2); 
+	ivec2 Pixel = ivec2(gl_FragCoord); 
+
+	if(Pixel.x == FocusPoint.x && Pixel.y == FocusPoint.y) {
+		AverageColor = textureLod(PreviousComposite, TexCoord, 10.0); 
+	}
+
+	//Lighting.xyz = textureLod(PreviousComposite, TexCoord, 10.0).xyz; 
 
   //  Lighting = ivec4(Lighting * 16 + (Noise(gl_FragCoord.xy) * 2.0)) / 16.0f; 
 

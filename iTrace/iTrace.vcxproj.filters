@@ -217,6 +217,9 @@
     <Filter Include="Shaders\CausticBaker">
       <UniqueIdentifier>{baa010b7-4e95-4a64-99a9-b7175cfe1d11}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Tonemap">
+      <UniqueIdentifier>{ff75bb6c-9df7-43c1-a76a-0300ae0388fd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -744,6 +747,12 @@
     </None>
     <None Include="Shaders\CausticBaker\shader.frag">
       <Filter>Shaders\CausticBaker</Filter>
+    </None>
+    <None Include="Shaders\Tonemap\shader.frag">
+      <Filter>Shaders\Tonemap</Filter>
+    </None>
+    <None Include="Shaders\Tonemap\shader.vert">
+      <Filter>Shaders\Tonemap</Filter>
     </None>
   </ItemGroup>
 </Project>

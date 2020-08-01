@@ -314,6 +314,8 @@
     <None Include="Shaders\TemporalUpscaler\shader.vert" />
     <None Include="Shaders\TextShader\shader.frag" />
     <None Include="Shaders\TextShader\shader.vert" />
+    <None Include="Shaders\Tonemap\shader.frag" />
+    <None Include="Shaders\Tonemap\shader.vert" />
     <None Include="Shaders\UIShader\shader.frag" />
     <None Include="Shaders\UIShader\shader.vert" />
     <None Include="Shaders\Volumetrics\shader.frag" />

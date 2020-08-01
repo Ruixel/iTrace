@@ -131,7 +131,7 @@ namespace iTrace {
 			Combined.CombinedRefraction.BindImage(2, 2);
 			DoFPrepShader.SetUniform("Aperture", Aperture);
 			DoFPrepShader.SetUniform("ImageDistance", ImageDistance);
-			DoFPrepShader.SetUniform("FocusPoint", FocusPoint);
+			DoFPrepShader.SetUniform("FocusPoint", Combined.FocusPoint);
 
 			DrawPostProcessQuad(); 
 
@@ -150,7 +150,7 @@ namespace iTrace {
 
 			DofShader.SetUniform("Aperture", Aperture); 
 			DofShader.SetUniform("ImageDistance", ImageDistance); 
-			DofShader.SetUniform("FocusPoint", FocusPoint);
+			DofShader.SetUniform("FocusPoint", Combined.FocusPoint);
 
 			DrawPostProcessQuad();
 

@@ -44,6 +44,7 @@ namespace iTrace {
 			void BindDepthImagePrevious(int Target);
 
 			void UnBind(Window& Window);
+			void UnBind(); 
 			void Swap();
 
 		};

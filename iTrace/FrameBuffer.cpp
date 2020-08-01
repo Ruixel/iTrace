@@ -465,6 +465,11 @@ void iTrace::Rendering::FrameBufferObjectPreviousData::UnBind(Window& Window) {
 	Buffers[Buffer].UnBind(Window);
 }
 
+void iTrace::Rendering::FrameBufferObjectPreviousData::UnBind()
+{
+	Buffers[Buffer].UnBind();
+}
+
 void iTrace::Rendering::FrameBufferObjectPreviousData::Swap() {
 	Buffer = !Buffer;
 }

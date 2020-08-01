@@ -1,10 +1,13 @@
-#version 420
+#version 430 core
 
 in vec2 InTexCoord; 
 layout(location = 0) out vec4 Lighting;
 layout(location = 1) out vec3 Glow; 
 layout(location = 2) out float DofDepth; //<- depth used for DoF 
 
+layout(binding = 0, std140) buffer DepthMiddleBuffer {
+	vec4 OcclusionDepth[]; 
+};
 
 uniform sampler2D CombinedLighting; 
 uniform sampler2D CombinedGlow; 
@@ -16,6 +19,7 @@ uniform sampler2D PrimaryRefractionColor;
 uniform sampler2D PrimaryRefractionNormal; 
 uniform sampler2D PrimaryRefractionNormalLF; 
 uniform sampler2D Volumetrics; 
+uniform ivec2 PixelFocusPoint; 
 
 uniform mat4 IdentityMatrix;
 uniform mat4 InverseView; 
@@ -245,4 +249,15 @@ void main() {
 	}
 	vec4 Volumetrics = texture(Volumetrics, InTexCoord); 
 	Lighting.xyz += Volumetrics.xyz; 
+	gl_FragDepth = min(DofDepth,0.9999999); 
+
+	ivec2 Pixel = ivec2(gl_FragCoord); 
+
+	if(Pixel.x == PixelFocusPoint.x && Pixel.y == PixelFocusPoint.y) {
+		
+		OcclusionDepth[0] = vec4(DofDepth); 
+
+	}
+
+
 }

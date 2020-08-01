@@ -437,7 +437,7 @@ namespace iTrace {
 		RenderItemRequests();
 		Deferred.PrepareDeferredRenderer(Window);
 		Indirect.PrepareIndirectLightingHandler(Window);
-		Compositor.PrepareCompositing();
+		Compositor.PrepareCompositing(Window);
 		Glow.PreparePostProcess(Window, Camera);
 		Sky.PrepareSkyRenderer(Window);
 		Combiner.PrepareLightCombiner(Window);
@@ -584,6 +584,7 @@ namespace iTrace {
 								Glow.ReloadPostProcess(Window, Camera);
 								Sounds.ReloadSounds();
 								Particles.ReloadParticles(); 
+								Compositor.ReloadCompositing(); 
 							}
 							break;
 						case sf::Keyboard::F1:
@@ -766,10 +767,7 @@ namespace iTrace {
 			Profiler::SetPerformance("Post process");
 
 
-			glBindFramebuffer(GL_FRAMEBUFFER, NULL);
-
-			glViewport(0, 0, Window.GetResolution().x, Window.GetResolution().y);
-			Compositor.DoCompositing(Camera, Deferred, Combiner, Glow);
+			Compositor.DoCompositing(Window, Camera, Deferred, Combiner, Glow);
 			Profiler::SetPerformance("Composite");
 
 			if (ShowGUI) {

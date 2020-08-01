@@ -42,8 +42,33 @@ void ComputeDofKernels(float RAD_SCALE, float MAX_BLUR_SIZE) {
 }
 
 
+float RRTAndODTFit(float v) {
+	float a = v * (v + 0.0245786f) - 0.000090537f;
+	float b = v * (0.983729f * v + 0.4329510f) + 0.238081f;
+	return a / b;
+}
+
+float ODTtoRRT(float v) {
+
+	float f1 = 0.4329510f * v - 0.0245786f;
+	float f2 = 4.0 * (0.983729f * v - 1) * (0.238081f * v + 0.000090537f);
+	float f3 = 0.4329510f * v;
+	float f4 = 0.0245786f;
+
+	return (-sqrt(f1 * f1 - f2) - f3 + f4) / (2.0 * (0.983729f * v - 1));
+
+}
+
+
 
 int main(int *argc, char*argv[]) {
+
+	float AverageLum = 1.0f; 
+
+	std::cout << ODTtoRRT(0.75f) / AverageLum << '\n';
+	std::cin.get(); 
+
+
 
 	ComputeDofKernels(0.125, 4.0); 
 

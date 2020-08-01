@@ -12,15 +12,22 @@ namespace iTrace {
 		{
 
 			CombinedLighting = MultiPassFrameBufferObject(Window.GetResolution(), 2, { GL_RGB16F,GL_RGB16F }, false);
-			CombinedRefraction = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGB16F, GL_RGB16F, GL_R32F }, false); 
+			CombinedRefraction = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGB16F, GL_RGB16F, GL_R32F }, true); 
 			LightCombinerShader = Shader("Shaders/LightCombiner"); 
 			RefractiveCombiner = Shader("Shaders/RefractiveCombiner"); 
+
+			FocusSSBO = ShaderBuffer<Vector4f>::Create(1); 
 
 			RequestBoolean("noalbedo", false); 
 
 			SetUniforms(Window); 
 		}
 
+		float LinearZ(float z, Camera & Cam) {
+
+			return 2.0 * Cam.znear * Cam.zfar / (Cam.zfar + Cam.znear - (z * 2. - 1.) * (Cam.zfar - Cam.znear));
+
+		}
 
 		void LightCombiner::CombineLighting(Window& Window, Camera & Camera, LightManager& Indirect, DeferredRenderer& Deferred, SkyRendering& Sky, ParticleSystem& Particles)
 		{
@@ -103,19 +110,38 @@ namespace iTrace {
 			Indirect.TemporallyFiltered.BindImage(1, 6);
 			Deferred.DeferredRefractive.BindImage(7);
 			Deferred.PrimaryDeferredRefractive.BindImage(2, 8);
-
+			FocusSSBO.Bind(0);
+			
 
 			RefractiveCombiner.SetUniform("InverseProj", glm::inverse(Camera.Project));
 			RefractiveCombiner.SetUniform("InverseView", glm::inverse(Camera.View));
 			RefractiveCombiner.SetUniform("IdentityMatrix", Camera.Project * Camera.View);
 			RefractiveCombiner.SetUniform("CameraPosition", Camera.Position);
-
+			RefractiveCombiner.SetUniform("PixelFocusPoint", Window.GetResolution() / 2); 
 
 			DrawPostProcessQuad(); 
 
-			CombinedRefraction.UnBind(); 
+			RefractiveCombiner.UnBind();
 
-			RefractiveCombiner.UnBind(); 
+			CombinedRefraction.UnBind();
+
+			auto FocusPointBuffer = FocusSSBO.GetData(); 
+
+			
+
+			CurrentFocusPoint = LinearZ(FocusPointBuffer[0].x, Camera);
+			CurrentFocusPoint = glm::min(CurrentFocusPoint, 20.0f); 
+
+			float vec = (CurrentFocusPoint - FocusPoint); 
+
+			vec = glm::sign(vec) * glm::min(glm::abs(vec), 3.0f); 
+
+
+			FocusPoint = FocusPoint + vec * glm::min(Window.GetFrameTime(),1.0f);
+
+			std::cout << "Focus: " << FocusPoint << '\n';
+
+			FocusSSBO.UnMap(); 
 
 		}
 
@@ -176,6 +202,7 @@ namespace iTrace {
 
 			RefractiveCombiner.UnBind(); 
 
+			
 		}
 
 		void LightCombiner::ReloadLightCombiner(Window& Window)

@@ -210,5 +210,4 @@ void main() {
 	vec2 HashSample = hash2White(); 
 	
 	Lighting = vec4(DepthOfFieldNew(Radius, HashSample, BaseDepth),Radius / 2.0); 
-	Lighting.w = 0.0; 
 }
