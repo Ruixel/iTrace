@@ -15,7 +15,7 @@ namespace iTrace {
 			ChunkQueueItemState State = ChunkQueueItemState::BASESTATE; 
 			ChunkGenDirection Direction = ChunkGenDirection::POSITIVE_X; 
 			std::unique_ptr<Chunk::Chunk> Chunk; 
-
+			int CurrentChunkUpdate = 0;
 
 		};
 

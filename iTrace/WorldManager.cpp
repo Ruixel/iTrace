@@ -272,7 +272,7 @@ namespace iTrace {
 
 						}
 					}
-					else if (abs(Distance.y) > CHUNK_SIZE / 2 + 10) {
+					else  {
 
 						if (Distance.x > 0) {
 
@@ -307,11 +307,14 @@ namespace iTrace {
 
 				}
 				
+
 				if (Queue.size() != 0) {
 
-					
+					sf::Clock TimeClock; 
 
 					auto& QueueItem = Queue[QueueIdx]; 
+
+					bool AllowIncrement = true; 
 
 					if (QueueItem.State == ChunkQueueItemState::BASESTATE) {
 						QueueItem.Chunk->Generate({ nullptr,nullptr,nullptr,nullptr }); 
@@ -320,68 +323,273 @@ namespace iTrace {
 
 						std::vector<Chunk::Chunk*> Neighbours = { nullptr,nullptr,nullptr,nullptr };
 
-						switch (QueueItem.Direction) {
+						AllowIncrement = false; 
 
+						switch (QueueItem.Direction) {
+							
 						case ChunkGenDirection::POSITIVE_X:
+
+							if (QueueItem.CurrentChunkUpdate < 4) {
+
+								Neighbours[2] = Queue[QueueIdx].Chunk.get();
+
+								if (QueueIdx != CHUNK_RENDER_DISTANCE * 2) {
+									Neighbours[1] = Chunks[0][QueueIdx + 1].get();
+								}
+								if (QueueIdx != 0) {
+									Neighbours[3] = Chunks[0][QueueIdx - 1].get();
+								}
+
+								Chunks[0][QueueIdx]->UpdateMeshData(Neighbours, 0, QueueItem.CurrentChunkUpdate, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
+								Chunks[0][QueueIdx]->UpdateMeshData(Neighbours, 0, QueueItem.CurrentChunkUpdate, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
+								Chunks[0][QueueIdx]->UpdateMeshData(Neighbours, 0, QueueItem.CurrentChunkUpdate, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE);
+
+								QueueItem.CurrentChunkUpdate++;
+							}
+							else {
+
+								int UpdateIndex = QueueItem.CurrentChunkUpdate - 4; 
+				
+								Neighbours[0] = Chunks[0][QueueIdx].get();
+
+								if (QueueIdx != CHUNK_RENDER_DISTANCE * 2) {
+									//edge case 1: 
+									Neighbours[1] = Queue[QueueIdx + 1].Chunk.get();
+								}
+								if (QueueIdx != 0) {
+									Neighbours[3] = Queue[QueueIdx - 1].Chunk.get();
+								}
+								
+								if (UpdateIndex == 16) {
+									AllowIncrement = true; 
+								}
+								else {
+									std::cout << UpdateIndex / 4 << ' ' << UpdateIndex % 4 << '\n';
+
+									QueueItem.Chunk->UpdateMeshData(Neighbours, UpdateIndex/4,UpdateIndex % 4, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
+									QueueItem.Chunk->UpdateMeshData(Neighbours, UpdateIndex/4,UpdateIndex % 4, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
+									QueueItem.Chunk->UpdateMeshData(Neighbours, UpdateIndex/4,UpdateIndex % 4, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE);
+									
+
+								}
+								QueueItem.CurrentChunkUpdate++; 
+							}
+
 
 							break; 
 						case ChunkGenDirection::NEGATIVE_X: 
+
+							if (QueueItem.CurrentChunkUpdate < 4) {
+
+								Neighbours[0] = Queue[QueueIdx].Chunk.get();
+
+								if (QueueIdx != CHUNK_RENDER_DISTANCE * 2) {
+									Neighbours[1] = Chunks[CHUNK_RENDER_DISTANCE*2][QueueIdx + 1].get();
+								}
+								if (QueueIdx != 0) {
+									Neighbours[3] = Chunks[CHUNK_RENDER_DISTANCE*2][QueueIdx - 1].get();
+								}
+
+								Chunks[CHUNK_RENDER_DISTANCE*2][QueueIdx]->UpdateMeshData(Neighbours, 3, QueueItem.CurrentChunkUpdate, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
+								Chunks[CHUNK_RENDER_DISTANCE*2][QueueIdx]->UpdateMeshData(Neighbours, 3, QueueItem.CurrentChunkUpdate, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
+								Chunks[CHUNK_RENDER_DISTANCE*2][QueueIdx]->UpdateMeshData(Neighbours, 3, QueueItem.CurrentChunkUpdate, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE);
+
+								QueueItem.CurrentChunkUpdate++;
+							}
+							else {
+
+								int UpdateIndex = QueueItem.CurrentChunkUpdate - 4;
+
+								Neighbours[2] = Chunks[CHUNK_RENDER_DISTANCE*2][QueueIdx].get();
+
+								if (QueueIdx != CHUNK_RENDER_DISTANCE * 2) {
+									//edge case 1: 
+									Neighbours[1] = Queue[QueueIdx + 1].Chunk.get();
+								}
+								if (QueueIdx != 0) {
+									Neighbours[3] = Queue[QueueIdx - 1].Chunk.get();
+								}
+
+								if (UpdateIndex == 16) {
+									AllowIncrement = true;
+								}
+								else {
+									
+
+									QueueItem.Chunk->UpdateMeshData(Neighbours, UpdateIndex / 4, UpdateIndex % 4, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
+									QueueItem.Chunk->UpdateMeshData(Neighbours, UpdateIndex / 4, UpdateIndex % 4, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
+									QueueItem.Chunk->UpdateMeshData(Neighbours, UpdateIndex / 4, UpdateIndex % 4, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE);
+
+
+								}
+								QueueItem.CurrentChunkUpdate++;
+							}
+
+
 							break; 
 						case ChunkGenDirection::POSITIVE_Y: 
+
+							if (QueueItem.CurrentChunkUpdate < 4) {
+
+								Neighbours[2] = Queue[QueueIdx].Chunk.get();
+
+								if (QueueIdx != CHUNK_RENDER_DISTANCE * 2) {
+									Neighbours[1] = Chunks[QueueIdx + 1][0].get();
+								}
+								if (QueueIdx != 0) {
+									Neighbours[3] = Chunks[QueueIdx - 1][0].get();
+								}
+
+								Chunks[QueueIdx][0]->UpdateMeshData(Neighbours, 3, QueueItem.CurrentChunkUpdate, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
+								Chunks[QueueIdx][0]->UpdateMeshData(Neighbours, 3, QueueItem.CurrentChunkUpdate, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
+								Chunks[QueueIdx][0]->UpdateMeshData(Neighbours, 3, QueueItem.CurrentChunkUpdate, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE);
+
+								QueueItem.CurrentChunkUpdate++;
+							}
+							else {
+
+								int UpdateIndex = QueueItem.CurrentChunkUpdate - 4;
+
+								Neighbours[0] = Chunks[QueueIdx][0].get();
+
+								if (QueueIdx != CHUNK_RENDER_DISTANCE * 2) {
+									//edge case 1: 
+									Neighbours[1] = Queue[QueueIdx + 1].Chunk.get();
+								}
+								if (QueueIdx != 0) {
+									Neighbours[3] = Queue[QueueIdx - 1].Chunk.get();
+								}
+
+								if (UpdateIndex == 16) {
+									AllowIncrement = true;
+								}
+								else {
+
+
+									QueueItem.Chunk->UpdateMeshData(Neighbours, UpdateIndex / 4, UpdateIndex % 4, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
+									QueueItem.Chunk->UpdateMeshData(Neighbours, UpdateIndex / 4, UpdateIndex % 4, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
+									QueueItem.Chunk->UpdateMeshData(Neighbours, UpdateIndex / 4, UpdateIndex % 4, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE);
+
+
+								}
+								QueueItem.CurrentChunkUpdate++;
+							}
+
 							break; 
 						case ChunkGenDirection::NEGATIVE_Y:
+
+							if (QueueItem.CurrentChunkUpdate < 4) {
+
+								Neighbours[0] = Queue[QueueIdx].Chunk.get();
+
+								if (QueueIdx != CHUNK_RENDER_DISTANCE * 2) {
+									Neighbours[1] = Chunks[QueueIdx + 1][CHUNK_RENDER_DISTANCE * 2].get();
+								}
+								if (QueueIdx != 0) {
+									Neighbours[3] = Chunks[QueueIdx - 1][CHUNK_RENDER_DISTANCE * 2].get();
+								}
+
+								Chunks[QueueIdx][CHUNK_RENDER_DISTANCE * 2]->UpdateMeshData(Neighbours, 3, QueueItem.CurrentChunkUpdate, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
+								Chunks[QueueIdx][CHUNK_RENDER_DISTANCE * 2]->UpdateMeshData(Neighbours, 3, QueueItem.CurrentChunkUpdate, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
+								Chunks[QueueIdx][CHUNK_RENDER_DISTANCE * 2]->UpdateMeshData(Neighbours, 3, QueueItem.CurrentChunkUpdate, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE);
+
+								QueueItem.CurrentChunkUpdate++;
+							}
+							else {
+
+								int UpdateIndex = QueueItem.CurrentChunkUpdate - 4;
+
+								Neighbours[2] = Chunks[QueueIdx][CHUNK_RENDER_DISTANCE * 2].get();
+
+								if (QueueIdx != CHUNK_RENDER_DISTANCE * 2) {
+									//edge case 1: 
+									Neighbours[1] = Queue[QueueIdx + 1].Chunk.get();
+								}
+								if (QueueIdx != 0) {
+									Neighbours[3] = Queue[QueueIdx - 1].Chunk.get();
+								}
+
+								if (UpdateIndex == 16) {
+									AllowIncrement = true;
+								}
+								else {
+
+
+									QueueItem.Chunk->UpdateMeshData(Neighbours, UpdateIndex / 4, UpdateIndex % 4, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
+									QueueItem.Chunk->UpdateMeshData(Neighbours, UpdateIndex / 4, UpdateIndex % 4, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
+									QueueItem.Chunk->UpdateMeshData(Neighbours, UpdateIndex / 4, UpdateIndex % 4, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE);
+
+
+								}
+								QueueItem.CurrentChunkUpdate++;
+							}
+
 							break; 
 
 						}
 
-						QueueItem.Chunk->UpdateAllMeshData(Neighbours, Chunk::BLOCK_RENDER_TYPE::OPAQUE); 
-						QueueItem.Chunk->UpdateAllMeshData(Neighbours, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
-						QueueItem.Chunk->UpdateAllMeshData(Neighbours, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE);
+
+
+
+						
 
 					}
 
 					//move on to the next state 
-					QueueItem.State = static_cast<ChunkQueueItemState>(
-						static_cast<int>(QueueItem.State) + 1); 
+					if(AllowIncrement)
+						QueueItem.State = static_cast<ChunkQueueItemState>(
+							static_cast<int>(QueueItem.State) + 1); 
 
-					QueueIdx++; 
+					std::cout << "Type: " << static_cast<int>(QueueItem.State) << " Time: " << TimeClock.getElapsedTime().asSeconds() * 1000.0f << '\n';
 
-					if (QueueIdx == Queue.size() - 1) {
+
+					if (QueueIdx == Queue.size() - 1 && AllowIncrement) {
 						if (Queue[QueueIdx].State == ChunkQueueItemState::FINISHED) {
-
+							TimeClock.restart(); 
 							//move the memory -> 
 
 							switch (QueueItem.Direction) {
-							case ChunkGenDirection::POSITIVE_X:
+							case ChunkGenDirection::NEGATIVE_X:
 
 								for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
 
-									for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+									for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2; x++) {
 
-										if (x != CHUNK_RENDER_DISTANCE * 2) {
-											Chunks[x][y] = std::move(Chunks[x + 1][y]); 
-										}
-
+										Chunks[x][y] = std::move(Chunks[x + 1][y]);
+										 
 									}
 
-									Chunks[0][y] = std::move(Queue[y].Chunk); 
+									Chunks[CHUNK_RENDER_DISTANCE * 2][y] = std::move(Queue[y].Chunk);
 
 								}
 
 								break;
-							case ChunkGenDirection::NEGATIVE_X:
-								
-								for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+							case ChunkGenDirection::POSITIVE_X:
 
-									for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+								for (int y = CHUNK_RENDER_DISTANCE*2; y != -1; y--) {
 
-										if (x != 0) {
-											Chunks[x][y] = std::move(Chunks[x - 1][y]);
-										}
+									for (int x = CHUNK_RENDER_DISTANCE*2; x != 0; x--) {
+
+										Chunks[x][y] = std::move(Chunks[x - 1][y]);
 
 									}
 
-									Chunks[CHUNK_RENDER_DISTANCE * 2][y] = std::move(Queue[y].Chunk);
+									Chunks[0][y] = std::move(Queue[y].Chunk);
+									
+								}
+								
+								break;
+							case ChunkGenDirection::NEGATIVE_Y:
+								
+								for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+
+									for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2; y++) {
+
+										Chunks[x][y] = std::move(Chunks[x][y+1]);
+								
+									}
+
+									Chunks[x][CHUNK_RENDER_DISTANCE * 2] = std::move(Queue[x].Chunk);
 
 								}
 								
@@ -390,11 +598,9 @@ namespace iTrace {
 								
 								for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
 
-									for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+									for (int y = CHUNK_RENDER_DISTANCE*2; y != 0; y--) {
 
-										if (y != CHUNK_RENDER_DISTANCE * 2) {
-											Chunks[x][y] = std::move(Chunks[x][y+1]);
-										}
+										Chunks[x][y] = std::move(Chunks[x][y - 1]); 
 
 									}
 
@@ -403,31 +609,27 @@ namespace iTrace {
 								}
 								
 								break;
-							case ChunkGenDirection::NEGATIVE_Y:
-								
-								for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
-
-									for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
-
-										if (y != 0) {
-											Chunks[x][y] = std::move(Chunks[x][y - 1]);
-										}
-
-									}
-
-									Chunks[x][CHUNK_RENDER_DISTANCE*2] = std::move(Queue[x].Chunk);
-
-								}
-								
-								break;
 							}
 
 							Queue.clear();
+
+							UpdateChunkTexture(Vector3i(0), Vector3i(CHUNK_RENDER_DISTANCE * 2 + 1, 1, CHUNK_RENDER_DISTANCE * 2 + 1)* CHUNK_SIZE - Vector3i(1));
+
+							glFinish(); 
+
+							std::cout << "Final time: " << TimeClock.getElapsedTime().asSeconds() * 1000.0f << '\n';
+
 						}
 						else {
-							QueueIdx = 0;
+							QueueIdx = -1;
 						}
 					}
+					if (AllowIncrement) {
+						QueueIdx++;
+					}
+
+
+
 
 
 				}
