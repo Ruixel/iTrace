@@ -1037,8 +1037,6 @@ namespace iTrace {
 				glBindVertexArray(ChunkVAOID);
 				glGenBuffers(3, ChunkVBOID);
 				glBindVertexArray(0);
-				glGenTextures(1, &ChunkTexID);
-				glGenTextures(1, &ChunkLightTexID);
 
 				MeshDataOpaque.Create(); 
 				MeshDataTransparent.Create(); 

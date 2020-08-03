@@ -35,6 +35,8 @@ namespace iTrace {
 				return; 
 			}
 
+			
+
 			if (TYPE == ActiveType)
 				return; 
 
@@ -93,7 +95,6 @@ namespace iTrace {
 			}
 
 			return false;
-
 
 		}
 

@@ -139,8 +139,6 @@ namespace iTrace {
 
 			FocusPoint = FocusPoint + vec * glm::min(Window.GetFrameTime(),1.0f);
 
-		//	std::cout << "Focus: " << FocusPoint << '\n';
-
 			FocusSSBO.UnMap(); 
 
 		}

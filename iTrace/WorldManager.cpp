@@ -235,136 +235,204 @@ namespace iTrace {
 
 				Vector2i Distance = (Vector2i(CenterX, CenterY) * CHUNK_SIZE + CHUNK_SIZE / 2) - Vector2i(Camera.Position.x, Camera.Position.z);
 				
-				//std::cout << "Distance: " << Distance.x << ' ' << Distance.y << '\n'; 
+				//check if we should generate 
 
-				auto UpdateWorld = [&]() {
-					for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
-						for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+				if ((abs(Distance.x) > CHUNK_SIZE / 2 + 10 || abs(Distance.y) > CHUNK_SIZE / 2 + 10) && Queue.size() == 0) {
 
-							std::vector<Chunk::Chunk*> Neighboors = { nullptr, nullptr, nullptr, nullptr };
-							//^ non-ownership raw pointers, so its fine! 
+					//figure out which of the axis -> 
 
-							if (x != CHUNK_RENDER_DISTANCE * 2)
-								Neighboors[0] = Chunks[x + 1][y].get();
-							if (x != 0)
-								Neighboors[2] = Chunks[x - 1][y].get();
+					QueueIdx = 0; 
 
-							if (y != CHUNK_RENDER_DISTANCE * 2)
-								Neighboors[1] = Chunks[x][y + 1].get();
-							if (y != 0)
-								Neighboors[3] = Chunks[x][y - 1].get();
+					if (abs(Distance.x) > CHUNK_SIZE / 2 + 10) {
 
-							Chunks[x][y]->UpdateAllMeshData(Neighboors, Chunk::BLOCK_RENDER_TYPE::OPAQUE);
-							Chunks[x][y]->UpdateAllMeshData(Neighboors, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
-							Chunks[x][y]->UpdateAllMeshData(Neighboors, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE);
+						if (Distance.x > 0) {
+
+							//add the 3 to be generated chunks -> 
+
+							for (int i = 0; i < 3; i++) {
+								Queue.push_back({
+									ChunkQueueItemState::BASESTATE,
+									ChunkGenDirection::POSITIVE_X,
+									std::make_unique<Chunk::Chunk>(Chunks[0][i]->X - 1, Chunks[0][i]->Y)
+									}); 
+
+							}
 
 						}
+						else {
 
+							for (int i = 0; i < 3; i++) {
+								Queue.push_back({
+									ChunkQueueItemState::BASESTATE,
+									ChunkGenDirection::NEGATIVE_X,
+									std::make_unique<Chunk::Chunk>(Chunks[CHUNK_RENDER_DISTANCE*2][i]->X + 1, Chunks[CHUNK_RENDER_DISTANCE * 2][i]->Y)
+									});
+
+							}
+
+						}
 					}
-					UpdateChunkTexture(Vector3i(0), Vector3i(CHUNK_RENDER_DISTANCE * 2 + 1, 1, CHUNK_RENDER_DISTANCE * 2 + 1) * CHUNK_SIZE - Vector3i(1));
-				}; 
+					else if (abs(Distance.y) > CHUNK_SIZE / 2 + 10) {
 
-				//case 1, hardcoded (for now :/) 
-				if (Distance.x < -(CHUNK_SIZE / 2 + 10)) {
+						if (Distance.x > 0) {
 
-					//step 1: move memory 
+							//add the 3 to be generated chunks -> 
 
-					for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+							for (int i = 0; i < 3; i++) {
+								Queue.push_back({
+									ChunkQueueItemState::BASESTATE,
+									ChunkGenDirection::POSITIVE_Y,
+									std::make_unique<Chunk::Chunk>(Chunks[i][0]->X, Chunks[i][0]->Y-1)
+									});
 
-						for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+							}
 
-							if (x != CHUNK_RENDER_DISTANCE * 2) {
-								Chunks[x][y] = std::move(Chunks[x + 1][y]); 
+						}
+						else {
+
+							for (int i = 0; i < 3; i++) {
+								Queue.push_back({
+									ChunkQueueItemState::BASESTATE,
+									ChunkGenDirection::NEGATIVE_Y,
+									std::make_unique<Chunk::Chunk>(Chunks[i][CHUNK_RENDER_DISTANCE * 2]->X, Chunks[i][CHUNK_RENDER_DISTANCE * 2]->Y + 1)
+									});
+
 							}
 
 						}
 
 					}
+					
 
-					for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
-						Chunks[CHUNK_RENDER_DISTANCE*2][y] = std::make_unique<Chunk::Chunk>(Chunks[CHUNK_RENDER_DISTANCE*2-1][y]->X+1, Chunks[CHUNK_RENDER_DISTANCE * 2 - 1][y]->Y);
-						Chunks[CHUNK_RENDER_DISTANCE * 2][y]->Generate({ nullptr, nullptr, nullptr, nullptr });
-					}
+
+				}
+				
+				if (Queue.size() != 0) {
 
 					
-					UpdateWorld(); 
 
-				}
-				else if (Distance.x > (CHUNK_SIZE / 2 + 10)) {
+					auto& QueueItem = Queue[QueueIdx]; 
 
-					//step 1: move memory 
+					if (QueueItem.State == ChunkQueueItemState::BASESTATE) {
+						QueueItem.Chunk->Generate({ nullptr,nullptr,nullptr,nullptr }); 
+					}
+					else {
 
-					for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+						std::vector<Chunk::Chunk*> Neighbours = { nullptr,nullptr,nullptr,nullptr };
 
-						for (int x = CHUNK_RENDER_DISTANCE*2; x != -1; x--) {
+						switch (QueueItem.Direction) {
 
-							if (x != 0) {
-								Chunks[x][y] = std::move(Chunks[x - 1][y]);
-							}
+						case ChunkGenDirection::POSITIVE_X:
+
+							break; 
+						case ChunkGenDirection::NEGATIVE_X: 
+							break; 
+						case ChunkGenDirection::POSITIVE_Y: 
+							break; 
+						case ChunkGenDirection::NEGATIVE_Y:
+							break; 
 
 						}
 
+						QueueItem.Chunk->UpdateAllMeshData(Neighbours, Chunk::BLOCK_RENDER_TYPE::OPAQUE); 
+						QueueItem.Chunk->UpdateAllMeshData(Neighbours, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT);
+						QueueItem.Chunk->UpdateAllMeshData(Neighbours, Chunk::BLOCK_RENDER_TYPE::REFRACTIVE);
+
 					}
 
-					for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
-						Chunks[0][y] = std::make_unique<Chunk::Chunk>(Chunks[1][y]->X - 1, Chunks[1][y]->Y);
-						Chunks[0][y]->Generate({ nullptr, nullptr, nullptr, nullptr });
-					}
+					//move on to the next state 
+					QueueItem.State = static_cast<ChunkQueueItemState>(
+						static_cast<int>(QueueItem.State) + 1); 
 
-					UpdateWorld();
+					QueueIdx++; 
 
-				}
+					if (QueueIdx == Queue.size() - 1) {
+						if (Queue[QueueIdx].State == ChunkQueueItemState::FINISHED) {
 
-				if (Distance.y < -(CHUNK_SIZE / 2 + 10)) {
+							//move the memory -> 
 
-					//step 1: move memory 
+							switch (QueueItem.Direction) {
+							case ChunkGenDirection::POSITIVE_X:
 
-					for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+								for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
 
-						for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+									for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
 
-							if (y != CHUNK_RENDER_DISTANCE * 2) {
-								Chunks[x][y] = std::move(Chunks[x][y+1]);
+										if (x != CHUNK_RENDER_DISTANCE * 2) {
+											Chunks[x][y] = std::move(Chunks[x + 1][y]); 
+										}
+
+									}
+
+									Chunks[0][y] = std::move(Queue[y].Chunk); 
+
+								}
+
+								break;
+							case ChunkGenDirection::NEGATIVE_X:
+								
+								for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+
+									for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+
+										if (x != 0) {
+											Chunks[x][y] = std::move(Chunks[x - 1][y]);
+										}
+
+									}
+
+									Chunks[CHUNK_RENDER_DISTANCE * 2][y] = std::move(Queue[y].Chunk);
+
+								}
+								
+								break;
+							case ChunkGenDirection::POSITIVE_Y:
+								
+								for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+
+									for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+
+										if (y != CHUNK_RENDER_DISTANCE * 2) {
+											Chunks[x][y] = std::move(Chunks[x][y+1]);
+										}
+
+									}
+
+									Chunks[x][0] = std::move(Queue[x].Chunk);
+
+								}
+								
+								break;
+							case ChunkGenDirection::NEGATIVE_Y:
+								
+								for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
+
+									for (int y = 0; y < CHUNK_RENDER_DISTANCE * 2 + 1; y++) {
+
+										if (y != 0) {
+											Chunks[x][y] = std::move(Chunks[x][y - 1]);
+										}
+
+									}
+
+									Chunks[x][CHUNK_RENDER_DISTANCE*2] = std::move(Queue[x].Chunk);
+
+								}
+								
+								break;
 							}
 
+							Queue.clear();
 						}
-
+						else {
+							QueueIdx = 0;
+						}
 					}
 
-					for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
-						Chunks[x][CHUNK_RENDER_DISTANCE * 2] = std::make_unique<Chunk::Chunk>(Chunks[x][CHUNK_RENDER_DISTANCE * 2 - 1]->X, Chunks[x][CHUNK_RENDER_DISTANCE * 2 - 1]->Y+1);
-						Chunks[x][CHUNK_RENDER_DISTANCE * 2]->Generate({ nullptr, nullptr, nullptr, nullptr });
-					}
-
-
-					UpdateWorld();
 
 				}
-				else if (Distance.y > (CHUNK_SIZE / 2 + 10)) {
-
-					//step 1: move memory 
-
-					for (int y = CHUNK_RENDER_DISTANCE*2; y !=-1; y--) {
-
-						for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
-
-							if (y != 0) {
-								Chunks[x][y] = std::move(Chunks[x][y - 1]);
-							}
-
-						}
-
-					}
-
-					for (int x = 0; x < CHUNK_RENDER_DISTANCE * 2 + 1; x++) {
-						Chunks[x][0] = std::make_unique<Chunk::Chunk>(Chunks[x][1]->X, Chunks[x][1]->Y - 1);
-						Chunks[x][0]->Generate({ nullptr, nullptr, nullptr, nullptr });
-					}
 
 
-					UpdateWorld();
-
-				}
 			}
 		
 

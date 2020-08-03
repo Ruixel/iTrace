@@ -35,8 +35,6 @@ vec3 BlockNormals[6] = vec3[](
 	);
 
 
-
-
 bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, inout vec3 Normal, inout vec3 Position, int Steps, float MaxLength) {
 
 

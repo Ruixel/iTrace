@@ -198,7 +198,6 @@ namespace iTrace {
 				ChunkMeshData MeshDataOpaque, MeshDataTransparent, MeshDataRefractive; 
 				//			  Standard blocks Leaf-like blocks     Glass/water-like blocks
 
-				unsigned int ChunkTexID, ChunkLightTexID; //the 3D texture used for tracing. Weighs ~2.62 mb of vram 
 				unsigned int ChunkVAOID, ChunkVBOID[3]; //VBO IDs -> Triangles, Normals, Texture Coordinates (z component stores material), Tangents, Indicies 
 				long long X, Y; 
 				unsigned int Vertices = 0; 

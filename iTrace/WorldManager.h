@@ -7,6 +7,18 @@ namespace iTrace {
 
 	namespace Rendering {
 
+		const enum class ChunkQueueItemState {BASESTATE = 0, GENERATED, FINISHED};
+		const enum class ChunkGenDirection {POSITIVE_X, NEGATIVE_X, POSITIVE_Y, NEGATIVE_Y};
+
+		struct ChunkQueueItem {
+
+			ChunkQueueItemState State = ChunkQueueItemState::BASESTATE; 
+			ChunkGenDirection Direction = ChunkGenDirection::POSITIVE_X; 
+			std::unique_ptr<Chunk::Chunk> Chunk; 
+
+
+		};
+
 		struct WorldManager {
 			
 #define CHUNK_RENDER_DISTANCE 1 //likely NOT going to change, EVER. 
@@ -15,8 +27,8 @@ namespace iTrace {
 
 
 			std::array<std::array<std::unique_ptr<Chunk::Chunk>, CHUNK_RENDER_DISTANCE * 2 + 1>, CHUNK_RENDER_DISTANCE * 2 + 1> Chunks; 
-			
-
+			std::vector<ChunkQueueItem> Queue; 
+			int QueueIdx = 0; 
 
 
 			uint64_t CenterX, CenterY; 
