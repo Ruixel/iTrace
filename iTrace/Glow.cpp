@@ -11,20 +11,23 @@ namespace iTrace {
 		void PostProcess::PreparePostProcess(Window& Window, Camera& Camera)
 		{
 
-			PrepBuffer = MultiPassFrameBufferObject(Window.GetResolution() / 4, 1, { GL_RGB16F }, false, true); 
 			DoFPrepBuffer = MultiPassFrameBufferObject(Window.GetResolution() / 4, 1, { GL_RGBA16F }, false, true);
 
-			for (int i = 0; i < 2; i++) {
-				for(int j = 0; j < 3; j++)
-					GlowBuffer[j][i] = FrameBufferObject(Window.GetResolution() / Divisors[j], GL_RGB16F, false, false);
-			}
+			GlowBuffer[0] = MultiPassFrameBufferObject(Window.GetResolution() / 8, 4, { GL_RGBA16F, GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
+			GlowBuffer[1] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 5, { GL_RGBA16F, GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGB16F }, false);
+
+			GlowPrepBuffer = MultiPassFrameBufferObject(Window.GetResolution() / 4, 4, { GL_RGBA16F, GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
+
+
+
+
 			DoFBuffer = FrameBufferObject(Window.GetResolution() / 4, GL_RGBA16F, false, false);
-			PrepShader = Shader("Shaders/PrepShader");
-			BlurShader[0] = Shader("Shaders/BlurHorizontal");
-			BlurShader[1] = Shader("Shaders/BlurVertical");
+			GlowShader = Shader("Shaders/Glow"); 
 			DofShader = Shader("Shaders/DoF"); 
 			GlowPrepShader = Shader("Shaders/BlurCombiner"); 
 			DoFPrepShader = Shader("Shaders/DoFPrep"); 
+
+			LensDirt = LoadTextureGL("Resources/Post Process/Lens Dirt.png"); 
 
 			SetShaderUniforms(Window, Camera); 
 
@@ -47,77 +50,50 @@ namespace iTrace {
 				FocusPoint -= 1.0 * Window.GetFrameTime();
 			}
 
-			PrepBuffer.Bind();
+			
+			Combined.CombinedRefraction.BindImage(1, 0); 
 
-			PrepShader.Bind();
+			for (int i = 0; i < 2; i++) {
 
-			Deferred.Deferred.BindImage(0, 0); 
-			Deferred.Deferred.BindImage(2, 1);
-			Sky.SkyIncident.BindImage(1, 2); 
-			Combined.CombinedRefraction.BindImage(0,3);
-			Indirect.TemporallyFiltered.BindImage(1, 4); 
-			Combined.CombinedRefraction.BindImage(1, 5);
-			Indirect.TemporallyFiltered.BindImage(3, 6);
+				GlowPrepBuffer.Bind(); 
 
+				GlowPrepShader.Bind(); 
 
-			DrawPostProcessQuad(); 
+				GlowPrepShader.SetUniform("First", i == 0); 
+				GlowPrepShader.SetUniform("Mix", i == 0 ? 1.0f : 0.0f); 
+				GlowPrepShader.SetUniform("Lod", i == 0 ? 3.0f : 2.0f); 
 
-			PrepShader.UnBind();
+				DrawPostProcessQuad(); 
 
-			PrepBuffer.UnBind();
+				GlowPrepShader.UnBind();
 
-			//Glow: 
+				GlowPrepBuffer.UnBind(); 
 
-			PrepBuffer.BindImage(0, 0);
-			PrepBuffer.BindImage(0, 1);
+				GlowPrepBuffer.BindImage(0, 0); 
+				GlowPrepBuffer.BindImage(1, 1);
+				GlowPrepBuffer.BindImage(2, 2);
+				GlowPrepBuffer.BindImage(3, 3);
+				Combined.CombinedRefraction.BindImage(0, 4);
 
-			float Lods[2] = { 1.0, 0.0 }; 
+				GlowShader.Bind(); 
 
-			for (int j = 0; j < 3; j++) {
+				GlowBuffer[i].Bind(); 
 
+				GlowShader.SetUniform("PixelStep", i * 5 + 1);
 
-				if (j != 0) {
+				DrawPostProcessQuad(); 
 
-					GlowBuffer[j][1].Bind(); 
+				GlowBuffer[i].UnBind();
 
-					GlowPrepShader.Bind(); 
+				GlowShader.UnBind();
 
-					GlowPrepShader.SetUniform("Mix", j == 2 ? 0.75f : 0.5f);
-					GlowPrepShader.SetUniform("Lod", Lods[j-1]);
-					GlowPrepShader.SetUniform("LensFlare", j == 2);
-
-					DrawPostProcessQuad(); 
-
-					GlowPrepShader.UnBind(); 
-
-					GlowBuffer[j][1].UnBind();
-					GlowBuffer[j][1].BindImage(0);
-
-
-				}
-
-
-				for (int x = 0; x < 2; x++) {
-
-					GlowBuffer[j][x].Bind();
-
-					BlurShader[x].Bind();
-
-					BlurShader[x].SetUniform("InverseRes", 1.0f / Vector2f(Window.GetResolution() / Divisors[j]));
-					BlurShader[x].SetUniform("j", j);
-
-					DrawPostProcessQuad();
-
-					BlurShader[x].UnBind();
-
-					GlowBuffer[j][x].UnBind();
-
-					GlowBuffer[j][x].BindImage(0);
-
-				}
-
+				GlowBuffer[i].BindImage(0, 1); 
+				GlowBuffer[i].BindImage(1, 2);
+				GlowBuffer[i].BindImage(2, 3);
+				GlowBuffer[i].BindImage(3, 4);
 
 			}
+
 
 			Profiler::SetPerformance("Glow"); 
 
@@ -127,8 +103,9 @@ namespace iTrace {
 			DoFPrepShader.Bind(); 
 
 			Combined.CombinedRefraction.BindImage(0, 0);
-			GlowBuffer[2][1].BindImage(1);
+			GlowBuffer[1].BindImage(4,1);
 			Combined.CombinedRefraction.BindImage(2, 2);
+			LensDirt.Bind(3); 
 			DoFPrepShader.SetUniform("Aperture", Aperture);
 			DoFPrepShader.SetUniform("ImageDistance", ImageDistance);
 			DoFPrepShader.SetUniform("FocusPoint", Combined.FocusPoint);
@@ -167,9 +144,7 @@ namespace iTrace {
 		void PostProcess::ReloadPostProcess(Window& Window, Camera & Camera)
 		{
 
-			PrepShader.Reload("Shaders/PrepShader");
-			BlurShader[0].Reload("Shaders/BlurHorizontal");
-			BlurShader[1].Reload("Shaders/BlurVertical");
+			GlowShader.Reload("Shaders/Glow"); 
 			DofShader.Reload("Shaders/DoF");
 			GlowPrepShader.Reload("Shaders/BlurCombiner");
 			DoFPrepShader.Reload("Shaders/DoFPrep");
@@ -179,26 +154,35 @@ namespace iTrace {
 
 		void PostProcess::SetShaderUniforms(Window& Window, Camera & Camera)
 		{
-			PrepShader.Bind();
+			
+		
+			GlowPrepShader.Bind(); 
 
-			PrepShader.SetUniform("Normal", 0);
-			PrepShader.SetUniform("Albedo", 1);
-			PrepShader.SetUniform("SkyReigh", 2);
-			PrepShader.SetUniform("Lighting", 3);
-			PrepShader.SetUniform("Volumetrics", 4);
-			PrepShader.SetUniform("Glow", 5);
-			PrepShader.SetUniform("Clouds", 6);
+			GlowPrepShader.SetUniform("RawInput", 0); 
+			GlowPrepShader.SetUniform("GlowInput1", 1);
+			GlowPrepShader.SetUniform("GlowInput2", 2);
+			GlowPrepShader.SetUniform("GlowInput3", 3);
+			GlowPrepShader.SetUniform("GlowInput4", 4);
 
-			PrepShader.UnBind();
 
-			for (int x = 0; x < 2; x++) {
+			GlowPrepShader.UnBind(); 
 
-				BlurShader[x].Bind();
-				BlurShader[x].SetUniform("InverseRes", 1.0f / Vector2f(Window.GetResolution() / 4));
-				BlurShader[x].SetUniform("Input", 0);
-				BlurShader[x].UnBind();
+			GlowShader.Bind(); 
 
-			}
+			GlowShader.SetUniform("Input1", 0); 
+			GlowShader.SetUniform("Input2", 1);
+			GlowShader.SetUniform("Input3", 2);
+			GlowShader.SetUniform("Input4", 3);
+			GlowShader.SetUniform("RawInput", 4);
+
+			GlowShader.SetUniform("InverseRes", 1.0f / Vector2f(Window.GetResolution()/8));
+
+			GlowShader.UnBind(); 
+
+
+
+
+
 
 			DofShader.Bind();
 			DofShader.SetUniform("InverseRes", 1.0f / Vector2f(Window.GetResolution() / 4));
@@ -213,20 +197,13 @@ namespace iTrace {
 			DofShader.UnBind();
 
 
-			GlowPrepShader.Bind();
-
-
-			GlowPrepShader.SetUniform("GlowInput", 0);
-			GlowPrepShader.SetUniform("RawInput", 1);
-
-
-			GlowPrepShader.UnBind();
-
+			
 			DoFPrepShader.Bind();
 
 			DoFPrepShader.SetUniform("Lighting", 0);
 			DoFPrepShader.SetUniform("Glow", 1);
 			DoFPrepShader.SetUniform("Depth", 2);
+			DoFPrepShader.SetUniform("LensDirt", 3);
 			DoFPrepShader.SetUniform("znear", Camera.znear);
 			DoFPrepShader.SetUniform("zfar", Camera.zfar);
 			DoFPrepShader.SetUniform("MaxRadius", 50.0f);

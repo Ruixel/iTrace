@@ -381,7 +381,7 @@ namespace iTrace {
 
 					for (int y = 0; y < NUM_RAYS; y++) {
 
-						int BasePixel = (x * NUM_RAYS + y);
+						int BasePixel = ((x+1) * NUM_RAYS + y);
 
 						Vector3f VGainsShared = GainsShared[BasePixel].ToVector4f();
 
@@ -462,10 +462,8 @@ namespace iTrace {
 
 						for (int y = 0; y < NUM_RAYS; y++) {
 
-							int BasePixel = (x * NUM_RAYS + y);
-							Vector3f VGainsShared = GainsShared[BasePixel].ToVector4f(); 
-
-							OcclusionAccumulation += VGainsShared.z;
+							int BasePixel = (y);
+							OcclusionAccumulation += GainsShared[BasePixel].ToVector4f().z;
 
 						}
 

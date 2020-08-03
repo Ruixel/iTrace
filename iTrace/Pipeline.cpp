@@ -415,7 +415,7 @@ namespace iTrace {
 
 		GetGlobalWeatherManager().PrepareWeather(); 
 
-		RequestBoolean("freefly", true);
+		RequestBoolean("freefly", false);
 		RequestBoolean("noclip", true);
 		RequestBoolean("slowframes", false);
 		RequestBoolean("newfiltering", true);
@@ -470,7 +470,7 @@ namespace iTrace {
 
 		FootSteps.PrepareFootStepManager(Sounds);
 		FootSteps.SetActiveMaterial(SoundType::STONE, Sounds);
-
+		FootSteps.SetStepLength(0.4f); 
 		SoundEffect ForestEffect = SoundEffect("Forest", "Ambience", Vector3f(0.0), SoundEffectType::LOOP, true, true); 
 		SoundEffect RainEffect = SoundEffect("Rain", "Ambience", Vector3f(0.0), SoundEffectType::LOOP, true, true);
 		SoundEffect ThunderEffect = SoundEffect("Thunder", "Ambience", Vector3f(0.0), SoundEffectType::SPLIT, true, true, 6, 15.0);
@@ -595,7 +595,7 @@ namespace iTrace {
 						case sf::Keyboard::Space:
 							if (glm::abs(Camera.Acceleration.y) < 0.0001) {
 
-								Camera.Velocity = Vector3f(0.0, 9.0, 0.0);
+								Camera.Velocity.y = 9.0f;
 
 
 							}
@@ -688,9 +688,6 @@ namespace iTrace {
 
 			}
 
-			
-
-		
 			Camera.Project = Camera.RawProject;
 
 
@@ -725,8 +722,19 @@ namespace iTrace {
 
 			}
 
+			Camera.Acceleration = Vector3f(0.0); 
+
 			if (!Commands.Active)
-				Camera.HandleInput(Window, sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift) ? 100.f : sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) ? 1.0 : 4.0, 0.15f, Active, Active);
+				Camera.HandleInput(Window, sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift) ? 100.f : !sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) ? 1.6 : 9.0, 0.15f, Active, Active);
+
+			bool Case = FootSteps.Poll(Camera, Sounds, Window);
+
+			Vector3i Pos = Camera.Position;
+			Pos.y -= 2;
+
+			auto BlockIdx = World.GetBlock(Pos);
+
+			auto ViewBobMatrix = ViewBobbing.PollViewBobbing(Camera,Window, Sounds, FootSteps, BlockIdx, length(Vector2f(Camera.Velocity.x, Camera.Velocity.z))/1.6f); 
 
 			GetGlobalCommandPusher().GivenConstantData["camera_pos"] = Camera.Position;
 			GetGlobalCommandPusher().GivenConstantData["camera_rot"] = Camera.Rotation;
@@ -735,8 +743,8 @@ namespace iTrace {
 
 			if (!PollAnimation(Camera, Window)) {
 				if (!GetBoolean("freefly")) {
-					Camera.Acceleration = Vector3f(0.0, -25.0, 0.0);
-					Camera.Velocity += Camera.Acceleration * glm::min(Window.GetFrameTime(), 0.1f);
+					Camera.Acceleration += Vector3f(0.0, -25.0, 0.0);
+					Camera.Velocity += (Camera.Acceleration) * glm::min(Window.GetFrameTime(), 0.1f);
 					Camera.Position += Camera.Velocity * glm::min(Window.GetFrameTime(), 0.1f);
 				}
 				if (!GetBoolean("freefly") || !GetBoolean("noclip"))
@@ -744,7 +752,7 @@ namespace iTrace {
 			}
 
 			Camera.PrevView = Camera.View;
-			Camera.View = Core::ViewMatrix(Camera.Position, Camera.Rotation);
+			Camera.View = ViewBobMatrix * Core::ViewMatrix(Camera.Position, Camera.Rotation);
 			
 			Profiler::SetPerformance("Pre-render step");
 
@@ -795,25 +803,19 @@ namespace iTrace {
 			}
 
 			
-			Vector3i Pos = Camera.Position;
-			Pos.y -= 2;
-
-			auto BlockIdx = World.GetBlock(Pos);
 			
-			auto& Block = Chunk::GetBlock(BlockIdx);
-
+						/*
 			bool Case = FootSteps.Poll(Camera, Sounds, Window);
 
 			if (Case && Block.SoundMaterialType != ActiveSoundtype && Block.SoundMaterialType != SoundType::NONE) {
 				FootSteps.SetActiveMaterial(Block.SoundMaterialType, Sounds);
-			}
+			}*/
 			
 
 
 			Window.GetRawWindow()->display();
 
 			Camera.PrevProject = Camera.Project;
-			FootSteps.Step();
 
 			auto Weather = GetGlobalWeatherManager().GetWeather(); 
 

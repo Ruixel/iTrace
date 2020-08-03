@@ -102,7 +102,7 @@ void main() {
 	float MixFactor = min(FrameCount / (FrameCount+1.0),0.99); //<- should be enough to guide the spatial filter without impossible ghosting 
 
 	vec4 PreviousDetail = texture(PreviousDetail, TexCoord+MotionVectors); 
-
+	BaseDetail = Detail; 
 	Detail = mix(Detail, PreviousDetail, MixFactor); 
 	Detail.y = mix(BaseDetail.y, PreviousDetail.y, min(MixFactor,0.9)); 
 	//-> convert detail + raw diffuse into L-SVGF friendly signal 

@@ -135,10 +135,10 @@ namespace iTrace {
 
 			Vector3f Vector = (Position - Center) / Size;
 
-			if (abs(Vector.x) > abs(Vector.y) && abs(Vector.x) > abs(Vector.z)) {
+			if (abs(Vector.x) > (abs(Vector.y)+.05) && abs(Vector.x) > abs(Vector.z)) {
 				Axis = Vector.x > 0.0 ? AABB3DAxis::POSX : AABB3DAxis::NEGX;
 			}
-			else if(abs(Vector.y) > abs(Vector.z)) {
+			else if((abs(Vector.y)+.05) > abs(Vector.z)) {
 				Axis = Vector.y > 0.0 ? AABB3DAxis::POSY : AABB3DAxis::NEGY;
 			}
 			else {
@@ -154,11 +154,14 @@ namespace iTrace {
 			return Position.x > Min.x && Position.x < Max.x && Position.y > Min.y&& Position.y < Max.y && Position.z > Min.z && Position.z < Max.z;
 		}
 
-		bool CollisionAABB::HandleCollision(Vector3f& Position)
+		bool CollisionAABB::HandleCollision(Vector3f& Position, AABB3DAxis* side)
 		{
 			if (IsOverlapping(Position)) {
 
 				auto Axis = GetMajorAxis(Position);
+
+				if (side != nullptr)
+					* side = Axis; 
 
 				switch (Axis) {
 				case AABB3DAxis::POSX:

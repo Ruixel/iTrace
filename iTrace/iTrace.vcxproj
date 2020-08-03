@@ -181,6 +181,7 @@
     <ClInclude Include="SoundReflectivity.h" />
     <ClInclude Include="text.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="ViewBob.h" />
     <ClInclude Include="Weather.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="WorldManager.h" />
@@ -219,6 +220,7 @@
     <ClCompile Include="text.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureBaker.cpp" />
+    <ClCompile Include="ViewBob.cpp" />
     <ClCompile Include="Weather.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WorldManager.cpp" />
@@ -264,6 +266,8 @@
     <None Include="Shaders\DoFVertical\shader.vert" />
     <None Include="Shaders\DoF\shader.frag" />
     <None Include="Shaders\DoF\shader.vert" />
+    <None Include="Shaders\Glow\shader.frag" />
+    <None Include="Shaders\Glow\shader.vert" />
     <None Include="Shaders\HemiSphericalShadowMapCopy\shader.frag" />
     <None Include="Shaders\HemiSphericalShadowMapCopy\shader.vert" />
     <None Include="Shaders\InventoryUIShader\shader.frag" />

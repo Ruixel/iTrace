@@ -146,7 +146,7 @@ void main() {
 
 	float Traversal = AnalyticalTraversal(-Incident,Pos.xyz - Normal*0.01); 
 
-	Color.xyz = pow(TextureLookUp / 2.0, vec3(Traversal*2.0)) * 2.0; 
+	Color.xyz = pow(TextureLookUp / 2.0, vec3((Traversal+.5)*1.0)) * 2.0; 
 	Color.xyz = clamp(Color.xyz, vec3(0.0), vec3(1.0));  
 
 	//if(dot(Incident, Normal) < 0.0) 

@@ -66,10 +66,14 @@ namespace iTrace {
 
 			Combined.CombinedRefraction.BindImage(0,0); 
 			Deferred.Deferred.BindDepthImage(1); 
-			Glow.GlowBuffer[2][1].BindImage(2); 
-			Glow.DoFBuffer.BindImage(3);
-			LensDirt.Bind(5); 
-			BlitFBO.BindImagePrevious(6); 
+			Glow.GlowBuffer[1].BindImage(0,2); 
+			Glow.GlowBuffer[1].BindImage(1,3);
+			Glow.GlowBuffer[1].BindImage(2, 4);
+			Glow.GlowBuffer[1].BindImage(3, 5);
+
+			Glow.DoFBuffer.BindImage(6);
+			LensDirt.Bind(7); 
+			BlitFBO.BindImagePrevious(8); 
 			AverageColor.Bind(0); 
 
 			DrawPostProcessQuad(); 
@@ -87,8 +91,6 @@ namespace iTrace {
 			CurrentExposure = glm::clamp(CurrentExposure, 0.1f, 30.0f); 
 
 			Exposure = glm::mix(Exposure, CurrentExposure, 0.33f*glm::min(Window.GetFrameTime(), 1.0f)); 
-
-			std::cout << Exposure << '\n';
 
 			AverageColor.UnMap();
 
@@ -122,10 +124,14 @@ namespace iTrace {
 
 			CompositorShader.SetUniform("CombinedLighting", 0);
 			CompositorShader.SetUniform("Depth", 1);
-			CompositorShader.SetUniform("Glow", 2);
-			CompositorShader.SetUniform("DoF", 3);
-			CompositorShader.SetUniform("LensDirt", 5);
-			CompositorShader.SetUniform("PreviousComposite", 6);
+			CompositorShader.SetUniform("Glow[0]", 2);
+			CompositorShader.SetUniform("Glow[1]", 3);
+			CompositorShader.SetUniform("Glow[2]", 4);
+			CompositorShader.SetUniform("Glow[3]", 5);
+
+			CompositorShader.SetUniform("DoF", 6);
+			CompositorShader.SetUniform("LensDirt", 7);
+			CompositorShader.SetUniform("PreviousComposite", 8);
 
 			CompositorShader.UnBind();
 

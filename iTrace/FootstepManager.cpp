@@ -51,7 +51,7 @@ namespace iTrace {
 
 			ActiveInstance = &SoundManager.Instances[InstanceName]; 
 
-			std::cout << "Set active instance to: " << InstanceName << '\n'; 
+			//std::cout << "Set active instance to: " << InstanceName << '\n'; 
 
 		}
 
@@ -64,9 +64,9 @@ namespace iTrace {
 			if (ElapsedTime <= Length && ActiveInstance->IsPlaying())
 				return; 
 
-			RandomSound = (RandomSound + 1 + (rand() % 4)) % 5; 
+			RandomSound = (RandomSound + 1 + (rand() % 3)) % 4; 
 
-			std::cout << RandomSound << '\n'; 
+			//std::cout << RandomSound << '\n'; 
 
 			ActiveInstance->SetPlayingOffset(float(RandomSound)); 
 			ActiveInstance->Play(); 

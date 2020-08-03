@@ -122,6 +122,42 @@ float NewWeightSpecular(vec3 Normal, vec3 NormalCenter,
 } 
 
 
+float NewNewWeightSpecular(vec3 Normal, vec3 NormalCenter, 
+				float Depth, float DepthCenter, 
+				float Traversal, float TraversalCenter,
+				float FrameCount, float Facing, 
+				float Roughness, float CenterRoughness,
+				float distanceSqr, 
+				float Lum, float LumCenter) {
+	float WeightFactor = mix(0.5,6.0,Facing); 
+	
+	float DepthWeight = 1.0 / pow(1.0 + WeightFactor * (abs(Depth - DepthCenter) / min(clamp(Depth, 0.1,DepthCenter),1.0)), 3.0); 
+	float NormalWeight = pow(max(dot(Normal.xyz, NormalCenter.xyz), 0.0), 15.0); 
+	float RoughnessDiffWeight = 1.0 / pow(1.0 + 50.0 * abs(Roughness - CenterRoughness), 2.0);
+	float RoughnessSqrWeight = 1.0 / (1.0 + 0.25*(1.0-min(Roughness, CenterRoughness)) * distanceSqr); 
+	float TraversalFactor = sin(0.785398163 * Roughness) * max(Traversal, TraversalCenter); 
+
+	TraversalFactor = clamp((TraversalFactor - max(Traversal, TraversalCenter)) * 100.0, 0.0, 1.0); 
+
+	
+
+	float TraversalWeight = 1.0 / (1.0 + 5.0 * abs(Traversal-TraversalCenter) / clamp(Traversal, 0.05, TraversalCenter)); 
+
+	//TraversalWeight = mix(1.0, TraversalWeight, TraversalFactor); 
+
+	TraversalWeight = mix(TraversalWeight, 1.0, min(Roughness*min(TraversalCenter, Traversal),1.0)); 
+
+
+
+	float LuminanceWeight = 0.1 * abs(Lum-LumCenter); 
+
+	LuminanceWeight = mix( 0.0,LuminanceWeight, pow(1.0-min(2.0*Roughness*min(TraversalCenter, Traversal),1.0),2.0)); 
+
+	return max(DepthWeight * NormalWeight * RoughnessDiffWeight * RoughnessSqrWeight* TraversalWeight - LuminanceWeight,0.0); 
+
+} 
+
+
 void main() {
 
 	
@@ -223,7 +259,7 @@ void main() {
 								CurrentDetail.w, BaseDetail.w, 
 								phiIndirect, Frame, Facing);
 								
-			WeightSpecular = NewWeightSpecular(CurrentPackedData.xyz, BasePacked.xyz,
+			WeightSpecular = NewNewWeightSpecular(CurrentPackedData.xyz, BasePacked.xyz,
 												CurrentPackedData.w, BasePacked.w, 
 												CurrentDetail.y, BaseDetail.y, 
 												Frame, Facing, 

@@ -1108,7 +1108,7 @@ namespace iTrace {
 
 				Vector3i PositionBlock = Vector3i(Position); 
 
-				auto ManageCollision = [](Vector3i BlockPosition, Vector3f& Position, int BlockType) {
+				auto ManageCollision = [](Vector3i BlockPosition, Vector3f& Position, int BlockType, Core::AABB3DAxis & Axis) {
 				
 					Vector3f Positionf = Vector3f(BlockPosition); 
 
@@ -1117,9 +1117,12 @@ namespace iTrace {
 					CollisionBox.Min = Vector3f(Positionf - Vector3f(0.125, 0.25, 0.125));
 					CollisionBox.Max = Vector3f(Positionf + Vector3f(1.125, 2.5, 1.125));
 
-					return CollisionBox.HandleCollision(Position); 
+					return CollisionBox.HandleCollision(Position,&Axis);
 				
 				}; 
+
+				std::string str; 
+				
 				
 				for (int x = -5; x <= 5; x++) {
 					for (int y = -5; y <= 5; y++) {
@@ -1135,10 +1138,14 @@ namespace iTrace {
 								auto& Data = Rendering::Chunk::GetBlock(TypeIndex); 
 
 								if (Data.IsSolid) {
+									Core::AABB3DAxis Axis; 
+									if (ManageCollision(NewPositionBlock + Vector3i(X, 0, Y) * CHUNK_SIZE, Position, TypeIndex, Axis)) {
+										
 
-									if (ManageCollision(NewPositionBlock + Vector3i(X, 0, Y) * CHUNK_SIZE, Position, TypeIndex)) {
-										Acceleration = Vector3f(0.0);
-										Velocity = Vector3f(0.0); 
+										Acceleration[static_cast<int>(Axis) / 2] = 0.0f; 
+										Velocity[static_cast<int>(Axis) / 2] = 0.0f;
+
+
 									}
 
 								}

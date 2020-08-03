@@ -14,7 +14,7 @@ uniform sampler2D CombinedLighting;
 uniform sampler2D Depth; 
 
 //Post Process
-uniform sampler2D Glow; 
+uniform sampler2D Glow[4]; 
 uniform sampler2D DoF; 
 uniform sampler2D Lensflare; 
 
@@ -130,9 +130,15 @@ void main() {
 
     }
 
-	if(DoGlow) 
-       Lighting += texture(Glow, TexCoord); 
-	   
+	if(DoGlow) {
+		vec4 Glow1 = texture(Glow[0], TexCoord); 
+		vec4 Glow2 = texture(Glow[1], TexCoord); 
+		vec4 Glow3 = texture(Glow[2], TexCoord); 
+		vec4 Glow4 = texture(Glow[3], TexCoord); 
+
+		Lighting.xyz += (Glow1.xyz / Glow1.w + Glow2.xyz / Glow2.w + Glow3.xyz / Glow3.w + Glow4.xyz / Glow4.w) * 0.25; 
+
+	}
 	Lighting.xyz = mix(DofFetch.xyz,Lighting.xyz,pow(1.0-min(DofFetch.w/2.0,1.0),2.0)); 
 
 

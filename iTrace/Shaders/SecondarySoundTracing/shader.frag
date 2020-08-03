@@ -13,6 +13,8 @@ layout(binding = 1, std140) buffer ReflectivityRatiosBuffer {
 };
 
 
+in vec2 TexCoord; 
+
 uniform sampler2D SoundLocations; 
 uniform vec3 PlayerPosition;
 uniform int MaxSounds; 
@@ -212,15 +214,14 @@ void MainPositional() {
 	int CurrentSubray = int(gl_FragCoord.y); 
 
 	vec3 SoundLocation = texelFetch(SoundLocations, ivec2(CurrentRay, 0), 0).xyz; 
-
-	int Index = CurrentRay * NumRays + CurrentSubray; 
+	SoundLocation = PlayerPosition - vec3(0.0,1.5,0.0); 
 
 
 	GainsShared = vec3(0.); 
 	ReflectivityRatios = vec3(0.); 
 
-	if(abs(SoundLocation.x) < 0.01 && abs(SoundLocation.y) < 0.01 && abs(SoundLocation.z) < 0.01)
-		return; 
+	//if(abs(SoundLocation.x) < 0.01 && abs(SoundLocation.y) < 0.01 && abs(SoundLocation.z) < 0.01)
+	//	return; 
 
 	vec3 ToPlayerVector = normalize(PlayerPosition - SoundLocation); 
 
@@ -352,8 +353,6 @@ void MainPositional() {
 	GainsShared.y = uintBitsToFloat(packHalf2x16(vec2(SendGain2, SendGain3)));
 	GainsShared.z = SharedAirSpace; 
 
-
-
 	for(int i = 0; i < Bounces/2;i++) 
 		ReflectivityRatios[i] = uintBitsToFloat(packHalf2x16(vec2(BounceReflectivityRatios[i*2], BounceReflectivityRatios[i*2+1]))); 
 
@@ -374,10 +373,9 @@ void MainAmbience() {
 
 	RayDirection.y = abs(RayDirection.y); 
 
-	GainsShared.z = 0.0; 
 
 	vec3 Origin = PlayerPosition; 
-
+	GainsShared.z = 0.0; 
 	for(int i = 0; i < 10; i++) {
 		
 		bool Hit; 
@@ -408,7 +406,7 @@ void main(void) {
 
 	int Index = CurrentRay * NumRays + CurrentSubray; 
 	
-	if(CurrentRay >= MaxSounds) 
+	if(CurrentRay == 0) 
 		MainAmbience(); 
 	else 
 		MainPositional(); 

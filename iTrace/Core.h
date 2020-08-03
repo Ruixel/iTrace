@@ -60,7 +60,7 @@ namespace iTrace {
 
 			bool IsOverlapping(Vector3f Position); 
 
-			bool HandleCollision(Vector3f& Position); 
+			bool HandleCollision(Vector3f& Position, AABB3DAxis* side = nullptr);
 
 			void SetCenter(Vector3f Position); 
 

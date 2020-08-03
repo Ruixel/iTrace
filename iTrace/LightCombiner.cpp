@@ -12,7 +12,7 @@ namespace iTrace {
 		{
 
 			CombinedLighting = MultiPassFrameBufferObject(Window.GetResolution(), 2, { GL_RGB16F,GL_RGB16F }, false);
-			CombinedRefraction = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGB16F, GL_RGB16F, GL_R32F }, true); 
+			CombinedRefraction = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGB16F, GL_RGB16F, GL_R32F }, false, true); 
 			LightCombinerShader = Shader("Shaders/LightCombiner"); 
 			RefractiveCombiner = Shader("Shaders/RefractiveCombiner"); 
 
@@ -139,7 +139,7 @@ namespace iTrace {
 
 			FocusPoint = FocusPoint + vec * glm::min(Window.GetFrameTime(),1.0f);
 
-			std::cout << "Focus: " << FocusPoint << '\n';
+		//	std::cout << "Focus: " << FocusPoint << '\n';
 
 			FocusSSBO.UnMap(); 
 

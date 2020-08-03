@@ -972,7 +972,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 		}
 
 		HemiSpherical /= 12.0; 
-		HemiSpherical *= HemiSpherical * HemiSpherical * SkyColor;  
+		HemiSpherical *= HemiSpherical  * SkyColor;  
 
 		//HemiSpherical =  GetHemisphericalShadowMaphit(Position, OutNormal, 0, 1); 
 	
@@ -1148,7 +1148,7 @@ void main() {
 	float IncidentLength = length(Incident); 
 	Incident /= IncidentLength; 
 
-	Direct.xyz = DirectHQ(WorldPos,max(Penum,0.007),vec2(Pixel) / 2, SmoothNessFactor); 
+	Direct.xyz = DirectHQ(WorldPos,max(Penum,0.007),vec2(Pixel) / 2, SmoothNessFactor) * DirectDensity; 
 //	Direct.xyz *= ScreenSpaceTraceShadows(WorldPos + Normal.xyz * mix(0.01,0.1,clamp(IncidentLength/30.0,0.0,1.0)), normalize(LightDirection), 0.3,9) * DirectDensity; 
 
 

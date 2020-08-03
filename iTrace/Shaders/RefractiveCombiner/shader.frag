@@ -226,7 +226,7 @@ void main() {
 
 			//Lighting.xyz = vec3(Traversal); 
 
-			ColorSample = pow(ColorSample / 2.0, vec3(Traversal*2.0)) * 2.0; 
+			ColorSample = pow(ColorSample / 2.0, vec3((Traversal+.5)*1.0)) * 2.0; 
 			ColorSample = clamp(ColorSample, vec3(0.0), vec3(1.0));  
 			
 		}
@@ -258,6 +258,5 @@ void main() {
 		OcclusionDepth[0] = vec4(DofDepth); 
 
 	}
-
 
 }

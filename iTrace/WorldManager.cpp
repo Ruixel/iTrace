@@ -70,7 +70,7 @@ namespace iTrace {
 				Chunk::AddBlock(Chunk::BlockType("coal block", { 45 }, true, false, false, SoundType::STONE)); //CC0 (and a bit self made), good
 				Chunk::AddBlock(Chunk::BlockType("wet stones", { 46 }, true, false, false, SoundType::STONE)); //CC0 (and a bit self made), good
 				Chunk::AddBlock(Chunk::BlockType("sandstone", { 47 }, true, false, false, SoundType::STONE)); //CC0, good 
-				Chunk::AddBlock(Chunk::BlockType("gravel", { 48 }, true, false, false, SoundType::STONE)); //CC0, good 
+				Chunk::AddBlock(Chunk::BlockType("gravel", { 48 }, true, false, false, SoundType::GRAVEL)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("polished wood", { 49 }, true, false, false, SoundType::STONE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("jungle ground", { 50 }, true, false, false, SoundType::DIRT)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("leaves", { 51 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT)); //CC0, good 

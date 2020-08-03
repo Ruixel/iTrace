@@ -61,8 +61,8 @@ const vec3 PlayerOrigin = vec3(0,6200,0);
 const float PlanetRadius = 6573; 
 const float AtmosphereRadius = 7773; 
 const float Size = AtmosphereRadius - PlanetRadius; 
-const int Steps = 8; 
-const int LightSteps = 3; 
+const int Steps = 12; 
+const int LightSteps = 8; 
 const float Epsilon = 1e-4; 
 
 //Cloud properties 
@@ -90,14 +90,14 @@ float Density(vec3 Position) {
 
 	Position.x += Time * 6.0; 
 
-	vec3 WeatherSample = texture(WeatherMap, (Position.xz) / 8192).xyz; 
+	vec3 WeatherSample = texture(WeatherMap, (Position.xz) / 16384).xyz; 
 
 	float WeatherNoise =  (1.0-pow(1.0-WeatherSample.x,3.0)); ; 
 
 	if(WeatherNoise < 1.0/256.0)
 		return 0.0; 
 
-	vec4 NoiseFetch1 = texture(CloudNoise, ((Position + vec3(0.0,-Time*10,0.0)) * vec3(1.0,1,1.0)) / 4096); 
+	vec4 NoiseFetch1 = texture(CloudNoise, ((Position + vec3(0.0,-Time*10,0.0)) * vec3(1.0,1,1.0)) / 8192); 
 	
 	float HighFrequencyNoise = dot(NoiseFetch1.yzw, vec3(0.25,0.125,0.625)); 
 
@@ -127,12 +127,12 @@ float Density(vec3 Position) {
 
 
 
-	BaseShape = pow(BaseShape,0.0625 *8.0 *GlobalPower * (.4+16.0*pow(HeightSignal,8.0))); 
+	BaseShape = pow(BaseShape,0.0625 *8.0 *GlobalPower * (.4+16.0*pow(HeightSignal,5.0))); 
 
 	if(BaseShape < 1.0/25.0)
 		return 0.; 
 
-	vec4 NoiseFetch2 = texture(CloudShape, (Position + vec3(0.0,Time*2,0.0)) / 384); 
+	vec4 NoiseFetch2 = texture(CloudShape, (Position + vec3(0.0,Time*2,0.0)) / 384*2); 
 
 	float ErosionNoise = dot(NoiseFetch2.xyz, vec3(0.25,0.125,0.625)); 
 

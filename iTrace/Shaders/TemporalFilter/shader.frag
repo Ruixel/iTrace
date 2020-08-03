@@ -91,7 +91,7 @@ void main() {
 
 	float NewMaxTemporal = FrameCount < 4.0 ? 0.0 : FrameCount < 12.0 ? 0.9 : (NewFiltering ? 0.99 : 0.95); 
 	float MaxTemporalShadow = FrameCount < 6.0 ? 0.0 : 0.95; 
-	float MaxTemporalClouds = FrameCount < 1.0 ? 0.0 : 0.9677; 
+	float MaxTemporalClouds = FrameCount < 4.0 ? 0.0 : 0.9677; 
 
 	float MixFactor = min(FrameCount / (FrameCount+1.0),NewMaxTemporal);
 	float MixFactorVolume = min(FrameCount / (FrameCount+1.0),min(NewMaxTemporal, 0.0));

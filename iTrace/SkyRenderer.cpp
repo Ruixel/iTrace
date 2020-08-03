@@ -344,10 +344,6 @@ namespace iTrace {
 			}; 
 
 
-
-
-
-
 			ShadowMaps[ToUpdate].Bind();
 
 			ShadowDeferred.Bind(); 

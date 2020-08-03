@@ -13,38 +13,47 @@ bool iTrace::Camera::HandleInput(Window& Window, float MovementSpeed, float Mous
 	
 	float ft = glm::min(Window.GetFrameTime(), 0.1f); 
 
+	Vector3f CurrentVelocity = Vector3f(0.0); 
+
 	if (Position) {
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-			Core::Move_2DXZ(this->Position, MovementSpeed, static_cast<float>(this->Rotation.y - 180.0), ft);
+			Core::Move_2DXZ(CurrentVelocity, MovementSpeed, static_cast<float>(this->Rotation.y - 180.0), 1.0f);
 			Movement = true;
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-			Core::Move_2DXZ(this->Position, MovementSpeed, static_cast<float>(this->Rotation.y), ft);
+			Core::Move_2DXZ(CurrentVelocity, MovementSpeed, static_cast<float>(this->Rotation.y), 1.0f);
 			Movement = true;
 		}
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-			Core::Move_2DXZ(this->Position, MovementSpeed,  static_cast<float>(this->Rotation.y - 90.0), ft);
+			Core::Move_2DXZ(CurrentVelocity, MovementSpeed,  static_cast<float>(this->Rotation.y - 90.0), 1.0f);
 			Movement = true;
 		}	
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-			Core::Move_2DXZ(this->Position, MovementSpeed,  static_cast<float>(this->Rotation.y + 90.0), ft);
+			Core::Move_2DXZ(CurrentVelocity, MovementSpeed,  static_cast<float>(this->Rotation.y + 90.0), 1.0f);
 			Movement = true;
 		}
 
 		if (Creative) {
 
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-				this->Position.y += MovementSpeed * ft;
+				this->Acceleration.y = MovementSpeed;
 			}
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-				this->Position.y -= MovementSpeed * ft;
+				this->Acceleration.y =- MovementSpeed;
 			}
 
 		}
 
 
 	}
+
+	CurrentVelocity.y = Velocity.y; 
+
+	Velocity = glm::mix(Velocity, CurrentVelocity, 5.0f*ft); 
+
+
+
 	if (Rotation) {
 
 		

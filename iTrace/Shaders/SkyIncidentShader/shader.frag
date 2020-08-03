@@ -129,11 +129,11 @@ vec3 atmosphere(vec3 r, vec3 r0, vec3 pSun, float iSun, float rPlanet, float rAt
     }
 
     // Calculate and return the final color.
-	    rayleigh = iSun * 9000.0 *  pow(pMie/3.0,48.0)*3.0 * kMie * totalMie; 
+	    rayleigh = iSun * 9000.0 * mix(vec3(1, 0.721568627, 0.0745098039),vec3(1),0.6f)* pow(pMie/3.0,140.0)*2000.0 * kMie * totalMie; 
 
   //  rayleigh = iSun * (pow(pMie * kMie,1.3) * totalMie)*12.0; 
    // rayleigh = pow(rayleigh/30.0, vec3(4.0))*30.0; 
-    return iSun * (pRlh * kRlh * totalRlh + mix(vec3(1, 0.721568627, 0.0745098039),vec3(1),0.6f)* 9000.0 *  pow(pMie/3.0,48.0)*3.0 * kMie * totalMie); 
+    return iSun * (pRlh * kRlh * totalRlh); 
 
 
 }

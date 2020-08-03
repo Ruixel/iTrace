@@ -5,9 +5,9 @@
 #include "CommandManager.h"
 #include "CommandPusher.h"
 #include "Inventory.h"
-#include "FootstepManager.h"
 #include "SoundEffectManager.h"
 #include "CrosshairDrawer.h"
+#include "ViewBob.h"
 
 namespace iTrace {
 
@@ -31,6 +31,7 @@ namespace iTrace {
 		SoundEffectManager SoundEffects; 
 		ParticleSystem Particles; 
 		CrosshairDrawer Crosshair; 
+		ViewBobHandler ViewBobbing; 
 
 		void PreparePipeline(Camera& Camera, Window& Window);
 		void RunPipeline(Camera& Camera, Window& Window);
