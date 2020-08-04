@@ -1,7 +1,6 @@
 #version 330
 #extension GL_ARB_bindless_texture : enable
 
-in vec2 TexCoord; 
 layout(location = 0) out vec4 Volumetrics;
 
 
@@ -25,6 +24,7 @@ uniform sampler2D Wind;
 uniform mat4 IncidentMatrix; 
 uniform float Time; 
 uniform bool DoVolumetrics; 
+uniform int CheckerStep; 
 
 uniform float ScatteringMultiplier; 
 uniform float AbsorptionMultiplier; 
@@ -172,6 +172,12 @@ void main() {
 	else if(SubFrame == 0) {
 		Offset = States[2]; 
 	}
+
+	ivec2 FragCoord = ivec2(gl_FragCoord); 
+	FragCoord.x *= 2; 
+	FragCoord.x += int(FragCoord.y % 2 == CheckerStep); 
+
+	vec2 TexCoord = vec2(FragCoord) / vec2(textureSize(CloudDepth, 0) * ivec2(2,1)); 
 
 	Pixel = ivec2(gl_FragCoord.xy) * 2 + Offset; 
 	

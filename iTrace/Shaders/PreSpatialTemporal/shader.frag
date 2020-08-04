@@ -13,6 +13,7 @@ uniform sampler2D MotionVectors;
 uniform sampler2D FrameCount; 
 
 uniform int SubFrame; 
+uniform int CheckerStep; 
 
 
 ivec2 States[] = ivec2[](
@@ -50,6 +51,10 @@ void main() {
 	//if required, spatially filter the detail using a 3x3 bilateral filter 
 	
 	ivec2 Pixel = ivec2(gl_FragCoord.xy); 
+	ivec2 PixelShifted = Pixel; 
+	PixelShifted.x *= 2; 
+	PixelShifted.x += int(PixelShifted.y % 2 == CheckerStep); 
+
 
 	Detail = texelFetch(CurrentDetail, Pixel, 0); 
 
@@ -57,7 +62,7 @@ void main() {
 
 	if(true) {
 		
-		ivec2 HighResPixel = Pixel * 2 + States[SubFrame];
+		ivec2 HighResPixel = PixelShifted * 2 + States[SubFrame];
 
 		vec4 BasePacked = texelFetch(SpatialDenoiseData, HighResPixel, 0); 
 

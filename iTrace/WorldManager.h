@@ -64,6 +64,9 @@ namespace iTrace {
 
 			//probably one of the hardest functions I'm every going to write
 			void UpdateChunkTexture(Vector3i Min, Vector3i Max, bool OnlyLight = false); 
+			void FastUpdateFullChunkTexture(unsigned char ChunkX, unsigned char ChunkY); 
+			void FastUpdateLightTexture(unsigned char ChunkX, unsigned char ChunkY); 
+
 
 			void ManageCollision(Vector3f& Position, Vector3f& Acceleration, Vector3f& Velocity); 
 

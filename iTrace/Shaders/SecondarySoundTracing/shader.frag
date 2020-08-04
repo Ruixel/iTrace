@@ -124,8 +124,7 @@ bool RawTrace(vec3 RayDirection, vec3 Origin, inout int Block, inout int Face, i
 
 
 
-#define GLOBAL_REFLECTIVITY 0.5
-
+#define GLOBAL_REFLECTIVITY 0.8
 
 //the rays that are going to be shot out
 
@@ -208,7 +207,7 @@ vec3(-0.0222833,-0.22831,0.973333)
 );
 
 void MainPositional() {
-	int CurrentRay = int(gl_FragCoord.x); 
+	int CurrentRay = int(gl_FragCoord.x)-1; 
 	int CurrentSubray = int(gl_FragCoord.y); 
 
 	vec3 SoundLocation = texelFetch(SoundLocations, ivec2(CurrentRay, 0), 0).xyz; 
@@ -324,7 +323,7 @@ void MainPositional() {
 				TotalRayDistance += distance(LastPosHit, PlayerPosition); 
 			}
 
-			float ReflectionDelay = max(TotalRayDistance,0.) * 0.7 * GLOBAL_REFLECTIVITY; 
+			float ReflectionDelay = max(TotalRayDistance,0.) *  GLOBAL_REFLECTIVITY; 
 			
 			float Cross0 = 1.0 - clamp(abs(ReflectionDelay),0.0,1.0); 
 			float Cross1 = 1.0 - clamp(abs(ReflectionDelay - 2.0),0.0,1.0); 
@@ -333,8 +332,8 @@ void MainPositional() {
 
 			SendGain0 += Cross0 * OneOverTotalRays * 6.4f * EnergyTowardsPlayer;
 			SendGain1 += Cross1 * OneOverTotalRays * 12.8 * EnergyTowardsPlayer; 
-			SendGain2 += Cross2 * OneOverTotalRays * 12.8 * EnergyTowardsPlayer; 
-			SendGain3 += Cross3 * OneOverTotalRays * 25.6 * EnergyTowardsPlayer;  
+			SendGain2 += Cross2 * OneOverTotalRays * 25.8 * EnergyTowardsPlayer; 
+			SendGain3 += Cross3 * OneOverTotalRays * 51.2 * EnergyTowardsPlayer;  
 
 
 			if(!Hit)
@@ -344,7 +343,6 @@ void MainPositional() {
 
 
 	}
-
 
 
 	GainsShared.x = uintBitsToFloat(packHalf2x16(vec2(SendGain0, SendGain1))); 
@@ -384,7 +382,7 @@ void MainAmbience() {
 
 		if(Hit) {
 
-			GainsShared.z += 0.5; 
+			GainsShared.z += 1.0; 
 			Origin = HitPosition + RayDirection * 0.1 +  vec3(PositionBias.x, 0, PositionBias.y); 
 
 		}

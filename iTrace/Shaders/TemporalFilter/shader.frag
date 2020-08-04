@@ -74,6 +74,30 @@ vec4 GetClamped(sampler2D Current, sampler2D Previous, vec2 PreviousTexCoord, fl
 
 #endif 
 
+vec3 ClampDirect(sampler2D DirectSampler, vec3 Previous) {
+
+	ivec2 Coord = ivec2(gl_FragCoord); 
+
+	vec3 Min = vec3(10000.0); 
+	vec3 Max = vec3(-10000.0); 
+
+	for(int x = -1; x <= 1; x++) {
+		for(int y = -1; y <= 1; y++) {
+
+			vec3 Fetch = texelFetch(DirectSampler,Coord + ivec2(x,y), 0).xyz; 
+
+			Min = min(Min, Fetch); 
+			Max = max(Max, Fetch); 
+		}
+	}
+
+	return clamp(Previous, Min, Max); 
+
+}
+
+
+
+
 void main() {
 
 	
@@ -126,7 +150,7 @@ void main() {
 	IndirectSpecular = mix(CurrentSpecularSample, PreviousSpecular, min(MixFactor, SpecularTrustFactor)); 
 	Clouds = mix(CurrentClouds, PreviousClouds,MixFactorClouds);  
 	Direct.xyz = CurrentDirect.xyz; 
-	//Direct.xyz = mix(CurrentDirect.xyz, PreviousDirect.xyz, min(MixFactor,0.75)); 
+	Direct.xyz = mix(CurrentDirect.xyz, ClampDirect(UpscaledDirect,PreviousDirect.xyz), min(MixFactor,0.95)); 
 	Direct.w = mix(CurrentDirect.w, PreviousDirect.w, MixFactor); 
 	IndirectSpecular.w = mix(CurrentSpecularSample.w, PreviousSpecular.w, MixFactor); 
 

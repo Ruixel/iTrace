@@ -248,7 +248,7 @@ void main() {
 
 	}
 	vec4 Volumetrics = texture(Volumetrics, InTexCoord); 
-	Lighting.xyz += Volumetrics.xyz; 
+	//Lighting.xyz += Volumetrics.xyz; 
 	gl_FragDepth = min(DofDepth,0.9999999); 
 
 	ivec2 Pixel = ivec2(gl_FragCoord); 

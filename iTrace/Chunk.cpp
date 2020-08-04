@@ -254,8 +254,9 @@ namespace iTrace {
 				//definitely worth doing this on another thread in the future 
 
 				Blocks = std::vector<unsigned char>(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, 0);
-				BlockLighting = std::vector<Vector4f>(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, Vector4f(0.0));
+				BlockLighting = std::vector<Vector3f>(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, Vector3f(0.0));
 				TallestBlock = std::vector<unsigned char>(CHUNK_SIZE * CHUNK_SIZE, 0);
+				BlockLightingByte = std::vector<unsigned char>(3 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, 0);
 				//Mask = std::vector<BlockMask>(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, BlockMask());
 #ifdef SKYGRID 
 				for (int x = 0; x < CHUNK_SIZE / 5; x++) {
@@ -316,7 +317,7 @@ namespace iTrace {
 				for (int x = 0; x < CHUNK_SIZE; x++) {
 
 					for (int z = 0; z < CHUNK_SIZE; z++) {
-						HeightMap[x*CHUNK_SIZE+z] = (fractalnoise((x + X * CHUNK_SIZE) / 512., (z + Y * CHUNK_SIZE) / 512., -1238, 3) * 0.5 + 0.5) * 60 + 30;
+						HeightMap[x*CHUNK_SIZE+z] = (fractalnoise((x + X * CHUNK_SIZE) / 2048.0, (z + Y * CHUNK_SIZE) / 2048.0, -1238, 3) * 0.5 + 0.5) * 20 + 50;
 					}
 
 				}
@@ -1092,6 +1093,11 @@ namespace iTrace {
 				std::string Title = "World/Chunk_" + std::to_string(X) + '_' + std::to_string(Y) + ".bin";
 
 				std::ifstream File; 
+
+				if (!File.good())
+					return; 
+
+
 				File.open(Title, std::ios::out | std::ios::binary);
 				File.read((char*)Blocks.data(), Blocks.size()); 
 				File.close(); 

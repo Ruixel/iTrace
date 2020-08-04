@@ -68,7 +68,7 @@ namespace iTrace {
 
 
 				float SecondaryStepMultiplier = glm::mix(0.2f, 0.0f, glm::clamp((Velocity - 1.0f) / 3.0f, 0.0f, 1.0f)); 
-				float RotationMultiplier = glm::mix(-2.0f, -0.3f, glm::clamp((Velocity - 1.0f) / 3.0f, 0.0f, 1.0f)); 
+				float RotationMultiplier = glm::mix(-1.0f, -0.3f, glm::clamp((Velocity - 1.0f) / 3.0f, 0.0f, 1.0f)); 
 
 				float SecondaryStep = SecondaryStepMultiplier * pow(sin(Sequence + Shift), 2.0) / (1.0 + 4.0*abs(Sequence + Shift - 1.57));
 

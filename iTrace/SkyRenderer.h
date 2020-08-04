@@ -10,7 +10,7 @@ namespace iTrace {
 
 	namespace Rendering {
 
-		const float Ranges[5] = { 7.5, 30.0, 90.0, 300.0,150.0 };
+		const float Ranges[5] = { 5.0, 30.0, 90.0, 300.0,150.0 };
 		const int SHADOWMAP_RES = 512; 
 		const unsigned char UpdateQueue[] = { 0,1,0,2,0,1,0,2,0,1,0,3,4 };
 

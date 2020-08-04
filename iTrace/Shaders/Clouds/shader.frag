@@ -1,6 +1,5 @@
 #version 330
 
-in vec2 TexCoord; 
 layout(location = 0) out vec4 Clouds;
 layout(location = 1) out float Depth; 
 
@@ -20,7 +19,7 @@ uniform vec3 SunColor;
 uniform vec3 SkyColor; 
 uniform vec3 AmbientColor; 
 uniform vec3 CameraPosition; 
-
+uniform int CheckerStep; 
 
 uniform float Time; 
 
@@ -342,6 +341,11 @@ void main() {
 	vec2 TexelSize = 1 / vec2(TextureSize); 
 
 	ivec2 RawPixel = ivec2(gl_FragCoord.xy); 
+
+	RawPixel.x *= 2; 
+	RawPixel.x += int(RawPixel.y % 2 == CheckerStep); 
+
+
 	Pixel = RawPixel * 2 + States[SubFrame]; 
 	vec2 NewTexCoord = vec2(Pixel) * TexelSize;  
 

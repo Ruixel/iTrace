@@ -10,6 +10,8 @@ int RefractiveCount = 2;
 
 #endif 
 
+ivec2 FragCoord = ivec2(0); 
+
 //idea: Denoise lighting as a spherical harmonic. 
 //Very useful because we can reproject the denoised diffuse 
 //for specular lighting. We can also denoise using a low-frequency 
@@ -75,6 +77,7 @@ uniform float Time;
 uniform int ParallaxResolution; 
 uniform bool DoParallax; 
 uniform ivec2 PositionBias; 
+uniform int CheckerStep; 
 
 uniform mat4 CameraMatrix; 
 
@@ -650,7 +653,7 @@ vec3 cosWeightedRandomHemisphereDirection(const vec3 n, vec2 rv2) {
 
 vec3 GetHemisphericalShadowMaphit(vec3 WorldPos, vec3 Normal, int i, int maxi) {
 	
-	float Noise = hash(ivec2(gl_FragCoord).xy, FrameCount*maxi+i, 20); 
+	float Noise = hash(FragCoord, FrameCount*maxi+i, 20); 
 
 	int Sample = clamp(int(Noise * 48), 0, 47); 
 
@@ -988,7 +991,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 		
 		//return LightingData.xyz; 
 
-		Diffuse.xyz += 1.0 * (LightingData.xyz) ; 
+		Diffuse.xyz += BlockColor * 64.0 * (LightingData.xyz*LightingData.xyz) ; 
 
 		//idea: if specular and roughness < treshhold, consider applying some super basic ambient light.
 
@@ -1106,7 +1109,11 @@ void main() {
 
 	Rand_Seed = (TexCoord.x * TexCoord.y) * 500.0 * 20.0;
 
-	ivec2 Pixel = ivec2(gl_FragCoord.xy) * 4 + States[FrameCount % 4] * 2;
+	FragCoord = ivec2(gl_FragCoord); 
+	FragCoord.x *= 2; 
+	FragCoord.x += int(FragCoord.y % 2 == CheckerStep); 
+
+	ivec2 Pixel = FragCoord * 4 + States[FrameCount % 4] * 2;
 
 	Rand_Seed = (Pixel.x * 540 + Pixel.y) * 0.01; 
 
@@ -1122,7 +1129,7 @@ void main() {
 	for(int x = -1; x <= 1; x++) {
 		for(int y = -1; y <= 1; y++) {
 		
-			ivec2 Pixel = ivec2(gl_FragCoord.xy) / 2 + ivec2(x,y); 
+			ivec2 Pixel = FragCoord / 2 + ivec2(x,y); 
 
 			vec2 BlockerInfo = texelFetch(BlockerData, Pixel, 0).xy; 
 

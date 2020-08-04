@@ -54,7 +54,7 @@ bool IsInSky(vec3 Normal) {
 }
 
 bool ConfirmGood(vec4 GTNormal, vec4 CurrentNormal) {
-
+return false; 
 	if(!NewFiltering)
 		return false; 
 

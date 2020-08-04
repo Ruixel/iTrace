@@ -37,18 +37,17 @@ bool iTrace::Camera::HandleInput(Window& Window, float MovementSpeed, float Mous
 		if (Creative) {
 
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-				this->Acceleration.y = MovementSpeed;
+				CurrentVelocity.y = MovementSpeed;
 			}
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-				this->Acceleration.y =- MovementSpeed;
+				CurrentVelocity.y =- MovementSpeed;
 			}
 
 		}
-
-
 	}
 
-	CurrentVelocity.y = Velocity.y; 
+	if(!Creative) 
+		CurrentVelocity.y = Velocity.y; 
 
 	Velocity = glm::mix(Velocity, CurrentVelocity, 5.0f*ft); 
 

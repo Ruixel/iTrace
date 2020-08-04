@@ -240,6 +240,8 @@
     <None Include="Shaders\CausticBaker\shader.vert" />
     <None Include="Shaders\Checkerboarder\shader.frag" />
     <None Include="Shaders\Checkerboarder\shader.vert" />
+    <None Include="Shaders\CheckerBoardHandler\shader.frag" />
+    <None Include="Shaders\CheckerBoardHandler\shader.vert" />
     <None Include="Shaders\CloudProjection\shader.frag" />
     <None Include="Shaders\CloudProjection\shader.vert" />
     <None Include="Shaders\Clouds\shader.frag" />

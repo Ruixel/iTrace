@@ -191,8 +191,9 @@ namespace iTrace {
 				Matrix4f ModelMatrix; 
 
 				std::vector<unsigned char> Blocks; //size is CHUNK_SIZE^3
-				std::vector<Vector4f> BlockLighting; 
-				
+				std::vector<Vector3f> BlockLighting; 
+				std::vector<unsigned char> BlockLightingByte;
+
 				std::vector<unsigned char> TallestBlock; 
 
 				ChunkMeshData MeshDataOpaque, MeshDataTransparent, MeshDataRefractive; 

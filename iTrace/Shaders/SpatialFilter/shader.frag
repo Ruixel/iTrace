@@ -17,7 +17,7 @@ uniform sampler2D MotionVectors;
 uniform sampler2D Direct; 
 uniform sampler2D Detail;
 uniform sampler2D InputSHCg; 
-
+uniform int CheckerStep; 
 
 uniform bool DoSpatial; 
 uniform bool Final; 
@@ -161,9 +161,14 @@ float NewNewWeightSpecular(vec3 Normal, vec3 NormalCenter,
 void main() {
 
 	
-	ivec2 Pixel = ivec2(gl_FragCoord.xy); 
+	ivec2 Pixel = ivec2(gl_FragCoord.xy);
+
+
+	ivec2 CheckerPixel = ivec2(gl_FragCoord.xy);
+	CheckerPixel.x *= 2; 
+	CheckerPixel.x += int(Pixel.y % 2 == CheckerStep); 
 	
-	ivec2 HighResPixel = Pixel * 2 + States[SubFrame];
+	ivec2 HighResPixel = CheckerPixel * 2 + States[SubFrame];
 
 	vec4 BasePacked = texelFetch(InputPacked, HighResPixel, 0); 
 

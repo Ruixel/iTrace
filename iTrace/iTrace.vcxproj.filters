@@ -223,6 +223,9 @@
     <Filter Include="Shaders\Glow">
       <UniqueIdentifier>{928c7d47-4d2a-49e6-8eb1-6c158644dea1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\CheckerBoardHandler">
+      <UniqueIdentifier>{6b181f57-f888-4334-9724-5fab2d033d91}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -768,6 +771,12 @@
     </None>
     <None Include="Shaders\Glow\shader.frag">
       <Filter>Shaders\Glow</Filter>
+    </None>
+    <None Include="Shaders\CheckerBoardHandler\shader.vert">
+      <Filter>Shaders\CheckerBoardHandler</Filter>
+    </None>
+    <None Include="Shaders\CheckerBoardHandler\shader.frag">
+      <Filter>Shaders\CheckerBoardHandler</Filter>
     </None>
   </ItemGroup>
 </Project>

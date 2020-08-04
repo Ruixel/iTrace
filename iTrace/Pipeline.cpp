@@ -734,7 +734,7 @@ namespace iTrace {
 
 			auto BlockIdx = World.GetBlock(Pos);
 
-			auto ViewBobMatrix = ViewBobbing.PollViewBobbing(Camera,Window, Sounds, FootSteps, BlockIdx, length(Vector2f(Camera.Velocity.x, Camera.Velocity.z))/1.6f); 
+			auto ViewBobMatrix = ViewBobbing.PollViewBobbing(Camera,Window, Sounds, FootSteps, BlockIdx, length(Vector2f(Camera.Velocity.x, Camera.Velocity.z))*1.5); 
 
 			GetGlobalCommandPusher().GivenConstantData["camera_pos"] = Camera.Position;
 			GetGlobalCommandPusher().GivenConstantData["camera_rot"] = Camera.Rotation;
@@ -747,7 +747,14 @@ namespace iTrace {
 					Camera.Velocity += (Camera.Acceleration) * glm::min(Window.GetFrameTime(), 0.1f);
 					Camera.Position += Camera.Velocity * glm::min(Window.GetFrameTime(), 0.1f);
 				}
-				if (!GetBoolean("freefly") || !GetBoolean("noclip"))
+				if (GetBoolean("freefly")) {
+
+					Camera.Acceleration = Vector3f(0.0, 0.0, 0.0);
+					Camera.Velocity += (Camera.Acceleration) * glm::min(Window.GetFrameTime(), 0.1f);
+					Camera.Position += Camera.Velocity * glm::min(Window.GetFrameTime(), 0.1f);
+					
+				}
+				if (!GetBoolean("noclip") || !GetBoolean("freefly"))
 					World.ManageCollision(Camera.Position, Camera.Acceleration, Camera.Velocity);
 			}
 
@@ -802,7 +809,8 @@ namespace iTrace {
 				Sleep(30);
 			}
 
-			
+			Profiler::SetPerformance("UI");
+
 			
 						/*
 			bool Case = FootSteps.Poll(Camera, Sounds, Window);
@@ -814,6 +822,7 @@ namespace iTrace {
 
 
 			Window.GetRawWindow()->display();
+			Profiler::SetPerformance("Window blitting");
 
 			Camera.PrevProject = Camera.Project;
 
@@ -824,10 +833,11 @@ namespace iTrace {
 			SoundEffects.GetSoundEffect("Thunder").SetVolume(Weather.ThunderStormGain); 
 			if(Weather.ThunderStormGain > 0.05)
 				SoundEffects.GetSoundEffect("Thunder").Play(rand() % 6); 
+			Profiler::SetPerformance("The rest");
 
 			SoundEffects.PollSoundEffects(Sounds, Window, Camera); 
 
-			Profiler::SetPerformance("The rest");
+			Profiler::SetPerformance("Sound parameters");
 			Sounds.Update(Camera, Window, World);
 
 		}
