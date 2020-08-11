@@ -64,19 +64,19 @@ void main() {
 		
 		ivec2 HighResPixel = PixelShifted * 2 + States[SubFrame];
 
-		vec4 BasePacked = texelFetch(SpatialDenoiseData, HighResPixel, 0); 
+		vec4 BasePacked = texelFetch(SpatialDenoiseData, Pixel, 0); 
 
 		float BaseRoughness = GetRoughness(BasePacked.xyz); 
 
 		float TotalWeight = 1.0; 
 
-		for(int x = -2; x <= 2; x++) {
+		for(int x = -1; x <= 1; x++) {
 			for(int y = -2; y <= 2; y++) {
 				
 				ivec2 PixelOffet = Pixel + ivec2(x,y); 
 				ivec2 PixelOffsetHighRes = HighResPixel + ivec2(x,y)*2; 
 
-				vec4 CurrentPacked = texelFetch(SpatialDenoiseData, PixelOffsetHighRes, 0); 
+				vec4 CurrentPacked = texelFetch(SpatialDenoiseData, PixelOffet, 0); 
 				vec4 CurrentDetail = texelFetch(CurrentDetail, PixelOffet, 0); 
 
 				float CurrentRoughness = GetRoughness(CurrentPacked.xyz); 
@@ -104,7 +104,7 @@ void main() {
 
 	//temporally filter the signals -> 
 
-	float MixFactor = min(FrameCount / (FrameCount+1.0),0.99); //<- should be enough to guide the spatial filter without impossible ghosting 
+	float MixFactor = min(FrameCount / (FrameCount+1.0),0.9); //<- should be enough to guide the spatial filter without impossible ghosting 
 
 	vec4 PreviousDetail = texture(PreviousDetail, TexCoord+MotionVectors); 
 	BaseDetail = Detail; 

@@ -281,7 +281,7 @@ void main() {
 	}
 
 	if(TextureExData.z != 0) {
-	//	Albedo.w = textureLod(MetalnessTextures, vec3(TC.xy, TextureExData.z-1),0.0).x; 
+		Albedo.w = textureLod(MetalnessTextures, vec3(TC.xy, TextureExData.z-1),0.0).x; 
 	}
 
 	HighFreqNormal.xyz = normalize(TBN * (normalize(texture(NormalTextures, vec3(TC.xy, TextureIdx)).xyz * 2.0 - 1.0)));
@@ -292,7 +292,7 @@ void main() {
 	
 	//HighFreqNormal.w = 0.0; 
 	SimpleLighting = texture(LightData,(WorldPos.xyz - vec3(PositionBias.x, 0.0, PositionBias.y) + Normal.xyz * .5).zyx / vec3(384.0,128.0,384.0)).xyz; 
-	
+	SimpleLighting = 64.0 * SimpleLighting * SimpleLighting; 
 	Normal.w  = texture(RoughnessTextures, vec3(TC, TextureIdx)).x; 
 		//Normal.w = 0.0; 
 		//HighFreqNormal.xyz = Normal.xyz; 

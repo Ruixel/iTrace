@@ -115,7 +115,7 @@ void main() {
 
 	float NewMaxTemporal = FrameCount < 4.0 ? 0.0 : FrameCount < 12.0 ? 0.9 : (NewFiltering ? 0.99 : 0.95); 
 	float MaxTemporalShadow = FrameCount < 6.0 ? 0.0 : 0.95; 
-	float MaxTemporalClouds = FrameCount < 4.0 ? 0.0 : 0.9677; 
+	float MaxTemporalClouds = FrameCount < 4.0 ? 0.98 : 0.98; 
 
 	float MixFactor = min(FrameCount / (FrameCount+1.0),NewMaxTemporal);
 	float MixFactorVolume = min(FrameCount / (FrameCount+1.0),min(NewMaxTemporal, 0.0));
@@ -127,11 +127,11 @@ void main() {
 		MixFactorClouds = 0.0; 
 	}
 
-	float SpecularTrustFactor = 0.9; 
+	float SpecularTrustFactor = 0.95; 
 	
 	//We know that the more we've moved, the less we can trust the specular motion vectors! 
 
-	SpecularTrustFactor = mix(SpecularTrustFactor, 0.75, min(length(MotionVectors)*10000.0,1.0)); 
+	//SpecularTrustFactor = mix(SpecularTrustFactor, 0.99, min(length(MotionVectors)*10000.0,1.0)); 
 
 	vec4 CurrentLightingSample = texture(UpscaledDiffuse, TexCoord); 
 	vec4 CurrentVolumetricSample = texture(UpscaledVolumetrics, TexCoord); 
@@ -153,7 +153,7 @@ void main() {
 	Direct.xyz = mix(CurrentDirect.xyz, ClampDirect(UpscaledDirect,PreviousDirect.xyz), min(MixFactor,0.95)); 
 	Direct.w = mix(CurrentDirect.w, PreviousDirect.w, MixFactor); 
 	IndirectSpecular.w = mix(CurrentSpecularSample.w, PreviousSpecular.w, MixFactor); 
-
+	Volumetrics = CurrentVolumetricSample; 
 
 //	Volumetrics = CurrentVolumetricSample; 
 	//IndirectDiffuse.xyz = int(gl_FragCoord.x) % 2 == 0 ? vec3(1.0) : vec3(0.0); 

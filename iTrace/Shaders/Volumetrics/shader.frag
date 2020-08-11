@@ -177,9 +177,9 @@ void main() {
 	FragCoord.x *= 2; 
 	FragCoord.x += int(FragCoord.y % 2 == CheckerStep); 
 
-	vec2 TexCoord = vec2(FragCoord) / vec2(textureSize(CloudDepth, 0) * ivec2(2,1)); 
+	vec2 TexCoord = vec2(FragCoord) / vec2(960/2,540/2); 
 
-	Pixel = ivec2(gl_FragCoord.xy) * 2 + Offset; 
+	Pixel = ivec2(FragCoord) * 2 + Offset; 
 	
 	vec3 WorldPosSample = texelFetch(WorldPosition, Pixel * 2, 0).xyz; 
 
@@ -204,7 +204,7 @@ void main() {
 	}
 	else if(L < 0.75 || L > 1.25) {
 		Vector = normalize(vec3(IncidentMatrix * vec4(TexCoord * 2.0 - 1.0, 1.0, 1.0)));
-		ActualDistance = texelFetch(CloudDepth, ivec2(gl_FragCoord.xy), 0).x; 
+		ActualDistance = texelFetch(CloudDepth, ivec2(FragCoord) / ivec2(2,1), 0).x; 
 	}
 	
  
@@ -243,7 +243,9 @@ void main() {
 
 			vec3 LightFetch = DirectBasic(Position) * 0.25 * SunColor * DirectDensity; 
 
-			LightFetch += textureLod(ChunkLighting, (Position.xyz - vec3(PositionBias.x, 0.0, PositionBias.y)).zyx / vec3(384.0,128.0,384.0), 0.0).xyz; 
+			vec3 Fetch = textureLod(ChunkLighting, (Position.xyz - vec3(PositionBias.x, 0.0, PositionBias.y)).zyx / vec3(384.0,128.0,384.0), 0.0).xyz; 
+
+			LightFetch += 128.0 * Fetch*Fetch; 
 
 			vec3 S = SampleSigmaS * LightFetch; 
 

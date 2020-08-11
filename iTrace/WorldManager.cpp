@@ -82,6 +82,7 @@ namespace iTrace {
 				Chunk::AddBlock(Chunk::BlockType("Metal test", { 58 }, true, false, false, SoundType::METAL)); //CC0, good (50)
 				Chunk::AddBlock(Chunk::BlockType("Red concrete", { 62 }, true, false, false, SoundType::STONE)); //CC0, good (50)
 				Chunk::AddBlock(Chunk::BlockType("Blue concrete", { 63 }, true, false, false, SoundType::STONE)); //CC0, good (50)
+				Chunk::AddBlock(Chunk::BlockType("Wheat", { 64 }, true, false, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT)); //CC0, good (50)
 
 
 				Chunk::AddTexture("stone", 0.75);
@@ -107,13 +108,13 @@ namespace iTrace {
 				Chunk::AddTexture("sand", 0.6);
 				Chunk::AddTexture("marble", 0.1);
 				Chunk::AddTexture("iron ore", 0.75);
-				Chunk::AddTexture("farmland_old", 0.3);
+				Chunk::AddTexture("farmland wet", 0.5f);
 				Chunk::AddTexture("brick", 0.58);
 				Chunk::AddTexture("forest ground", 0.4);
 				Chunk::AddTexture("nether bricks MC", 0.2);
 				Chunk::AddTexture("log_sides", 0.58);
 				Chunk::AddTexture("log_top", 0.58);
-				Chunk::AddTexture("farmland_stratum", 0.3);
+				Chunk::AddTexture("farmland", 0.5f);
 				Chunk::AddTexture("netherrack", 0.58);
 				Chunk::AddTexture("cobblestone", 0.1);
 				Chunk::AddTexture("snow", 0.4);
@@ -132,7 +133,7 @@ namespace iTrace {
 				Chunk::AddTexture("coal block", 0.75);
 				Chunk::AddTexture("wet stones", 0.0625);
 				Chunk::AddTexture("sandstone", 0.3);
-				Chunk::AddTexture("gravel", 0.4);
+				Chunk::AddTexture("gravel", 0.2);
 				Chunk::AddTexture("polished wood", 0.0325);
 				Chunk::AddTexture("jungle ground", 0.25);
 				Chunk::AddTexture("leaves", 0.0);
@@ -141,13 +142,14 @@ namespace iTrace {
 				Chunk::AddTexture("Jelly", 0.125);
 				Chunk::AddTexture("Gold block", 0.0625);
 				Chunk::AddTexture("Hop", 0.25);
-				Chunk::AddTexture("Diamond block MC", 0.25);
+				Chunk::AddTexture("Diamond block MC", 0.65);
 				Chunk::AddTexture("Metal", 0.125);
 				Chunk::AddTexture("Green glass", 0.125);
 				Chunk::AddTexture("red glass RTX", 0.125);
 				Chunk::AddTexture("blue glass RTX", 0.125);
 				Chunk::AddTexture("red concrete RTX", 0.125);
 				Chunk::AddTexture("blue concrete RTX", 0.125);
+				Chunk::AddTexture("Wheat", 0.0);
 
 
 				Chunk::GetTextureArrayList(0);
@@ -210,7 +212,7 @@ namespace iTrace {
 							Vector2i ChunkPos = Vector2i(0);
 							auto BlockIdx = GetBlock(Location, &ChunkPos);
 
-							if (Chunk::GetBlock(BlockIdx).IsEmissive && BlockIdx != 0) {
+							if (Chunk::GetBlock(BlockIdx).IsEmissive && BlockIdx > 0 && BlockIdx < Chunk::GetBlockSize()) {
 
 								Vector3i SubPosition = Location % 128;
 

@@ -24,6 +24,7 @@ layout(location = 3) out vec4 IndirectSpecular;
 layout(location = 4) out vec3 Direct;
 layout(location = 5) out vec4 Detail;
 layout(location = 6) out float ShCg; 
+layout(location = 7) out vec4 PackedSpatialData; 
 
 
 uniform sampler2D Normals;
@@ -190,7 +191,7 @@ vec3 DirectHQ(vec3 Position, float Penumbra, vec2 ScreenPos, float SmoothNess) {
 
 	vec3 Shadow = vec3(0.0); 
 
-	float Noise = hash(ivec2(ScreenPos),0,12) * 2.4; 
+	float Noise = hash(ivec2(ScreenPos),FrameCount/4,12) * 2.4; 
 
 
 	for(int Sample = 0; Sample < 8; Sample++) {
@@ -743,15 +744,16 @@ float LinearDepth(float z)
 } 
 
 
-float ScreenSpaceTraceShadows(vec3 Origin, vec3 Direction, float MaxTraversal, int Steps) {
+float ScreenSpaceTraceShadows(vec3 Origin, vec3 Direction, float MaxTraversal, int Steps, float Hash) {
 
-	vec4 PreviousClip = CameraMatrix * vec4(Origin, 1.0); 
+	vec3 Step = (Direction * MaxTraversal) / float(Steps); 
+	vec3 Pos = Origin + Step * Hash; 
+	vec4 PreviousClip = CameraMatrix * vec4(Pos, 1.0); 
 	PreviousClip.xyz /= PreviousClip.w; 
 	if(abs(PreviousClip.x) > 1 || abs(PreviousClip.y) > 1 || abs(PreviousClip.z) > 1) 
 			return 1.0; 
 	PreviousClip.xyz = PreviousClip.xyz * 0.5 + 0.5; 
-	vec3 Pos = Origin; 
-	vec3 Step = (Direction * MaxTraversal) / float(Steps); 
+	
 
 	float LinPrev = LinearDepth(PreviousClip.z); 
 
@@ -777,7 +779,7 @@ float ScreenSpaceTraceShadows(vec3 Origin, vec3 Direction, float MaxTraversal, i
 
 		float LinCur = LinearDepth(CurrentClip.z); 
 
-		if(CurrentClip.z > zFetch && abs(LinearDepth(zFetch)-LinCur) < max(10.0 * abs(LinCur-LinPrev),0.1)) {
+		if(CurrentClip.z > zFetch && abs(LinearDepth(zFetch)-LinCur) < max(2.0 * abs(LinCur-LinPrev),0.1)) {
 			return pow(float(i)/float(Steps),5); 
 		}
 		LinPrev = LinCur;  
@@ -1050,7 +1052,7 @@ vec3 GetSpecularRayDirection(vec3 RawDirection, vec3 Normal, vec3 Incident, floa
 
 	for(int Try = 0; Try < 3; Try++) {
 		
-		vec2 Xi = hash2(Pixel,FrameCount,Try+3) * vec2(1.0, 0.2); 
+		vec2 Xi = hash2(Pixel,FrameCount / 4,Try+3) * vec2(1.0, 0.2); 
 
 		vec3 rho = ImportanceGGX(Xi, clamp(sqrt(Roughness), 0.001f, 1.0f)); 
 
@@ -1105,6 +1107,10 @@ vec2 IrridianceToSH(vec3 Radiance, vec3 Direction) {
 	return vec2(Co, Cg); 
 }
 
+vec4 PackData(vec3 Normal, float Roughness, float Depth) {
+	return vec4(Normal * ((1.0-Roughness)*0.5+0.5), Depth); 
+}
+
 void main() {
 
 	Rand_Seed = (TexCoord.x * TexCoord.y) * 500.0 * 20.0;
@@ -1156,7 +1162,7 @@ void main() {
 	Incident /= IncidentLength; 
 
 	Direct.xyz = DirectHQ(WorldPos,max(Penum,0.007),vec2(Pixel) / 2, SmoothNessFactor) * DirectDensity; 
-//	Direct.xyz *= ScreenSpaceTraceShadows(WorldPos + Normal.xyz * mix(0.01,0.1,clamp(IncidentLength/30.0,0.0,1.0)), normalize(LightDirection), 0.3,9) * DirectDensity; 
+	Direct.xyz *= ScreenSpaceTraceShadows(WorldPos + Normal.xyz * mix(0.01,0.1,clamp(IncidentLength/30.0,0.0,1.0)), normalize(LightDirection), 0.75,20, hash(Pixel / 2, FrameCount / 4,32)); 
 
 
 
@@ -1217,5 +1223,7 @@ void main() {
 	vec2 RawTC = vec2(Pixel) / vec2(textureSize(TCData, 0).xy); 
 
 	//Direct.xyz = pow(texelFetch(DirectionalCascadesRaw[0], ivec2(RawTC * textureSize(DirectionalCascadesRaw[0],0)),0).xxx,vec3(1000.0)); 
+
+	PackedSpatialData = PackData(Normal.xyz, LowFrequencyNormal.w, LinearDepth(texelFetch(Depth, Pixel, 0).x)); 
 
 }

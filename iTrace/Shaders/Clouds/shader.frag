@@ -61,7 +61,7 @@ const float PlanetRadius = 6573;
 const float AtmosphereRadius = 7773; 
 const float Size = AtmosphereRadius - PlanetRadius; 
 const int Steps = 12; 
-const int LightSteps = 8; 
+const int LightSteps = 6; 
 const float Epsilon = 1e-4; 
 
 //Cloud properties 

@@ -131,7 +131,7 @@ namespace iTrace {
 
 				// Calculate and return the final color.
 
-				Result.WithMie = iSun * (pRlh * kRlh * totalRlh + 3.0f * mix(vec3(1, 0.721568627, 0.0745098039),vec3(1),0.0f) * pow(pMie / 3.0f, 1.0f) * 3.0f * kMie * totalMie);
+				Result.WithMie = iSun * (pRlh * kRlh * totalRlh + 3.0f * mix(vec3(1, 0.721568627, 0.0745098039),vec3(1),0.55f) * pow(pMie / 3.0f, 1.0f) * 3.0f * kMie * totalMie);
 				Result.WithoutMie = iSun * (pRlh * kRlh * totalRlh);
 
 				return Result;

@@ -81,6 +81,27 @@ namespace iTrace {
 				Vector2f(0.,1.),
 			};
 
+			const Vector3f _BlockNormals[6] = {
+				Vector3f(0.0,0.0,1.0),
+				Vector3f(0.0,0.0,-1.0),
+				Vector3f(1.0,0.0,0.0),
+				Vector3f(-1.0,0.0,0.0),
+				Vector3f(0.0,1.0,0.0),
+				Vector3f(0.0,-1.0,0.0)
+			}; 
+
+			const Vector3f _BlockTangents[6] = {
+				Vector3f(-1.0,0.0,0.0),
+				Vector3f(1.0,0.0,0.0),
+				Vector3f(0.0,0.0,1.0),
+				Vector3f(0.0,0.0,-1.0),
+				Vector3f(1.0,0.0,0.0),
+				Vector3f(1.0,0.0,0.0)
+			}; 
+
+
+
+
 			Vector3f GetTexCoord(int ind, int BlockType) {
 
 				return Vector3f(BlockUVS[ind], BlockType);
@@ -399,233 +420,6 @@ namespace iTrace {
 
 				//UpdateMeshData(NeighbooringChunks);
 
-
-			}
-
-			void Chunk::UpdateMeshData(std::vector<Chunk*> NeighbooringChunks)
-			{
-
-				std::vector<Vector4f> Tris;
-				std::vector<Vector3f> TexCoord;
-
-				std::vector<unsigned int> Indicies;
-
-				//for (auto& El : Mask) El = BlockMask();
-
-				auto VisibleFaces = std::vector<BlockMask>(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, BlockMask());
-				auto VisibleDiscardedFaces = VisibleFaces;
-
-
-				int Indicie = 0;
-
-				auto GetBlock = [&](Vector3i BlockPosition) {
-
-					if (BlockPosition.x >= 0 && BlockPosition.x < CHUNK_SIZE &&
-						BlockPosition.y >= 0 && BlockPosition.y < CHUNK_SIZE &&
-						BlockPosition.z >= 0 && BlockPosition.z < CHUNK_SIZE) {
-
-
-						return Types[Blocks[BlockPosition.x * CHUNK_SIZE * CHUNK_SIZE + BlockPosition.y * CHUNK_SIZE + BlockPosition.z]];
-
-
-					}
-
-					return Types[0];
-
-				};
-
-				auto GetIndex = [](Vector3i Position) {
-
-					return Position.x * CHUNK_SIZE * CHUNK_SIZE + Position.y * CHUNK_SIZE + Position.z;
-
-				};
-
-				const int Dimensions[3] = {
-					0,2,1
-				};
-
-				const Vector3i DimensionX[3] = {
-
-					Vector3i(1,0,0),
-					Vector3i(0,0,1),
-					Vector3i(1,0,0)
-
-				};
-
-				const Vector3i DimensionY[3] = {
-
-					Vector3i(0,1,0),
-					Vector3i(0,1,0),
-					Vector3i(0,0,1)
-
-				};
-
-				for (unsigned short x = 0; x < CHUNK_SIZE; x++) {
-					for (unsigned short y = 0; y < CHUNK_SIZE; y++) {
-						for (unsigned short z = 0; z < CHUNK_SIZE; z++) {
-
-							unsigned char BlockIdx = Blocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z];
-							auto& Block = Types[BlockIdx];
-
-
-							if (!Block.IsNone) {
-
-
-								bool VisibleSides[6] = {
-
-									!GetBlock(Vector3i(x, y, z + 1)).IsSolid,
-									!GetBlock(Vector3i(x, y, z - 1)).IsSolid,
-									!GetBlock(Vector3i(x + 1, y, z)).IsSolid,
-									!GetBlock(Vector3i(x - 1, y, z)).IsSolid,
-									!GetBlock(Vector3i(x, y + 1, z)).IsSolid,
-									!GetBlock(Vector3i(x, y - 1, z)).IsSolid
-
-								};
-
-								for (int i = 0; i < 6; i++)
-									VisibleFaces[GetIndex(Vector3i(x, y, z))].SetMask(i, VisibleSides[i]);
-
-
-
-
-
-
-							}
-						}
-					}
-				}
-
-				int TriangleCountSaved = 0; 
-				int TotalTriangles = 0; 
-
-
-				for (unsigned short x = 0; x < CHUNK_SIZE; x++) {
-					for (unsigned short y = 0; y < CHUNK_SIZE; y++) {
-						for (unsigned short z = 0; z < CHUNK_SIZE; z++) {
-
-							auto CurrentVisibleFaces = VisibleFaces[GetIndex(Vector3i(x, y, z))];
-							auto& CurrentVisibleCulled = VisibleDiscardedFaces[GetIndex(Vector3i(x, y, z))];
-
-							unsigned char BlockIdx = Blocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z];
-							auto& Block = Types[BlockIdx];
-
-							if (!Block.IsNone) {
-
-								for (int i = 0; i < 6; i++) {
-
-									//has this already been greedily excluded ? 
-
-
-									if (CurrentVisibleFaces.GetMask(i) && !CurrentVisibleCulled.GetMask(i)) {
-
-										Vector2i BestGreedyRect = Vector2i(1, 1);
-
-										int Furthest = MAX_GREEDY;
-
-										for (int Greedyy = 0; Greedyy < MAX_GREEDY; Greedyy++) {
-
-											for (int Greedyx = 0; Greedyx < Furthest; Greedyx++) {
-
-												Vector3i NewCoordinate = Vector3i(x, y, z) + Greedyx * DimensionX[i / 2] + Greedyy * DimensionY[i / 2];
-
-												if (NewCoordinate.x >= CHUNK_SIZE || NewCoordinate.y >= CHUNK_SIZE || NewCoordinate.z >= CHUNK_SIZE) {
-													Furthest = Greedyx;
-													break;
-												}
-
-												if (this->GetBlock(NewCoordinate.x, NewCoordinate.y, NewCoordinate.z) != BlockIdx || !VisibleFaces[GetIndex(NewCoordinate)].GetMask(i) || VisibleDiscardedFaces[GetIndex(NewCoordinate)].GetMask(i)) {
-													Furthest = Greedyx;
-													break;
-												}
-
-												Vector2i CurrentGreedyRect = Vector2i(Greedyx, Greedyy) + Vector2i(1);
-
-												if (CurrentGreedyRect.x * CurrentGreedyRect.y > BestGreedyRect.x* BestGreedyRect.y) {
-													BestGreedyRect = CurrentGreedyRect;
-												}
-
-
-											}
-
-										}
-
-										//iterate over the largest greedy rect ! 
-
-										for (int rectX = 0; rectX < BestGreedyRect.x; rectX++) {
-
-											for (int rectY = 0; rectY < BestGreedyRect.y; rectY++) {
-
-												Vector3i NewCoordinate = Vector3i(x, y, z) + rectX * DimensionX[i / 2] + rectY * DimensionY[i / 2];
-
-												VisibleDiscardedFaces[GetIndex(NewCoordinate)].SetMask(i, true);
-
-
-
-											}
-
-										}
-
-
-
-
-										TriangleCountSaved += (BestGreedyRect.x * BestGreedyRect.y) - 1; 
-										TotalTriangles += (BestGreedyRect.x * BestGreedyRect.y);
-
-										Vector3f TriangleSize = Vector3i(1.0) + (BestGreedyRect.x - 1) * DimensionX[i / 2] + (BestGreedyRect.y - 1) * DimensionY[i / 2];
-										Vector2f TexCoordSize = Vector2f(BestGreedyRect); 
-										Vector3f ActualTexCoordSize = Vector3f(TexCoordSize, 1.0); 
-
-
-
-										//triangle one
-										Tris.push_back(Vector4f(BlockVertices[i * 4] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4, BlockIdx) * ActualTexCoordSize);
-										Tris.push_back(Vector4f(BlockVertices[i * 4 + 1] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 1, BlockIdx) * ActualTexCoordSize);
-										Tris.push_back(Vector4f(BlockVertices[i * 4 + 2] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 2, BlockIdx) * ActualTexCoordSize);
-
-										//triangle two
-										Tris.push_back(Vector4f(BlockVertices[i * 4 + 2] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 2, BlockIdx) * ActualTexCoordSize);
-										Tris.push_back(Vector4f(BlockVertices[i * 4 + 3] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 3, BlockIdx) * ActualTexCoordSize);
-										Tris.push_back(Vector4f(BlockVertices[i * 4] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4, BlockIdx) * ActualTexCoordSize);
-										Indicies.push_back(Indicie++);
-
-									}
-								}
-
-
-
-							}
-						}
-					}
-				}
-
-
-				Vertices = Tris.size();
-
-				glBindVertexArray(ChunkVAOID);
-
-				glBindBuffer(GL_ARRAY_BUFFER, ChunkVBOID[1]);
-				glBufferData(GL_ARRAY_BUFFER, sizeof(Tris[0]) * Tris.size(), Tris.data(), GL_STATIC_DRAW);
-				glEnableVertexAttribArray(0);
-				glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
-				glBindBuffer(GL_ARRAY_BUFFER, ChunkVBOID[2]);
-				glBufferData(GL_ARRAY_BUFFER, sizeof(TexCoord[0]) * TexCoord.size(), TexCoord.data(), GL_STATIC_DRAW);
-				glEnableVertexAttribArray(1);
-				glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ChunkVBOID[0]);
-				glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indicies[0]) * Indicies.size(), Indicies.data(), GL_STATIC_DRAW);
-
-				glBindVertexArray(0);
-
-				//construct correct AC structure for the voxels! 
-
-				
-
-				UpdateTextureData(); 
-
-				std::cout << "Saved triangles: " << TriangleCountSaved * 2 << '\n'; 
-				std::cout << "Total triangles: " << TotalTriangles * 2 << '\n';
 
 			}
 
@@ -1023,7 +817,6 @@ namespace iTrace {
 				return Line1 + "\n" + Line2 + "\n#define HAS_INJECTION"; 
 
 			}
-
 
 			void Chunk::SetBlock(unsigned char x, unsigned char y, unsigned char z, unsigned char type)
 			{

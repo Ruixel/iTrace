@@ -134,7 +134,7 @@ namespace iTrace {
 
 			float vec = (CurrentFocusPoint - FocusPoint); 
 
-			vec = glm::sign(vec) * glm::min(glm::abs(vec), 3.0f); 
+			vec = glm::sign(vec) * 8.0 * sqrt(glm::min(glm::abs(vec), 1.0f)); 
 
 
 			FocusPoint = FocusPoint + vec * glm::min(Window.GetFrameTime(),1.0f);

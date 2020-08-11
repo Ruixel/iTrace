@@ -8,6 +8,7 @@
 #include <array>
 #include "SoundReflectivity.h"
 #include "Frustum.h"
+#include "BlockModels.h"
 #include <iostream>
 /*
 
@@ -85,11 +86,12 @@ namespace iTrace {
 				bool IsMetallic = false; 
 				float EmissiveStrength = 0.0; 
 				BLOCK_RENDER_TYPE RenderType = BLOCK_RENDER_TYPE::OPAQUE; 
+				BLOCK_MODEL Model = BLOCK_MODEL::BASE; 
 
 				SoundType SoundMaterialType = SoundType::NONE; 
 
 				BlockType() {}
-				BlockType(std::string Name, std::vector<unsigned char> TexIds, bool IsSolid, bool IsEmpty, bool IsNone, SoundType SoundMaterialType, float EmissiveStrength=0.0, BLOCK_RENDER_TYPE RenderType = BLOCK_RENDER_TYPE::OPAQUE) : 
+				BlockType(std::string Name, std::vector<unsigned char> TexIds, bool IsSolid, bool IsEmpty, bool IsNone, SoundType SoundMaterialType, float EmissiveStrength=0.0, BLOCK_RENDER_TYPE RenderType = BLOCK_RENDER_TYPE::OPAQUE, BLOCK_MODEL Model = BLOCK_MODEL::BASE) :
 					Name(Name),
 					
 					IsSolid(IsSolid),
@@ -98,7 +100,8 @@ namespace iTrace {
 					EmissiveStrength(EmissiveStrength),
 					IsEmissive(EmissiveStrength>0.1),
 					RenderType(RenderType),
-					SoundMaterialType(SoundMaterialType)
+					SoundMaterialType(SoundMaterialType),
+					Model(Model)
 				{
 					for (int i = 0; i < 6; i++) {
 						this->TexIds[i] = TexIds[glm::min(i, (int)(TexIds.size() - 1))]; 
@@ -142,7 +145,7 @@ namespace iTrace {
 
 			struct ChunkMeshData {
 
-				unsigned int ChunkVAOs[4][4], ChunkVBOs[4][4][3]; 
+				unsigned int ChunkVAOs[4][4], ChunkVBOs[4][4][5]; 
 				unsigned int Vertices[4][4]; 
 
 				void Create() {
@@ -150,7 +153,7 @@ namespace iTrace {
 						for (int y = 0; y < 4; y++) {
 							glGenVertexArrays(1, &ChunkVAOs[x][y]); 
 							glBindVertexArray(ChunkVAOs[x][y]); 
-							glGenBuffers(3, ChunkVBOs[x][y]); 
+							glGenBuffers(5, ChunkVBOs[x][y]); 
 						}
 					}
 					glBindVertexArray(0);
@@ -160,7 +163,7 @@ namespace iTrace {
 					for (int x = 0; x < 4; x++) {
 						for (int y = 0; y < 4; y++) {
 							glBindVertexArray(ChunkVAOs[x][y]); 
-							glDeleteBuffers(3, ChunkVBOs[x][y]); 
+							glDeleteBuffers(5, ChunkVBOs[x][y]); 
 							glDeleteVertexArrays(1, &ChunkVAOs[x][y]); 
 						}
 					}
@@ -211,7 +214,6 @@ namespace iTrace {
 				void DrawTransparent(Shader& RenderToShader, Camera& Camera);
 				void DrawRefractive(Shader& RenderToShader, Camera& Camera); 
 				void Generate(std::vector<Chunk*> NeighbooringChunks);
-				void UpdateMeshData(std::vector<Chunk*> NeighbooringChunks); 
 				void UpdateMeshData(std::vector<Chunk*> NeighbooringChunks,int SubX, int SubY, BLOCK_RENDER_TYPE RenderType);
 				void UpdateAllMeshData(std::vector<Chunk*> NeighbooringChunks, BLOCK_RENDER_TYPE RenderType);
 				void UpdateMeshDataSpecificBlock(std::vector<Chunk*> NeighbooringChunks, Vector3i BlockPos, BLOCK_RENDER_TYPE RenderType);

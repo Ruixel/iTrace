@@ -62,7 +62,7 @@ float WeightNew(float Luminance, float LuminanceCenter,
 
 	float FavorMixer = clamp((FrameCount-6.0)/4.0,0.0,1.0); 
 
-	phiIndirect = mix(1000.0, phiIndirect, FavorMixer); 
+	phiIndirect = mix(10.0, phiIndirect, FavorMixer); 
 	
 	float WeightFactor = mix(0.5,6.0,Facing); 
 	WeightFactor = 0.5; 
@@ -113,7 +113,7 @@ float NewWeightSpecular(vec3 Normal, vec3 NormalCenter,
 
 	TraversalWeight = mix(1.0, TraversalWeight, TraversalFactor); 
 
-	float LuminanceWeight = 0.2 * abs(Lum-LumCenter); 
+	float LuminanceWeight = 1.0 * abs(Lum-LumCenter); 
 
 	LuminanceWeight = mix( 0.0,LuminanceWeight, pow(1.0-min(Roughness,CenterRoughness),3.0)); 
 
@@ -129,11 +129,11 @@ float NewNewWeightSpecular(vec3 Normal, vec3 NormalCenter,
 				float Roughness, float CenterRoughness,
 				float distanceSqr, 
 				float Lum, float LumCenter) {
-	float WeightFactor = mix(0.5,6.0,Facing); 
+	float WeightFactor = mix(0.5,6.0,abs(Facing)); 
 	
-	float DepthWeight = 1.0 / pow(1.0 + WeightFactor * (abs(Depth - DepthCenter) / min(clamp(Depth, 0.1,DepthCenter),1.0)), 3.0); 
+	float DepthWeight = 1.0 / pow(1.0 + WeightFactor*(abs(Depth - DepthCenter)), 3.0); 
 	float NormalWeight = pow(max(dot(Normal.xyz, NormalCenter.xyz), 0.0), 15.0); 
-	float RoughnessDiffWeight = 1.0 / pow(1.0 + 50.0 * abs(Roughness - CenterRoughness), 2.0);
+	float RoughnessDiffWeight = 1.0 / pow(1.0 + 50.0 * abs(Roughness - CenterRoughness), 3.0);
 	float RoughnessSqrWeight = 1.0 / (1.0 + 0.25*(1.0-min(Roughness, CenterRoughness)) * distanceSqr); 
 	float TraversalFactor = sin(0.785398163 * Roughness) * max(Traversal, TraversalCenter); 
 
@@ -152,7 +152,7 @@ float NewNewWeightSpecular(vec3 Normal, vec3 NormalCenter,
 	float LuminanceWeight = 0.1 * abs(Lum-LumCenter); 
 
 	LuminanceWeight = mix( 0.0,LuminanceWeight, pow(1.0-min(2.0*Roughness*min(TraversalCenter, Traversal),1.0),2.0)); 
-
+	
 	return max(DepthWeight * NormalWeight * RoughnessDiffWeight * RoughnessSqrWeight* TraversalWeight - LuminanceWeight,0.0); 
 
 } 
@@ -170,7 +170,7 @@ void main() {
 	
 	ivec2 HighResPixel = CheckerPixel * 2 + States[SubFrame];
 
-	vec4 BasePacked = texelFetch(InputPacked, HighResPixel, 0); 
+	vec4 BasePacked = texelFetch(InputPacked, Pixel, 0); 
 
 	float TotalWeight = 1.0; 
 	float TotalWeightAO = TotalWeight; 
@@ -202,28 +202,31 @@ void main() {
 
 	float BaseRoughness = GetRoughness(BasePacked.xyz); 
 	
-	vec2 NewTexCoord = HighResPixel / vec2(textureSize(InputPacked,0).xy); 
+	vec2 NewTexCoord = HighResPixel / vec2(textureSize(InputPacked,0).xy * vec2(4,2)); 
 
 	vec3 Direction = normalize(vec3(IncidentMatrix * vec4(NewTexCoord * 2.0 - 1.0, 1.0, 1.0)));
-	
+	float Facing = abs(dot(BasePacked.xyz, Direction)); 
+
+	vec4 BaseDetail = texelFetch(Detail, Pixel, 0); 
+
 	if(!DoSpatial ) {
 		SHy /= TotalWeight; 
 		IndirectSpecularCo /= TotalWeightSpecular; 
+		//IndirectSpecularCo.xyz = vec3(Facing); 
 		return; 
 	}
 
 	//construct variance estimate -> 
 
-	vec4 BaseDetail = texelFetch(Detail, Pixel, 0); 
+	
 
 	float Var = abs(BaseDetail.x * BaseDetail.x - BaseDetail.z); 
 
 	float phiIndirect = sqrt(max(0.0, 1e-10+Var)); 
 
-	float Facing = abs(dot(BasePacked.xyz, Direction)); 
-
-
-	for(int x = -2; x <= 2; x++) {
+	phiIndirect = phiIndirect / (StepSize > 1 ? 0.5 : 1.0); 
+	
+	for(int x = -1; x <= 1; x++) {
 		for(int y = -2; y <= 2; y++) {
 			
 			if(x == 0 && y == 0)  
@@ -238,7 +241,7 @@ void main() {
 
 			vec4 CurrentDetail = texelFetch(Detail, NewPixel, 0); 
 
-			vec4 CurrentPackedData = texelFetch(InputPacked, NewPixelHighRes, 0); 
+			vec4 CurrentPackedData = texelFetch(InputPacked, NewPixel, 0); 
 
 			float CurrentRoughness = GetRoughness(CurrentPackedData.xyz); 
 
@@ -272,7 +275,7 @@ void main() {
 												distSqr, 
 												Luminance(SpecularLightingSampleCo.xyz), Luminance(BaseIndirectSpecular.xyz)); 
 
-								
+					
 
 			float BaseKernelWeight = Kernel[3-abs(x)] * Kernel[3-abs(y)]; 
 			float KernelWeight = BaseKernelWeight; 

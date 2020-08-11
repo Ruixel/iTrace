@@ -145,6 +145,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AtmosphereRenderer.h" />
+    <ClInclude Include="BlockModels.h" />
     <ClInclude Include="BooleanCommands.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CausticBaker.h" />
@@ -155,6 +156,7 @@
     <ClInclude Include="Compositor.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="CrosshairDrawer.h" />
+    <ClInclude Include="CustomBlockModel.h" />
     <ClInclude Include="DeferredDrawer.h" />
     <ClInclude Include="DependenciesMath.h" />
     <ClInclude Include="DependenciesRendering.h" />
@@ -187,6 +189,7 @@
     <ClInclude Include="WorldManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BlockModels.cpp" />
     <ClCompile Include="BooleanCommands.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CausticBaker.cpp" />
@@ -197,6 +200,7 @@
     <ClCompile Include="Compositor.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="CrosshairDrawer.cpp" />
+    <ClCompile Include="CustomBlockModel.cpp" />
     <ClCompile Include="DeferredDrawer.cpp" />
     <ClCompile Include="FootstepManager.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />

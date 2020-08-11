@@ -207,6 +207,8 @@ void iTrace::Rendering::MultiPassFrameBufferObject::UnBind(Window Window) {
 
 void iTrace::Rendering::MultiPassFrameBufferObject::UnBind()
 {
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, NULL);
 	if (GenerateMip) {
 		glBindTexture(GL_TEXTURE_2D, DepthBuffer);
 		glGenerateMipmap(GL_TEXTURE_2D);
@@ -223,7 +225,6 @@ void iTrace::Rendering::MultiPassFrameBufferObject::UnBind()
 
 		glBindTexture(GL_TEXTURE_2D, NULL);
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, NULL);
 }
 
 unsigned int PPQuadVBO, PPQuadVAO, PPCubeVBO, PPCubeVAO, WaterVAO, WaterVBO, PlayerVAO, PlayerVBO;

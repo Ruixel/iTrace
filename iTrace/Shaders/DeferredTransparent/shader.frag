@@ -44,7 +44,7 @@ void main() {
 
 	float Opacity = texture(OpacityTextures, vec3(TC, TextureIdx-1)).x; 
 
-	if(Opacity < 0.95) 
+	if(Opacity < 0.1) 
 		discard; 
 
 	TexCoordSideBlockType.xy = fract(TexCoord.xy); 

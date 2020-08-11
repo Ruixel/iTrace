@@ -351,6 +351,12 @@
     <ClInclude Include="ViewBob.h">
       <Filter>Header Files\World</Filter>
     </ClInclude>
+    <ClInclude Include="CustomBlockModel.h">
+      <Filter>Header Files\World</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockModels.h">
+      <Filter>Header Files\World</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">
@@ -462,6 +468,12 @@
       <Filter>Source Files\Baker</Filter>
     </ClCompile>
     <ClCompile Include="ViewBob.cpp">
+      <Filter>Source Files\World</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomBlockModel.cpp">
+      <Filter>Source Files\World</Filter>
+    </ClCompile>
+    <ClCompile Include="BlockModels.cpp">
       <Filter>Source Files\World</Filter>
     </ClCompile>
   </ItemGroup>

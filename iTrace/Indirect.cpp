@@ -26,7 +26,7 @@ namespace iTrace {
 			Vector2i CheckerBoardedResolution = Vector2i(Window.GetResolution()) / Vector2i(8, 4); 
 			
 			for (int x = 0; x < 4; x++) {
-				RawPathTrace[x] = MultiPassFrameBufferObject(CheckerBoardedResolution, 7, { GL_RGBA16F, GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_RGB16F,GL_RGBA16F, GL_R16F }, false);
+				RawPathTrace[x] = MultiPassFrameBufferObject(CheckerBoardedResolution, 8, { GL_RGBA16F, GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_RGB16F,GL_RGBA16F, GL_R16F,GL_RGBA16F }, false);
 				MotionVectors[x] = FrameBufferObject(Window.GetResolution() / 2, GL_RGB16F, false);
 				SpatialyFiltered[x] = MultiPassFrameBufferObject(CheckerBoardedResolution, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 				VolumetricFBO[x] = FrameBufferObject(CheckerBoardedResolution, GL_RGBA16F, false);
@@ -321,6 +321,8 @@ namespace iTrace {
 			
 			PackedSpatialData.BindImage(2);
 
+			RawPathTrace[Window.GetFrameCount() % 4].BindImage(7, 2); 
+
 			MotionVectors[Window.GetFrameCount() % 4].BindImage(3);
 			TemporalFrameCount.BindImage(4);
 
@@ -345,6 +347,8 @@ namespace iTrace {
 			SpatialFilter.SetUniform("CheckerStep", (Window.GetFrameCount() / 4) % 2);
 
 			PackedSpatialData.BindImage(0);
+			RawPathTrace[Window.GetFrameCount() % 4].BindImage(7, 0);
+
 			RawPathTrace[Window.GetFrameCount() % 4].BindImage(0, 1); 
 			TemporalFrameCount.BindImage(2);
 			RawPathTrace[Window.GetFrameCount() % 4].BindImage(3, 3);
@@ -621,6 +625,7 @@ namespace iTrace {
 			//RawPathTrace[Window.GetFrameCount() % 4].BindImage(4, 4); 
 			Clouds[Window.GetFrameCount() % 4].BindImage(1, 5);
 			PackedSpatialData.BindImage(6);
+			RawPathTrace[Window.GetFrameCount() % 4].BindImage(7, 6); 
 
 			DrawPostProcessQuad(); 
 
@@ -730,6 +735,7 @@ namespace iTrace {
 			IndirectLightShader.Reload("Shaders/RawPathTracing", Chunk::GetInjectionCode());
 			TemporalUpscaler.Reload("Shaders/TemporalUpscaler");
 			SpatialFilter.Reload("Shaders/SpatialFilter");
+			SpatialFilterFinal.Reload("Shaders/SpatialFilter", std::string("#define SPATIAL_FINAL"));
 			SpatialUpscaler.Reload("Shaders/SpatialUpscaler");
 			TemporalFilter.Reload("Shaders/TemporalFilter");
 			RTMotionVectorCalculator.Reload("Shaders/RTMotionVectors");
