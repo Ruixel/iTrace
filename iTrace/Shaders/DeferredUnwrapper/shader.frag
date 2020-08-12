@@ -264,7 +264,9 @@ void main() {
 	uint BlockType = uint(RawTCData.z+.5); 
 	uint BlockSide = uint(RawTCData.w+.5); 
 
-	Normal.xyz = texture(InNormal, TexCoord).xyz; 
+	vec4 RawNormalFetch = texture(InNormal, TexCoord); 
+
+	Normal.xyz = RawNormalFetch.xyz; 
 	Normal.w = 0.0; 
 	vec3 Tangent = texture(InTangent, TexCoord).xyz; 
 
@@ -285,10 +287,10 @@ void main() {
 	
 	vec3 BetterWorldPos = WorldPos; 
 
+	float QueriedLod = RawNormalFetch.w; 
 	if(TextureExData.x != 0 && DoParallax)  {
 
-		float lod = textureQueryLod(DiffuseTextures, TC.xy).x; 
-		lod = 0.0; 
+		float lod = QueriedLod; 
 		
 
 		vec3 IncidentProjected; 
@@ -308,15 +310,16 @@ void main() {
 
 		BetterWorldPos = BetterWorldPos + Incident * Traversal; 
 
-		Albedo.xyz = pow(texture(DiffuseTextures, vec3(TC,TextureIdx)).xyz,vec3(2.2));
-		
+		Albedo.xyz = pow(textureBicubic(DiffuseTextures,TC,TextureIdx).xyz,vec3(2.2));
+		Albedo.xyz = pow(textureLod(DiffuseTextures, vec3(TC,TextureIdx),QueriedLod).xyz,vec3(2.2));
+
 		ParallaxData = vec4(float(BlockSide), float(TextureExData.x),lod, Traversal); 
 
 	}
 	else {
 		//todo: add setting for bicubic interpolation for albedo 
 		Albedo.xyz = pow(textureBicubic(DiffuseTextures, TC.xy,TextureIdx).xyz,vec3(2.2));
-		Albedo.xyz = pow(texture(DiffuseTextures, vec3(TC.xy, TextureIdx)).xyz,vec3(2.2));
+		Albedo.xyz = pow(textureLod(DiffuseTextures, vec3(TC.xy, TextureIdx),QueriedLod).xyz,vec3(2.2));
 	}
 	//Albedo.w = 0.0; 
 
@@ -324,14 +327,14 @@ void main() {
 
 	
 	if(TextureExData.y != 0) {
-		HighFreqNormal.w = textureLod(EmissiveTextures, vec3(TC.xy, TextureExData.y-1),0.0).x * texelFetch(BlockData, int(BlockType),0).x; 
+		HighFreqNormal.w = textureLod(EmissiveTextures, vec3(TC.xy, TextureExData.y-1),QueriedLod).x * texelFetch(BlockData, int(BlockType),0).x; 
 	}
 
 	if(TextureExData.z != 0) {
-		Albedo.w = textureLod(MetalnessTextures, vec3(TC.xy, TextureExData.z-1),0.0).x; 
+		Albedo.w = textureLod(MetalnessTextures, vec3(TC.xy, TextureExData.z-1),QueriedLod).x; 
 	}
 
-	HighFreqNormal.xyz = normalize(TBN * (normalize(texture(NormalTextures, vec3(TC.xy, TextureIdx)).xyz * 2.0 - 1.0)));
+	HighFreqNormal.xyz = normalize(TBN * (normalize(textureLod(NormalTextures, vec3(TC.xy, TextureIdx),QueriedLod).xyz * 2.0 - 1.0)));
 
 	HighFreqNormal.xyz = normalize(mix(Normal.xyz,HighFreqNormal.xyz,0.5)); 
 
@@ -340,7 +343,7 @@ void main() {
 	//HighFreqNormal.w = 0.0; 
 	SimpleLighting = texture(LightData,(WorldPos.xyz - vec3(PositionBias.x, 0.0, PositionBias.y) + Normal.xyz * .5).zyx / vec3(384.0,128.0,384.0)).xyz; 
 	SimpleLighting = 64.0 * SimpleLighting * SimpleLighting; 
-	Normal.w  = texture(RoughnessTextures, vec3(TC, TextureIdx)).x; 
+	Normal.w  = textureLod(RoughnessTextures, vec3(TC, TextureIdx),QueriedLod).x; 
 		//Normal.w = 0.0; 
 		//HighFreqNormal.xyz = Normal.xyz; 
 

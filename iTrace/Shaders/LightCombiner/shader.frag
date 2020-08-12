@@ -295,6 +295,7 @@ void main() {
 		//	Lighting.xyz = IndirectDiffuse.xyz; 	
 		//Lighting.xyz = Shadow.xyz; 
 	//	Lighting.xyz = HighfreqNormalSample.xyz; 
+
 	}
 	else {
 		vec4 CloudSample = textureBicubic(Clouds, TexCoord); 

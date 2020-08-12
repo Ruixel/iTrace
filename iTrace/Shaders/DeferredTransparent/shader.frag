@@ -1,7 +1,7 @@
-#version 330
+#version 400
 
 layout(location = 0) out vec4 TexCoordSideBlockType; 
-layout(location = 1) out vec3 Normal; 
+layout(location = 1) out vec4 Normal; 
 layout(location = 2) out vec3 Tangent; 
 
 in vec4 Pos; 
@@ -12,6 +12,8 @@ in vec3 InTangent;
 uniform sampler1D TextureData; 
 uniform sampler1D TextureExData; 
 uniform sampler2DArray OpacityTextures; 
+uniform sampler2DArray DiffuseTextures; 
+
 
 int GetTextureIdx(int Type, int Side) {
 	return int(texelFetch(TextureData, Type*2+(Side/3), 0)[Side%3]*255.0+0.5); 
@@ -53,6 +55,7 @@ void main() {
 
 	TexCoordSideBlockType.xy = fract(TexCoord.xy); 
 	TexCoordSideBlockType.zw = vec2(TexCoord.z,Pos.w); 
-	Normal = InNormal; 
+	Normal.xyz = InNormal; 
+	Normal.w = 0.0; 
 	Tangent = InTangent; 
 }

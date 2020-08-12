@@ -22,7 +22,7 @@ namespace iTrace {
 			RefractiveDeferredManager = Shader("Shaders/DeferredRefractive"); 
 			PrimaryRefractiveDeferredManager = Shader("Shaders/PrimaryDeferredRefractive"); 
 			Deferred = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 8, { GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_RGBA16F, GL_R16F,GL_RGBA16F,GL_RGB16F,GL_RGB16F }, false);
-			RawDeferred = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGBA16F, GL_RGB16F, GL_RGB16F });
+			RawDeferred = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGBA16F, GL_RGBA16F, GL_RGB16F });
 			DeferredRefractive = FrameBufferObject(Window.GetResolution(), GL_RGBA8, false); 
 			PrimaryDeferredRefractive = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 3, { GL_RGBA8,GL_RGB16F,GL_RGB16F });
 			TestStoneTexture = LoadTextureGL("Materials/Stone/Albedo.png"); 
@@ -63,6 +63,9 @@ namespace iTrace {
 			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
 			RawDeferred.Bind(); 
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Chunk::GetTextureArrayList(0));
 
 			DeferredManager.Bind();
 
@@ -273,6 +276,12 @@ namespace iTrace {
 
 
 			PrimaryRefractiveDeferredManager.UnBind();
+
+			DeferredManager.Bind(); 
+
+			DeferredManager.SetUniform("DiffuseTextures", 0); 
+
+			DeferredManager.UnBind(); 
 
 
 		}

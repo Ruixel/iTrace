@@ -1,4 +1,4 @@
-#version 330
+#version 400
 layout(location=0) in vec4 RawPos; 
 layout(location=1) in vec3 RawTexCoord;
 layout(location=2) in vec3 Normal;

@@ -192,7 +192,11 @@ namespace iTrace {
 
 			void Chunk::DrawTransparent(Shader& RenderToShader, Camera& Camera)
 			{
+
+				Matrix4f IdentityMatrix = Camera.Project * Camera.View * ModelMatrix; 
+
 				RenderToShader.SetUniform("IdentityMatrix", Camera.Project * Camera.View * ModelMatrix);
+
 				RenderToShader.SetUniform("ModelMatrix", ModelMatrix);
 
 				for (int x = 0; x < 4; x++) {
