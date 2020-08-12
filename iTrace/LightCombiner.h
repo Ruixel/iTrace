@@ -19,6 +19,8 @@ namespace iTrace {
 
 			float FocusPoint = 1.0;
 			float CurrentFocusPoint = 0.0; 
+			float ActualFocusPoint = 1.0; 
+			float PreviousFocusPoint = 1.0; 
 
 			void PrepareLightCombiner(Window& Window); 
 			void CombineLighting(Window& Window, Camera & Camera, LightManager& Indirect, DeferredRenderer& Deferred, SkyRendering& Sky, ParticleSystem & Particles); 

@@ -9,8 +9,8 @@ namespace iTrace {
 
 			std::vector<CustomBlockModel> Models; 
 
-			CustomBlockModelPlane::CustomBlockModelPlane(Vector3f Position, Vector3f Rotation, Vector2f Scale, int Face) : 
-				Position(Position), Rotation(Rotation), Scale(Scale), Face(Face)
+			CustomBlockModelPlane::CustomBlockModelPlane(Vector3f Position, Vector3f Rotation, Vector2f Scale, Vector2f UVScale, int Face) : 
+				Position(Position), Rotation(Rotation), Scale(Scale), UVScale(UVScale), Face(Face)
 			{
 				
 
@@ -19,7 +19,7 @@ namespace iTrace {
 			void CustomBlockModelPlane::AddToModelData(std::vector<Vector3f>& Tangents, std::vector<Vector3f>& Normals, std::vector<Vector3f>& Vertices, std::vector<Vector2f>& UVs)
 			{
 				
-				auto BlockModelDataLocalSpace = std::vector<Vector3f>{
+				auto BlockModelDataUVSpace = std::vector<Vector3f>{
 					Vector3f(0.0,0.0,0.0), 
 					Vector3f(1.0,0.0,0.0),
 					Vector3f(1.0,1.0,0.0),
@@ -27,6 +27,15 @@ namespace iTrace {
 					Vector3f(0.0,1.0,0.0),
 					Vector3f(0.0,0.0,0.0)
 				}; 
+
+				auto BlockModelDataLocalSpace = std::vector<Vector3f>{
+					Vector3f(-0.5,-0.5,0.0),
+					Vector3f(0.5,-0.5,0.0),
+					Vector3f(0.5,0.5,0.0),
+					Vector3f(0.5,0.5,0.0),
+					Vector3f(-0.5,0.5,0.0),
+					Vector3f(-0.5,-0.5,0.0)
+				};
 
 				auto Normal = Vector3f(0.0, 0.0, 1.0); 
 				auto Tangent = Vector3f(0.0, 1.0, 0.0); 
@@ -36,7 +45,7 @@ namespace iTrace {
 
 
 
-				Matrix4f Matrix = Core::ModelMatrix(Position, Rotation, Vector3f(Scale, 1.0f)); 
+				Matrix4f Matrix = Core::ModelMatrix(-Position, Rotation, Vector3f(Scale, 1.0f)); 
 				Matrix3f NormalMatrix = glm::inverse(glm::transpose(Matrix3f(Matrix)));
 				//see: https://computergraphics.stackexchange.com/questions/7570/how-do-i-build-my-tangent-space-matrix
 				Matrix3f TangentMatrix = Matrix3f(Matrix); 
@@ -53,7 +62,7 @@ namespace iTrace {
 				for (int FaceIdx = 0; FaceIdx < 6; FaceIdx++) {
 					Tangents.push_back(Tangent); 
 					Normals.push_back(Normal); 
-					UVs.push_back(Vector2f(BlockModelDataLocalSpace[FaceIdx])); 
+					UVs.push_back(Vector2f(BlockModelDataUVSpace[FaceIdx].x, 1.0-BlockModelDataUVSpace[FaceIdx].y)*UVScale);
 					Vertices.push_back(BlockModelDataWorldSpace[FaceIdx]); 
 				}
 
@@ -107,7 +116,7 @@ namespace iTrace {
 
 			}
 
-			void CustomBlockModel::AddToModelData(std::vector<Vector3f>& Tangents, std::vector<Vector3f>& Normals, std::vector<Vector3f>& Vertices, std::vector<Vector2f>& UVs, std::vector<unsigned int>& Indicies, unsigned int& Index, std::array<int, 6> & ModelIndicies)
+			void CustomBlockModel::AddToModelData(Vector3f OriginShift, std::vector<Vector3f>& Tangents, std::vector<Vector3f>& Normals, std::vector<Vector4f>& Vertices, std::vector<Vector3f>& UVs, std::vector<unsigned int>& Indicies, unsigned int& Index, std::array<int, 6> & ModelIndicies, int BlockIndex)
 			{
 				std::array<bool, 6> Cull; 
 				bool FullyCulled = true; 
@@ -128,18 +137,18 @@ namespace iTrace {
 
 				}
 
-				if (FullyCulled)
-					return; 
+				//if (FullyCulled)
+				//	return; 
 
 				for (int i = 0; i < 7; i++) {
 
 					bool Visible = true; 
-					if (i > 0)
-						Visible = Cull[i - 1]; 
+					//if (i > 0)
+					//	Visible = Cull[i - 1]; 
 
 					auto& ModelData = BlockData[i]; 
 
-					ModelData.AddToModelData(Tangents, Normals, Vertices, UVs, Indicies, Index); 
+					ModelData.AddToModelData(OriginShift, Tangents, Normals, Vertices, UVs, Indicies, Index,BlockIndex); 
 
 				}
 
@@ -155,15 +164,15 @@ namespace iTrace {
 
 			}
 
-			void CustomBlockModelData::AddToModelData(std::vector<Vector3f>& Tangents, std::vector<Vector3f>& Normals, std::vector<Vector3f>& Vertices, std::vector<Vector2f>& UVs, std::vector<unsigned int>& Indicies, unsigned int& Index)
+			void CustomBlockModelData::AddToModelData(Vector3f OriginShift, std::vector<Vector3f>& Tangents, std::vector<Vector3f>& Normals, std::vector<Vector4f>& Vertices, std::vector<Vector3f>& UVs, std::vector<unsigned int>& Indicies, unsigned int& Index, int BlockIndex)
 			{
 
 				for (int VertexIdx = 0; VertexIdx < this->Tangents.size(); VertexIdx++) {
 
 					Tangents.push_back(this->Tangents[VertexIdx]); 
 					Normals.push_back(this->Normals[VertexIdx]);
-					Vertices.push_back(this->Vertices[VertexIdx]);
-					UVs.push_back(this->UVs[VertexIdx]);
+					Vertices.push_back(Vector4f(this->Vertices[VertexIdx] + OriginShift,0));
+					UVs.push_back(Vector3f(this->UVs[VertexIdx], BlockIndex));
 
 					Indicies.push_back(Index++);
 

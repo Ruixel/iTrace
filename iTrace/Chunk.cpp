@@ -99,9 +99,6 @@ namespace iTrace {
 				Vector3f(1.0,0.0,0.0)
 			}; 
 
-
-
-
 			Vector3f GetTexCoord(int ind, int BlockType) {
 
 				return Vector3f(BlockUVS[ind], BlockType);
@@ -417,7 +414,7 @@ namespace iTrace {
 
 
 				LoadFromFile(); 
-
+				GenerateRTBlockData(); 
 				//UpdateMeshData(NeighbooringChunks);
 
 
@@ -430,7 +427,7 @@ namespace iTrace {
 
 
 				std::vector<Vector4f> Tris;
-				std::vector<Vector3f> TexCoord;
+				std::vector<Vector3f> TexCoord, Normals, Tangents;
 
 				std::vector<unsigned int> Indicies;
 
@@ -440,7 +437,7 @@ namespace iTrace {
 				auto VisibleDiscardedFaces = std::vector<BlockMask>(32 * CHUNK_SIZE * 32, BlockMask());
 
 
-				int Indicie = 0;
+				unsigned int Indicie = 0;
 
 				auto GetBlock = [&](Vector3i BlockPosition) {
 
@@ -515,8 +512,6 @@ namespace iTrace {
 				unsigned char StartX = 32 * SubX; 
 				unsigned char StartZ = 32 * SubY; 
 
-
-
 				for (unsigned short x = StartX; x < StartX+32; x++) {
 					for (unsigned short y = 0; y < CHUNK_SIZE; y++) {
 						for (unsigned short z = StartZ; z < StartZ+32; z++) {
@@ -525,7 +520,7 @@ namespace iTrace {
 							auto& Block = Types[BlockIdx];
 
 
-							if (!Block.IsNone && Block.RenderType == RenderType) {
+							if (!Block.IsNone && Block.RenderType == RenderType && Block.Model == BLOCK_MODEL::BASE) {
 
 
 								bool VisibleSides[6] = {
@@ -556,9 +551,6 @@ namespace iTrace {
 				}
 
 				//^ assume this one works 
-
-
-
 
 				for (unsigned short x = StartX; x < StartX+32; x++) {
 					for (unsigned short y = 0; y < CHUNK_SIZE; y++) {
@@ -646,26 +638,62 @@ namespace iTrace {
 										Vector3f ActualTexCoordSize = Vector3f(TexCoordSize, 1.0);
 
 										//triangle one
-										Tris.push_back(Vector4f(BlockVertices[i * 4] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4, BlockIdx) * ActualTexCoordSize);
-										Tris.push_back(Vector4f(BlockVertices[i * 4 + 1] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 1, BlockIdx) * ActualTexCoordSize);
-										Tris.push_back(Vector4f(BlockVertices[i * 4 + 2] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 2, BlockIdx) * ActualTexCoordSize);
+										Tris.push_back(Vector4f(BlockVertices[i * 4] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4, BlockIdx)* ActualTexCoordSize); Normals.push_back(_BlockNormals[i]); Tangents.push_back(_BlockTangents[i]); 
+										Tris.push_back(Vector4f(BlockVertices[i * 4 + 1] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 1, BlockIdx) * ActualTexCoordSize); Normals.push_back(_BlockNormals[i]); Tangents.push_back(_BlockTangents[i]);
+										Tris.push_back(Vector4f(BlockVertices[i * 4 + 2] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 2, BlockIdx) * ActualTexCoordSize); Normals.push_back(_BlockNormals[i]); Tangents.push_back(_BlockTangents[i]);
 
 										//triangle two
-										Tris.push_back(Vector4f(BlockVertices[i * 4 + 2] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 2, BlockIdx) * ActualTexCoordSize);
-										Tris.push_back(Vector4f(BlockVertices[i * 4 + 3] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 3, BlockIdx) * ActualTexCoordSize);
-										Tris.push_back(Vector4f(BlockVertices[i * 4] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4, BlockIdx) * ActualTexCoordSize);
+										Tris.push_back(Vector4f(BlockVertices[i * 4 + 2] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 2, BlockIdx) * ActualTexCoordSize); Normals.push_back(_BlockNormals[i]); Tangents.push_back(_BlockTangents[i]);
+										Tris.push_back(Vector4f(BlockVertices[i * 4 + 3] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4 + 3, BlockIdx) * ActualTexCoordSize); Normals.push_back(_BlockNormals[i]); Tangents.push_back(_BlockTangents[i]);
+										Tris.push_back(Vector4f(BlockVertices[i * 4] * TriangleSize, 0.) + Vector4f(x, y, z, i)); Indicies.push_back(Indicie++); TexCoord.push_back(GetTexCoord(i * 4, BlockIdx) * ActualTexCoordSize); Normals.push_back(_BlockNormals[i]); Tangents.push_back(_BlockTangents[i]);
 										Indicies.push_back(Indicie++);
 
 									}
 								}
-
-
 
 							}
 						}
 					}
 				}
 				
+
+				for (unsigned short x = StartX; x < StartX + 32; x++) {
+					for (unsigned short y = 0; y < CHUNK_SIZE; y++) {
+						for (unsigned short z = StartZ; z < StartZ + 32; z++) {
+
+							unsigned char BlockIdx = Blocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z];
+							auto& Block = Types[BlockIdx];
+
+
+							if (!Block.IsNone && Block.RenderType == RenderType && Block.Model != BLOCK_MODEL::BASE) {
+
+								std::array<int, 6> ModelIndicies = {
+
+									static_cast<int>(GetBlock(Vector3i(x, y, z + 1)).Model),
+									static_cast<int>(GetBlock(Vector3i(x, y, z - 1)).Model),
+									static_cast<int>(GetBlock(Vector3i(x + 1, y, z)).Model),
+									static_cast<int>(GetBlock(Vector3i(x - 1, y, z)).Model),
+									static_cast<int>(GetBlock(Vector3i(x, y + 1, z)).Model),
+									static_cast<int>(GetBlock(Vector3i(x, y - 1, z)).Model)
+
+								};
+
+
+								std::cout << static_cast<int>(Block.Model) << '\n'; 
+								auto& Model = GetModelData(static_cast<int>(Block.Model)); 
+
+								Model.AddToModelData(Vector3f(x, y, z) + Vector3f(0.5f), Tangents, Normals, Tris, TexCoord, Indicies, Indicie, ModelIndicies, BlockIdx);
+
+							}
+
+						}
+
+					}
+
+				}
+
+
+
 				ChunkMeshData* MeshData = nullptr; 
 				switch (RenderType) {
 				case BLOCK_RENDER_TYPE::OPAQUE: 
@@ -682,11 +710,7 @@ namespace iTrace {
 
 				}
 
-
-
 				MeshData->Vertices[SubX][SubY] = Tris.size();
-
-			//	std::cout << "Vertices: " << Tris.size() << '\n'; 
 
 				glBindVertexArray(MeshData->ChunkVAOs[SubX][SubY]);
 
@@ -700,11 +724,20 @@ namespace iTrace {
 				glEnableVertexAttribArray(1);
 				glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+				glBindBuffer(GL_ARRAY_BUFFER, MeshData->ChunkVBOs[SubX][SubY][3]);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(Normals[0])* Normals.size(), Normals.data(), GL_STATIC_DRAW);
+				glEnableVertexAttribArray(2);
+				glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+				glBindBuffer(GL_ARRAY_BUFFER, MeshData->ChunkVBOs[SubX][SubY][4]);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(Tangents[0])* Tangents.size(), Tangents.data(), GL_STATIC_DRAW);
+				glEnableVertexAttribArray(3);
+				glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
 				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, MeshData->ChunkVBOs[SubX][SubY][0]);
 				glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indicies[0])* Indicies.size(), Indicies.data(), GL_STATIC_DRAW);
 
 				glBindVertexArray(0);
-
 
 			}
 
@@ -745,46 +778,21 @@ namespace iTrace {
 
 			void Chunk::UpdateTextureData() //TODO: Remove this 
 			{
-				/*glBindTexture(GL_TEXTURE_3D, ChunkTexID);
+				
+			}
 
-				glTexImage3D(GL_TEXTURE_3D, 0, GL_R8, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, 0, GL_RED, GL_UNSIGNED_BYTE, Blocks.data());
-
-				int lowestMip = 5;
-
-				std::vector<unsigned char> Data[5];
-
-				int Res = CHUNK_SIZE;
-
-				glGenerateMipmap(GL_TEXTURE_3D);
-
-				glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-				glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-				for (int i = 0; i < lowestMip; i++) {
-
-
-					if (i == 0)
-						Data[i] = ConstructMip(Blocks, Res);
+			void Chunk::GenerateRTBlockData()
+			{
+				RTBlocks.resize(Blocks.size()); 
+				for (int i = 0; i < Blocks.size(); i++) {
+					auto& Block = Rendering::Chunk::GetBlock(Blocks[i]); 
+					if (Block.Model != BLOCK_MODEL::BASE)
+						RTBlocks[i] = 0;
 					else
-						Data[i] = ConstructMip(Data[i - 1], Res);
-
-					Res /= 2;
-
-					glTexSubImage3D(GL_TEXTURE_3D, i + 1, 0, 0, 0, Res, Res, Res, GL_RED, GL_UNSIGNED_BYTE, Data[i].data());
-
+						RTBlocks[i] = Blocks[i]; 
 				}
 
 
-
-				glBindTexture(GL_TEXTURE_3D, 0);
-
-
-
-				glBindTexture(GL_TEXTURE_3D, ChunkLightTexID);
-				glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA16F, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, 0, GL_RGBA, GL_FLOAT, BlockLighting.data());
-				glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glBindTexture(GL_TEXTURE_3D, 0);*/
 			}
 
 			std::string GetInjectionCode()
@@ -822,7 +830,10 @@ namespace iTrace {
 			{
 
 				Blocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z] = type;
-
+				if (Rendering::Chunk::GetBlock(type).Model != BLOCK_MODEL::BASE)
+					RTBlocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z] = 0; 
+				else 
+					RTBlocks[x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z] = type;
 			}
 
 			Chunk::Chunk(long long X, long long Y) : X(X), Y(Y), MainChunkFrustum(Vector3f(X*CHUNK_SIZE, 0.0, Y*CHUNK_SIZE), Vector3f(X*CHUNK_SIZE+CHUNK_SIZE, CHUNK_SIZE, Y*CHUNK_SIZE+CHUNK_SIZE))

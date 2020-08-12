@@ -414,7 +414,7 @@ namespace iTrace {
 	//	std::cin.get(); 
 
 		GetGlobalWeatherManager().PrepareWeather(); 
-
+		Chunk::AddBlockModels();
 		RequestBoolean("freefly", false);
 		RequestBoolean("noclip", true);
 		RequestBoolean("slowframes", false);
@@ -638,9 +638,6 @@ namespace iTrace {
 				}
 
 			}
-
-			if (UpdateWorld)
-				World.Chunk->UpdateMeshData({ nullptr,nullptr ,nullptr ,nullptr });
 
 
 			if (FrameRateCounter.getElapsedTime().asSeconds() >= 1.0) {

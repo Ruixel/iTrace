@@ -70,6 +70,9 @@ uniform sampler2D InTexCoord;
 uniform sampler2D InDepth; 
 uniform sampler2D Noise; 
 uniform sampler2DShadow ShadowMap; 
+uniform sampler2D InNormal; 
+uniform sampler2D InTangent; 
+
 uniform int RainFrames; 
 uniform mat4 RainMatrix; 
 
@@ -191,7 +194,49 @@ void HandleWeather(mat3 TBN, vec3 LowFrequencyNormal, vec3 WorldPos, vec3 NiceWo
 
 }
 
+vec4 cubic(float v){
+    vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;
+    vec4 s = n * n * n;
+    float x = s.x;
+    float y = s.y - 4.0 * s.x;
+    float z = s.z - 4.0 * s.y + 6.0 * s.x;
+    float w = 6.0 - x - y - z;
+    return vec4(x, y, z, w) * (1.0/6.0);
+}
 
+vec4 textureBicubic(sampler2DArray sampler, vec2 texCoords, int tex){
+
+   vec2 texSize = textureSize(sampler, 0).xy;
+   vec2 invTexSize = 1.0 / texSize;
+
+   texCoords = texCoords * texSize - 0.5;
+
+
+    vec2 fxy = fract(texCoords);
+    texCoords -= fxy;
+
+    vec4 xcubic = cubic(fxy.x);
+    vec4 ycubic = cubic(fxy.y);
+
+    vec4 c = texCoords.xxyy + vec2 (-0.5, +1.5).xyxy;
+
+    vec4 s = vec4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
+    vec4 offset = c + vec4 (xcubic.yw, ycubic.yw) / s;
+
+    offset *= invTexSize.xxyy;
+
+    vec4 sample0 = texture(sampler, vec3(offset.xz,tex));
+    vec4 sample1 = texture(sampler, vec3(offset.yz,tex));
+    vec4 sample2 = texture(sampler, vec3(offset.xw,tex));
+    vec4 sample3 = texture(sampler, vec3(offset.yw,tex));
+
+    float sx = s.x / (s.x + s.y);
+    float sy = s.z / (s.z + s.w);
+
+    return mix(
+       mix(sample3, sample2, sx), mix(sample1, sample0, sx)
+    , sy);
+}
 
 void main() {	
 	DirectMultiplier = 1.0; 
@@ -219,12 +264,12 @@ void main() {
 	uint BlockType = uint(RawTCData.z+.5); 
 	uint BlockSide = uint(RawTCData.w+.5); 
 
-	Normal.xyz = BlockNormals[BlockSide]; 
+	Normal.xyz = texture(InNormal, TexCoord).xyz; 
 	Normal.w = 0.0; 
-	vec3 Tangent = BlockTangents[BlockSide]; 
+	vec3 Tangent = texture(InTangent, TexCoord).xyz; 
 
-	vec3 Bitangent = BlockBiTangents[BlockSide]; 
-
+	vec3 Bitangent = normalize(cross(Tangent,Normal.xyz)); 
+	Bitangent = BlockBiTangents[BlockSide]; 
 	mat3 TBN = mat3(Tangent, Bitangent, Normal); 
 
 	int TextureIdx = GetTextureIdx(int(BlockType), int(BlockSide));
@@ -234,7 +279,7 @@ void main() {
 	vec2 TC = RawTCData.xy; 
 
 	//if(BlockSide == 4u) {
-		TC = ToTBNSpace(int(BlockSide),WorldPos).xy;
+		//TC = ToTBNSpace(int(BlockSide),WorldPos).xy;
 		//TC.y = 1.0 - TC.y; 
 	//} 
 	
@@ -269,6 +314,8 @@ void main() {
 
 	}
 	else {
+		//todo: add setting for bicubic interpolation for albedo 
+		Albedo.xyz = pow(textureBicubic(DiffuseTextures, TC.xy,TextureIdx).xyz,vec3(2.2));
 		Albedo.xyz = pow(texture(DiffuseTextures, vec3(TC.xy, TextureIdx)).xyz,vec3(2.2));
 	}
 	//Albedo.w = 0.0; 
@@ -301,5 +348,7 @@ void main() {
 	_TC.z = TextureIdx; 
 
 	HandleWeather(TBN, Normal.xyz, BetterWorldPos.xyz, WorldPos.xyz, HighFreqNormal.xyz, HighFreqNormal.w, Albedo.w, Albedo.xyz); 
+
+	//Normal.xyz = HighFreqNormal.xyz; 
 
 }

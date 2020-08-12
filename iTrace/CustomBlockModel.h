@@ -12,7 +12,7 @@ namespace iTrace {
 
 			struct CustomBlockModelPlane {
 				Vector3f Position, Rotation;
-				Vector2f Scale; 
+				Vector2f Scale, UVScale; 
 				//Other data: 
 				Vector3f Normal, Tangent, Bitangent; 
 
@@ -20,7 +20,7 @@ namespace iTrace {
 				//for some models, you may want certain planes to go away if a block from a certain location is there 
 
 
-				CustomBlockModelPlane(Vector3f Position, Vector3f Rotation, Vector2f Scale, int Face);
+				CustomBlockModelPlane(Vector3f Position, Vector3f Rotation, Vector2f Scale, Vector2f UVScale, int Face);
 
 				void AddToModelData(std::vector<Vector3f>& Tangents, std::vector<Vector3f>& Normals, std::vector<Vector3f>& Vertices, std::vector<Vector2f>& UVs); 
 
@@ -36,11 +36,11 @@ namespace iTrace {
 
 
 			struct CustomBlockModelData {
-				std::vector<Vector3f> Tangents = {}, Normals = {}, Vertices = {};
+				std::vector<Vector3f> Vertices = { }, Tangents = {}, Normals = {};
 				std::vector<Vector2f>  UVs = {};
 
-				void AddToModelData(std::vector<Vector3f>& Tangents, std::vector<Vector3f>& Normals, std::vector<Vector3f>& Vertices, std::vector<Vector2f>& UVs, std::vector<unsigned int>& Indicies, unsigned int& Index);
-
+				void AddToModelData(Vector3f OriginShift, std::vector<Vector3f>& Tangents, std::vector<Vector3f>& Normals, std::vector<Vector4f>& Vertices, std::vector<Vector3f>& UVs, std::vector<unsigned int>& Indicies, unsigned int& Index, int BlockIndex);
+				CustomBlockModelData() : Vertices{}, Tangents{}, Normals{}, UVs{} {}
 			};
 
 			struct CustomBlockModel {
@@ -48,7 +48,7 @@ namespace iTrace {
 				std::vector<CustomBlockModelAABB> AABBs; 
 				std::vector<CustomBlockModelPlane> Planes;
 
-				std::array< CustomBlockModelData, 7> BlockData; 
+				std::array< CustomBlockModelData, 7> BlockData = { CustomBlockModelData(),CustomBlockModelData(),CustomBlockModelData(),CustomBlockModelData(),CustomBlockModelData(),CustomBlockModelData(),CustomBlockModelData() };
 				
 
 
@@ -59,9 +59,9 @@ namespace iTrace {
 
 				void GenerateModelData(); //<- -1 if its a solid block, otherwise represents the model indicies at the locations 
 
-				void AddToModelData(std::vector<Vector3f>& Tangents, std::vector<Vector3f>& Normals, std::vector<Vector3f>& Vertices, std::vector<Vector2f>& UVs, std::vector<unsigned int>& Indicies, unsigned int& Index, std::array<int, 6> & ModelIndicies); 
+				void AddToModelData(Vector3f OriginShift,std::vector<Vector3f>& Tangents, std::vector<Vector3f>& Normals, std::vector<Vector4f>& Vertices, std::vector<Vector3f>& UVs, std::vector<unsigned int>& Indicies, unsigned int& Index, std::array<int, 6> & ModelIndicies, int BlockIndex);
 				void AddPlane(CustomBlockModelPlane Plane); 
-
+				CustomBlockModel() = default; 
 			protected: 
 
 				std::vector<Vector3f> Tangents = {}, Normals = {}, Vertices = {};

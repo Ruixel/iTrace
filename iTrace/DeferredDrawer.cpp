@@ -22,7 +22,7 @@ namespace iTrace {
 			RefractiveDeferredManager = Shader("Shaders/DeferredRefractive"); 
 			PrimaryRefractiveDeferredManager = Shader("Shaders/PrimaryDeferredRefractive"); 
 			Deferred = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 8, { GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_RGBA16F, GL_R16F,GL_RGBA16F,GL_RGB16F,GL_RGB16F }, false);
-			RawDeferred = FrameBufferObject(Window.GetResolution(), GL_RGBA16F); 
+			RawDeferred = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGBA16F, GL_RGB16F, GL_RGB16F });
 			DeferredRefractive = FrameBufferObject(Window.GetResolution(), GL_RGBA8, false); 
 			PrimaryDeferredRefractive = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 3, { GL_RGBA8,GL_RGB16F,GL_RGB16F });
 			TestStoneTexture = LoadTextureGL("Materials/Stone/Albedo.png"); 
@@ -136,8 +136,11 @@ namespace iTrace {
 
 			Sky.ShadowMaps[4].BindDepthImage(18); 
 
-			RawDeferred.BindImage(9); 
+			RawDeferred.BindImage(0,9); 
 			RawDeferred.BindDepthImage(10); 
+
+			RawDeferred.BindImage(1, 19);
+			RawDeferred.BindImage(2, 20);
 
 			DeferredUnwrapper.SetUniform("InverseProj", glm::inverse(Camera.Project)); 
 			DeferredUnwrapper.SetUniform("InverseView", glm::inverse(Camera.View));
@@ -238,6 +241,8 @@ namespace iTrace {
 			DeferredUnwrapper.SetUniform("MetalnessTextures", 14);
 			DeferredUnwrapper.SetUniform("RainDrop", 15);
 			DeferredUnwrapper.SetUniform("ShadowMap", 18);
+			DeferredUnwrapper.SetUniform("InNormal", 19);
+			DeferredUnwrapper.SetUniform("InTangent", 20);
 
 			DeferredUnwrapper.UnBind();
 

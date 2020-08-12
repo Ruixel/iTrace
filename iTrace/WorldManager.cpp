@@ -82,7 +82,8 @@ namespace iTrace {
 				Chunk::AddBlock(Chunk::BlockType("Metal test", { 58 }, true, false, false, SoundType::METAL)); //CC0, good (50)
 				Chunk::AddBlock(Chunk::BlockType("Red concrete", { 62 }, true, false, false, SoundType::STONE)); //CC0, good (50)
 				Chunk::AddBlock(Chunk::BlockType("Blue concrete", { 63 }, true, false, false, SoundType::STONE)); //CC0, good (50)
-				Chunk::AddBlock(Chunk::BlockType("Wheat", { 64 }, true, false, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT)); //CC0, good (50)
+				Chunk::AddBlock(Chunk::BlockType("Wheat", { 64 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT, Chunk::BLOCK_MODEL::FOLIAGE)); //CC0, good (50)
+				Chunk::AddBlock(Chunk::BlockType("gravel", { 65 }, true, false, false, SoundType::GRAVEL)); //CC0, good 
 
 
 				Chunk::AddTexture("stone", 0.75);
@@ -133,7 +134,7 @@ namespace iTrace {
 				Chunk::AddTexture("coal block", 0.75);
 				Chunk::AddTexture("wet stones", 0.0625);
 				Chunk::AddTexture("sandstone", 0.3);
-				Chunk::AddTexture("gravel", 0.2);
+				Chunk::AddTexture("gravel", 0.1);
 				Chunk::AddTexture("polished wood", 0.0325);
 				Chunk::AddTexture("jungle ground", 0.25);
 				Chunk::AddTexture("leaves", 0.0);
@@ -150,6 +151,7 @@ namespace iTrace {
 				Chunk::AddTexture("red concrete RTX", 0.125);
 				Chunk::AddTexture("blue concrete RTX", 0.125);
 				Chunk::AddTexture("Wheat", 0.0);
+				Chunk::AddTexture("gravel tiles", 0.3);
 
 
 				Chunk::GetTextureArrayList(0);
@@ -1661,7 +1663,7 @@ namespace iTrace {
 		void iTrace::Rendering::WorldManager::FastUpdateFullChunkTexture(unsigned char ChunkX, unsigned char ChunkY)
 		{
 
-			auto& Pixels = Chunks[ChunkX][ChunkY]->Blocks; 
+			auto& Pixels = Chunks[ChunkX][ChunkY]->RTBlocks; 
 			
 			glBindTexture(GL_TEXTURE_3D, ChunkContainer);
 			glTexSubImage3D(GL_TEXTURE_3D, 0, ChunkY * CHUNK_SIZE, 0, ChunkX * CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, GL_RED, GL_UNSIGNED_BYTE, Pixels.data());
@@ -1681,9 +1683,6 @@ namespace iTrace {
 			glFinish(); 
 
 		}
-
-		
-
 
 		void iTrace::Rendering::WorldManager::ManageCollision(Vector3f& Position, Vector3f& Acceleration, Vector3f& Velocity)
 		{

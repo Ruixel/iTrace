@@ -194,6 +194,7 @@ namespace iTrace {
 				Matrix4f ModelMatrix; 
 
 				std::vector<unsigned char> Blocks; //size is CHUNK_SIZE^3
+				std::vector<unsigned char> RTBlocks; 
 				std::vector<Vector3f> BlockLighting; 
 				std::vector<unsigned char> BlockLightingByte;
 
@@ -218,6 +219,7 @@ namespace iTrace {
 				void UpdateAllMeshData(std::vector<Chunk*> NeighbooringChunks, BLOCK_RENDER_TYPE RenderType);
 				void UpdateMeshDataSpecificBlock(std::vector<Chunk*> NeighbooringChunks, Vector3i BlockPos, BLOCK_RENDER_TYPE RenderType);
 				void UpdateTextureData(); 
+				void GenerateRTBlockData(); 
 
 				void SetBlock(unsigned char x, unsigned char y, unsigned char z, unsigned char type); 
 				unsigned char GetBlock(unsigned char x, unsigned char y, unsigned char z) {

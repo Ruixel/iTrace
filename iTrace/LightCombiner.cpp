@@ -132,12 +132,16 @@ namespace iTrace {
 			CurrentFocusPoint = LinearZ(FocusPointBuffer[0].x, Camera);
 			CurrentFocusPoint = glm::min(CurrentFocusPoint, 20.0f); 
 
-			float vec = (CurrentFocusPoint - FocusPoint); 
+			float vec = (CurrentFocusPoint - ActualFocusPoint); 
 
 			vec = glm::sign(vec) * 8.0 * sqrt(glm::min(glm::abs(vec), 1.0f)); 
 
 
-			FocusPoint = FocusPoint + vec * glm::min(Window.GetFrameTime(),1.0f);
+			PreviousFocusPoint = ActualFocusPoint; 
+			ActualFocusPoint = ActualFocusPoint + vec * glm::min(Window.GetFrameTime(),1.0f);
+
+			FocusPoint = (PreviousFocusPoint + ActualFocusPoint) / 2.0f; 
+
 
 			FocusSSBO.UnMap(); 
 
