@@ -34,7 +34,7 @@ void main(void) {
 	Pos = RawPos ;
 //	Pos.xyz += GetWave(Pos.xyz); 
 	TexCoord = RawTexCoord; 
-	gl_Position = CombinedMatrix * vec4(Pos.xyz ,1.0); 
+	gl_Position = IdentityMatrix * vec4(Pos.xyz ,1.0); 
 	InNormal = Normal; 
 	InTangent = Tangent; 
 }

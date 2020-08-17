@@ -60,7 +60,7 @@ const vec3 PlayerOrigin = vec3(0,6200,0);
 const float PlanetRadius = 6573; 
 const float AtmosphereRadius = 7773; 
 const float Size = AtmosphereRadius - PlanetRadius; 
-const int Steps = 12; 
+const int Steps = 16; 
 const int LightSteps = 6; 
 const float Epsilon = 1e-4; 
 
@@ -343,7 +343,7 @@ void main() {
 	ivec2 RawPixel = ivec2(gl_FragCoord.xy); 
 
 	RawPixel.x *= 2; 
-	RawPixel.x += int(RawPixel.y % 2 == CheckerStep); 
+	RawPixel.x += int(RawPixel.y % 2 == 0); 
 
 
 	Pixel = RawPixel * 2 + States[SubFrame]; 

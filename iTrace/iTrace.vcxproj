@@ -81,7 +81,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)\SFML\include;$(ProjectDir)\glm-master;$(ProjectDir);$(ProjectDir)\include;$(IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\assimp-3.3.1\include;$(ProjectDir)\SFML\include;$(ProjectDir)\glm-master;$(ProjectDir);$(ProjectDir)\include;$(IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)\OpenAL\lib;$(ProjectDir)\SFML\lib\64;$(ProjectDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -140,7 +140,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>sfml-window-s.lib;sfml-graphics-s.lib;sfml-system-s.lib;sfml-audio-s.lib;sfml-main.lib;alut.lib;jpeg.lib;glu32.lib;gdi32.lib;winmm.lib;opengl32.lib;OpenAL32.lib;flac.lib;ogg.lib;vorbis.lib;vorbisenc.lib;vorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>sfml-window-s.lib;sfml-graphics-s.lib;sfml-system-s.lib;sfml-audio-s.lib;sfml-main.lib;alut.lib;jpeg.lib;glu32.lib;gdi32.lib;winmm.lib;opengl32.lib;OpenAL32.lib;flac.lib;ogg.lib;vorbis.lib;vorbisenc.lib;vorbisfile.lib;assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -169,6 +169,7 @@
     <ClInclude Include="Inventory.h" />
     <ClInclude Include="ItemRenderer.h" />
     <ClInclude Include="LightCombiner.h" />
+    <ClInclude Include="MeshBaker.h" />
     <ClInclude Include="ParallaxBaker.h" />
     <ClInclude Include="Particles.h" />
     <ClInclude Include="Pipeline.h" />
@@ -212,6 +213,7 @@
     <ClCompile Include="ItemRenderer.cpp" />
     <ClCompile Include="LightCombiner.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MeshBaker.cpp" />
     <ClCompile Include="ParallaxBaker.cpp" />
     <ClCompile Include="Particles.cpp" />
     <ClCompile Include="Pipeline.cpp" />
@@ -276,6 +278,8 @@
     <None Include="Shaders\Glow\shader.vert" />
     <None Include="Shaders\HemiSphericalShadowMapCopy\shader.frag" />
     <None Include="Shaders\HemiSphericalShadowMapCopy\shader.vert" />
+    <None Include="Shaders\IntelligentDownScale\shader.frag" />
+    <None Include="Shaders\IntelligentDownScale\shader.vert" />
     <None Include="Shaders\InventoryUIShader\shader.frag" />
     <None Include="Shaders\InventoryUIShader\shader.vert" />
     <None Include="Shaders\LightCombiner\shader.frag" />

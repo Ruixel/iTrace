@@ -31,7 +31,7 @@ namespace iTrace {
 				SpatialyFiltered[x] = MultiPassFrameBufferObject(CheckerBoardedResolution, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 				VolumetricFBO[x] = FrameBufferObject(CheckerBoardedResolution, GL_RGBA16F, false);
 				Clouds[x] = MultiPassFrameBufferObject(CheckerBoardedResolution, 2, { GL_RGBA16F, GL_R32F }, false);
-				Checkerboarder[x] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 6, { GL_RGBA16F, GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_R32F }, false);
+				Checkerboarder[x] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 7, { GL_RGBA16F, GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_R32F,GL_RGBA16F }, false);
 
 			}
 
@@ -132,7 +132,7 @@ namespace iTrace {
 			SpatialyFilter(Window, Camera, Deferred);
 			Profiler::SetPerformance("Spatial filter");
 
-			CheckerboardUpscale(Window); 
+			CheckerboardUpscale(Window, Camera, Deferred); 
 			Profiler::SetPerformance("Checkerboarding"); 
 
 			TemporalyUpscale(Window, Camera, Deferred);
@@ -280,6 +280,7 @@ namespace iTrace {
 				Sky.RefractiveShadowMaps[i].BindImage(i + 31);
 			}
 
+			Deferred.Deferred.BindImage(2, 35);
 
 			DrawPostProcessQuad();
 
@@ -384,7 +385,7 @@ namespace iTrace {
 			SpatialFilterFinal.SetUniform("SubFrame", Window.GetFrameCount() % 4);
 			SpatialFilterFinal.SetUniform("DoSpatial", GetBoolean("spatial"));
 			SpatialFilterFinal.SetUniform("NewFiltering", GetBoolean("newfiltering"));
-			SpatialFilterFinal.SetUniform("CheckerStep", ((Window.GetFrameCount() % 2) + (Window.GetFrameCount() / 4) % 2) % 2);
+			SpatialFilterFinal.SetUniform("CheckerStep", (Window.GetFrameCount() / 4) % 2);
 
 			SpatialyFiltered[Window.GetFrameCount() % 4].Bind();
 
@@ -407,6 +408,7 @@ namespace iTrace {
 
 			for (int x = 0; x < 4; x++) {
 				RawPathTrace[x].BindImage(1, x);
+				Checkerboarder[x].BindImage(6, x); 
 				RawPathTrace[x].BindImage(2, x + 4);
 				
 				SpatialyFiltered[x].BindImage(0, x + 8); 
@@ -608,7 +610,7 @@ namespace iTrace {
 
 		}
 
-		void LightManager::CheckerboardUpscale(Window& Window)
+		void LightManager::CheckerboardUpscale(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
 		{
 
 			Checkerboarder[Window.GetFrameCount()%4].Bind(); 
@@ -616,6 +618,9 @@ namespace iTrace {
 			CheckerboardUpscaler.Bind(); 
 
 			CheckerboardUpscaler.SetUniform("CheckerStep", (Window.GetFrameCount()/4)%2);
+			CheckerboardUpscaler.SetUniform("State", Window.GetFrameCount() % 4); 
+			CheckerboardUpscaler.SetUniform("znear", Camera.znear);
+			CheckerboardUpscaler.SetUniform("zfar", Camera.zfar);
 
 			Clouds[Window.GetFrameCount() % 4].BindImage(0, 0);
 			VolumetricFBO[Window.GetFrameCount() % 4].BindImage(1); 
@@ -626,6 +631,9 @@ namespace iTrace {
 			Clouds[Window.GetFrameCount() % 4].BindImage(1, 5);
 			PackedSpatialData.BindImage(6);
 			RawPathTrace[Window.GetFrameCount() % 4].BindImage(7, 6); 
+			Deferred.RawDeferred.BindDepthImage(7); 
+			Deferred.Deferred.BindImage(0, 8); 
+			
 
 			DrawPostProcessQuad(); 
 
@@ -795,7 +803,7 @@ namespace iTrace {
 			IndirectLightShader.SetUniform("DirectionalRefractive[2]", 33);
 			IndirectLightShader.SetUniform("DirectionalRefractive[3]", 34);
 
-
+			IndirectLightShader.SetUniform("Albedo", 35); 
 
 			IndirectLightShader.UnBind();
 
@@ -1024,6 +1032,8 @@ namespace iTrace {
 			CheckerboardUpscaler.SetUniform("DirectLightingRaw", 4);
 			CheckerboardUpscaler.SetUniform("CloudDepthRaw", 5);
 			CheckerboardUpscaler.SetUniform("UpscaleData", 6);
+			CheckerboardUpscaler.SetUniform("Depth", 7);
+			CheckerboardUpscaler.SetUniform("Normal", 8);
 
 			CheckerboardUpscaler.UnBind(); 
 

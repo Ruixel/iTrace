@@ -111,12 +111,12 @@ int main(int *argc, char*argv[]) {
 
 	float AverageLum = 1.0f; 
 
-	std::cout << ODTtoRRT(0.75f) / AverageLum << '\n';
-	std::cin.get(); 
+	//std::cout << ODTtoRRT(0.75f) / AverageLum << '\n';
+	//std::cin.get(); 
 
 
 
-	ComputeDofKernels(1.0/float(8.0), 8.0);
+	//ComputeDofKernels(1.0/float(8.0), 8.0);
 
 
 	alutInit(argc, argv); 

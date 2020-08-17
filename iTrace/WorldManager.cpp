@@ -82,8 +82,11 @@ namespace iTrace {
 				Chunk::AddBlock(Chunk::BlockType("Metal test", { 58 }, true, false, false, SoundType::METAL)); //CC0, good (50)
 				Chunk::AddBlock(Chunk::BlockType("Red concrete", { 62 }, true, false, false, SoundType::STONE)); //CC0, good (50)
 				Chunk::AddBlock(Chunk::BlockType("Blue concrete", { 63 }, true, false, false, SoundType::STONE)); //CC0, good (50)
-				Chunk::AddBlock(Chunk::BlockType("Wheat", { 64 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT, Chunk::BLOCK_MODEL::FOLIAGE)); //CC0, good (50)
-				Chunk::AddBlock(Chunk::BlockType("gravel", { 65 }, true, false, false, SoundType::GRAVEL)); //CC0, good 
+				Chunk::AddBlock(Chunk::BlockType("Flower", { 64 }, false, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT, Chunk::BLOCK_MODEL::FLOWER)); //CC0, good (50)
+				Chunk::AddBlock(Chunk::BlockType("Wheat", { 65 }, false, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT, Chunk::BLOCK_MODEL::WHEAT)); //CC0, good (50)
+				Chunk::AddBlock(Chunk::BlockType("Stump", { 66 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::STUMP)); //CC0, good (50)
+				Chunk::AddBlock(Chunk::BlockType("Bush", { 67 }, false, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT, Chunk::BLOCK_MODEL::BUSH)); //CC0, good (50)
+				Chunk::AddBlock(Chunk::BlockType("Vines", { 68 }, false, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT, Chunk::BLOCK_MODEL::VINES)); //CC0, good (50)
 
 
 				Chunk::AddTexture("stone", 0.75);
@@ -150,8 +153,12 @@ namespace iTrace {
 				Chunk::AddTexture("blue glass RTX", 0.125);
 				Chunk::AddTexture("red concrete RTX", 0.125);
 				Chunk::AddTexture("blue concrete RTX", 0.125);
+				Chunk::AddTexture("Flower", 0.0);
 				Chunk::AddTexture("Wheat", 0.0);
-				Chunk::AddTexture("gravel tiles", 0.3);
+				Chunk::AddTexture("Stump", 0.0);
+				Chunk::AddTexture("Bush", 0.0);
+				Chunk::AddTexture("Vines", 0.0);
+
 
 
 				Chunk::GetTextureArrayList(0);

@@ -31,7 +31,10 @@ uniform ivec2 Resolution;
 
 bool IsBadMotionVectors(vec2 MotionVectors) {
 //return true;
-	return MotionVectors.x < -.3 && MotionVectors.y < -.3; 
+
+
+
+	return MotionVectors.x < -.3 || MotionVectors.y < -.3; 
 }
 
 
@@ -54,7 +57,6 @@ bool IsInSky(vec3 Normal) {
 }
 
 bool ConfirmGood(vec4 GTNormal, vec4 CurrentNormal) {
-return false; 
 	if(!NewFiltering)
 		return false; 
 

@@ -113,7 +113,7 @@ void main() {
 	}
 
 
-	float NewMaxTemporal = FrameCount < 4.0 ? 0.0 : FrameCount < 12.0 ? 0.9 : (NewFiltering ? 0.99 : 0.95); 
+	float NewMaxTemporal = FrameCount < 4.0 ? 0.0 : FrameCount < 12.0 ? 0.9 : (NewFiltering ? 0.975 : 0.95); 
 	float MaxTemporalShadow = FrameCount < 6.0 ? 0.0 : 0.95; 
 	float MaxTemporalClouds = FrameCount < 4.0 ? 0.98 : 0.98; 
 
@@ -153,7 +153,7 @@ void main() {
 	Direct.xyz = mix(CurrentDirect.xyz, ClampDirect(UpscaledDirect,PreviousDirect.xyz), min(MixFactor,0.95)); 
 	Direct.w = mix(CurrentDirect.w, PreviousDirect.w, MixFactor); 
 	IndirectSpecular.w = mix(CurrentSpecularSample.w, PreviousSpecular.w, MixFactor); 
-	Volumetrics = CurrentVolumetricSample; 
+	//Volumetrics = CurrentVolumetricSample; 
 
 //	Volumetrics = CurrentVolumetricSample; 
 	//IndirectDiffuse.xyz = int(gl_FragCoord.x) % 2 == 0 ? vec3(1.0) : vec3(0.0); 

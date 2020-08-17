@@ -344,7 +344,7 @@ void main() {
 	SimpleLighting = texture(LightData,(WorldPos.xyz - vec3(PositionBias.x, 0.0, PositionBias.y) + Normal.xyz * .5).zyx / vec3(384.0,128.0,384.0)).xyz; 
 	SimpleLighting = 64.0 * SimpleLighting * SimpleLighting; 
 	Normal.w  = textureLod(RoughnessTextures, vec3(TC, TextureIdx),QueriedLod).x; 
-		//Normal.w = 0.0; 
+	//	Normal.w = 0.0; 
 		//HighFreqNormal.xyz = Normal.xyz; 
 
 	_TC.xy = fract(TC);
@@ -352,6 +352,10 @@ void main() {
 
 	HandleWeather(TBN, Normal.xyz, BetterWorldPos.xyz, WorldPos.xyz, HighFreqNormal.xyz, HighFreqNormal.w, Albedo.w, Albedo.xyz); 
 
-	//Normal.xyz = HighFreqNormal.xyz; 
+	bool Facing = dot(Normal.xyz, Incident) < 0.0; 
 
+	Normal.xyz = !Facing ? -Normal.xyz : Normal.xyz; 
+	HighFreqNormal.xyz = !Facing ? -HighFreqNormal.xyz : HighFreqNormal.xyz; 
+	//Normal.xyz = HighFreqNormal.xyz; 
+	Normal.xyz = normalize(Normal.xyz); 
 }

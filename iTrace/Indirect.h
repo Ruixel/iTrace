@@ -40,7 +40,7 @@ namespace iTrace {
 			void TemporalyFilter(Window& Window, Camera& Camera, DeferredRenderer& Deferred);
 			void DoVolumetricLighting(Window& Window, Camera& Camera, DeferredRenderer& Deferred, WorldManager& World, SkyRendering& Sky);
 			void GenerateMotionVectors(Window& Window, Camera& Camera, DeferredRenderer& Deferred); 
-			void CheckerboardUpscale(Window& Window); 
+			void CheckerboardUpscale(Window& Window, Camera & Camera,DeferredRenderer & Deferred); 
 			void RenderClouds(Window & Window,Camera& Camera, DeferredRenderer & Deferred, SkyRendering& Sky);
 
 			void ReloadIndirect(Window& Window); 

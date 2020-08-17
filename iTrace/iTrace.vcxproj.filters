@@ -226,6 +226,9 @@
     <Filter Include="Shaders\CheckerBoardHandler">
       <UniqueIdentifier>{6b181f57-f888-4334-9724-5fab2d033d91}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\IntelligentDownScale">
+      <UniqueIdentifier>{7cfb3b20-c80f-4ce0-b4d9-7f12accd726a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -357,6 +360,9 @@
     <ClInclude Include="BlockModels.h">
       <Filter>Header Files\World</Filter>
     </ClInclude>
+    <ClInclude Include="MeshBaker.h">
+      <Filter>Header Files\Baker</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">
@@ -475,6 +481,9 @@
     </ClCompile>
     <ClCompile Include="BlockModels.cpp">
       <Filter>Source Files\World</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshBaker.cpp">
+      <Filter>Source Files\Baker</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -789,6 +798,12 @@
     </None>
     <None Include="Shaders\CheckerBoardHandler\shader.frag">
       <Filter>Shaders\CheckerBoardHandler</Filter>
+    </None>
+    <None Include="Shaders\IntelligentDownScale\shader.vert">
+      <Filter>Shaders\IntelligentDownScale</Filter>
+    </None>
+    <None Include="Shaders\IntelligentDownScale\shader.frag">
+      <Filter>Shaders\IntelligentDownScale</Filter>
     </None>
   </ItemGroup>
 </Project>

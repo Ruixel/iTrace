@@ -9,8 +9,8 @@ namespace iTrace {
 
 			std::vector<CustomBlockModel> Models; 
 
-			CustomBlockModelPlane::CustomBlockModelPlane(Vector3f Position, Vector3f Rotation, Vector2f Scale, Vector2f UVScale, int Face) : 
-				Position(Position), Rotation(Rotation), Scale(Scale), UVScale(UVScale), Face(Face)
+			CustomBlockModelPlane::CustomBlockModelPlane(Vector3f RotationAnker, Vector3f Position, Vector3f Rotation, Vector2f Scale, Vector2f UVScale, int Face, Vector2f UVOffset) :
+				RotationAnker(RotationAnker), Position(Position), Rotation(Rotation), Scale(Scale), UVScale(UVScale), Face(Face), UVOffset(UVOffset)
 			{
 				
 
@@ -29,12 +29,12 @@ namespace iTrace {
 				}; 
 
 				auto BlockModelDataLocalSpace = std::vector<Vector3f>{
-					Vector3f(-0.5,-0.5,0.0),
-					Vector3f(0.5,-0.5,0.0),
-					Vector3f(0.5,0.5,0.0),
-					Vector3f(0.5,0.5,0.0),
-					Vector3f(-0.5,0.5,0.0),
-					Vector3f(-0.5,-0.5,0.0)
+					Vector3f(0.0,0.0,0.0) + RotationAnker, 
+					Vector3f(1.0,0.0,0.0) + RotationAnker,
+					Vector3f(1.0,1.0,0.0) + RotationAnker,
+					Vector3f(1.0,1.0,0.0) + RotationAnker,
+					Vector3f(0.0,1.0,0.0) + RotationAnker,
+					Vector3f(0.0,0.0,0.0) + RotationAnker
 				};
 
 				auto Normal = Vector3f(0.0, 0.0, 1.0); 
@@ -62,7 +62,7 @@ namespace iTrace {
 				for (int FaceIdx = 0; FaceIdx < 6; FaceIdx++) {
 					Tangents.push_back(Tangent); 
 					Normals.push_back(Normal); 
-					UVs.push_back(Vector2f(BlockModelDataUVSpace[FaceIdx].x, 1.0-BlockModelDataUVSpace[FaceIdx].y)*UVScale);
+					UVs.push_back(Vector2f(BlockModelDataUVSpace[FaceIdx].x, 1.0-BlockModelDataUVSpace[FaceIdx].y)*UVScale + UVOffset);
 					Vertices.push_back(BlockModelDataWorldSpace[FaceIdx]); 
 				}
 

@@ -9,6 +9,7 @@ layout(location = 2) out vec4 DiffuseLighting;
 layout(location = 3) out vec4 SpecularLighting;
 layout(location = 4) out vec4 Direct; 
 layout(location = 5) out float CloudDepth; 
+layout(location = 6) out vec4 OutNormal; 
 
 
 uniform sampler2D CloudsRaw; 
@@ -17,11 +18,20 @@ uniform sampler2D DiffuseLightingRaw;
 uniform sampler2D SpecularLightingRaw; 
 uniform sampler2D DirectLightingRaw; 
 uniform sampler2D CloudDepthRaw; 
+uniform sampler2D Depth; 
+uniform sampler2D Normal; 
+uniform int State; 
 uniform int CheckerStep; 
 
 uniform sampler2D UpscaleData; 
 
+uniform float znear; 
+uniform float zfar; 
 
+float LinearDepth(float z)
+{
+    return 2.0 * znear * zfar / (zfar + znear - (z * 2.0 - 1.0) * (zfar - znear));
+} 
 
 float GetRoughness(inout vec3 Normal) {
 
@@ -61,12 +71,17 @@ float GetWeightSpecularRT(vec3 Normal, vec3 CenterNormal, float Depth, float Cen
 }
 
 
+ivec2 States[] = ivec2[](
+	ivec2(1, 1),
+	ivec2(0, 1),
+	ivec2(0, 0),
+	ivec2(1, 0));
 
 void main() {
 
 	ivec2 Pixel = ivec2(gl_FragCoord.xy); 
 
-	int Shift = int(Pixel.y % 2 != CheckerStep); 
+	int Shift = int(Pixel.y % 2 != 0); 
 
 	ivec2 BasePixel = Pixel / ivec2(2,1); 
 	vec4 CenterData = texelFetch(UpscaleData, BasePixel,0); 
@@ -113,6 +128,8 @@ void main() {
 		Clouds /= 4.0f; 
 		//SpecularLighting.xyz = vec3(TotalWeightSpecularRT); 
 		CloudDepth / 4.0f; 
+
+		//SpecularLighting.xyz = vec3(0.0); 
 	}
 	else {
 		
@@ -122,7 +139,13 @@ void main() {
 		SpecularLighting = texelFetch(SpecularLightingRaw, BasePixel, 0);
 		Direct = texelFetch(DirectLightingRaw, BasePixel, 0);
 		CloudDepth = texelFetch(CloudDepthRaw, BasePixel, 0).x;
+		//SpecularLighting.xyz = vec3(0.0); 
 	}
+
+	ivec2 UpscalePixel = Pixel * 4 + States[State] * 2; 
+
+	OutNormal = vec4(texelFetch(Normal, UpscalePixel, 0).xyz, LinearDepth(texelFetch(Depth, UpscalePixel, 0).x)); 
+
 	//Volumetrics = vec4(1.0); 
 	//Volumetrics = texelFetch(VolumetricsRaw, BasePixel, 0); 
 }

@@ -25,9 +25,9 @@ namespace iTrace {
 
 		struct PostProcess {
 
-			Shader DofShader, GlowPrepShader, DoFPrepShader, GlowShader; 
+			Shader DofShader, GlowPrepShader, DoFPrepShader, GlowShader, SmartDownScaler; 
 
-			FrameBufferObject DoFBuffer; 
+			FrameBufferObject DoFBuffer, SmartDownScale[2]; 
 			MultiPassFrameBufferObject DoFPrepBuffer, GlowBuffer[2], GlowPrepBuffer;
 			TextureGL LensDirt; 
 

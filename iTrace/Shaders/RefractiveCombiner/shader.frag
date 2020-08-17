@@ -30,6 +30,13 @@ const bool ChromaticAbberation = false;
 const bool HitLocationDepth = true; //<- if you want to use the surface location or the hit location depth for the DoF (refraction) 
 const vec3 CAMultiplier = vec3(1.02, 1.0, 1.04); //<- multipliers for chromatic abberation 
 
+uniform float znear; 
+uniform float zfar; 
+
+float LinearDepth(float z)
+{
+    return 2.0 * znear * zfar / (zfar + znear - (z * 2.0 - 1.0) * (zfar - znear));
+} 
 
 
 vec3 GetWorldPosition(float z, vec2 TexCoord) {
@@ -147,10 +154,10 @@ void main() {
 	float RefractiveDepth = texelFetch(PrimaryRefractionDepth, ivec2(gl_FragCoord), 0).x; 
 	
 	vec2 TC = InTexCoord; 
-	
+	vec3 ColorSample = vec3(1.0); 
 	if(RefractiveDepth < DepthSample) {
 		
-		vec3 ColorSample = pow(texture(PrimaryRefractionColor, TC).xyz,vec3(2.2)); 
+		ColorSample = pow(texture(PrimaryRefractionColor, TC).xyz,vec3(2.2)); 
 
 		vec3 Normal = texture(PrimaryRefractionNormal, TC).xyz; 
 		vec3 LFNormal = texture(PrimaryRefractionNormalLF, TC).xyz; 
@@ -248,7 +255,7 @@ void main() {
 
 	}
 	vec4 Volumetrics = texture(Volumetrics, InTexCoord); 
-	Lighting.xyz += Volumetrics.xyz; 
+	Lighting.xyz += Volumetrics.xyz * ColorSample; 
 	gl_FragDepth = min(DofDepth,0.9999999); 
 
 	ivec2 Pixel = ivec2(gl_FragCoord); 
@@ -258,5 +265,6 @@ void main() {
 		OcclusionDepth[0] = vec4(DofDepth); 
 
 	}
+	Lighting.w = LinearDepth(DofDepth); 
 
 }

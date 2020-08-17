@@ -51,7 +51,7 @@ void main() {
 
 	}
 
-	LightingCombined = texture(RawInput, TexCoord).xyz + (Lighting1.xyz / Lighting1.w + Lighting2.xyz / Lighting2.w + Lighting3.xyz / Lighting3.w + Lighting4.xyz / Lighting4.w) * 0.25; 
+	LightingCombined = texelFetch(RawInput, ivec2(gl_FragCoord),2).xyz + (Lighting1.xyz / Lighting1.w + Lighting2.xyz / Lighting2.w + Lighting3.xyz / Lighting3.w + Lighting4.xyz / Lighting4.w) * 0.25; 
 
 
 

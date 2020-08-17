@@ -63,11 +63,18 @@ namespace iTrace {
 
 		void SoundEffect::Play(int Split)
 		{
-			if (InstancePtr == nullptr)
-				return;
 
-			if (EffectType == SoundEffectType::SINGLE && !InstancePtr->IsPlaying())
-				InstancePtr->Play(); 
+
+
+			if (InstancePtr == nullptr) {
+				std::cout << "Sound instance is NULL\n";
+				return;
+			}
+
+			if (EffectType == SoundEffectType::SINGLE && !InstancePtr->IsPlaying()) {
+				InstancePtr->Play();
+				std::cout << "Playing single sound!\n"; 
+			}
 			else if (EffectType == SoundEffectType::SPLIT && !InstancePtr->IsPlaying()) {
 
 				if (Split >= Splits || Split < 0)

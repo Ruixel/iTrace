@@ -11,8 +11,8 @@ namespace iTrace {
 
 
 			struct CustomBlockModelPlane {
-				Vector3f Position, Rotation;
-				Vector2f Scale, UVScale; 
+				Vector3f Position, Rotation, RotationAnker;
+				Vector2f Scale, UVScale, UVOffset;
 				//Other data: 
 				Vector3f Normal, Tangent, Bitangent; 
 
@@ -20,7 +20,7 @@ namespace iTrace {
 				//for some models, you may want certain planes to go away if a block from a certain location is there 
 
 
-				CustomBlockModelPlane(Vector3f Position, Vector3f Rotation, Vector2f Scale, Vector2f UVScale, int Face);
+				CustomBlockModelPlane(Vector3f RotationAnker, Vector3f Position, Vector3f Rotation, Vector2f Scale, Vector2f UVScale, int Face, Vector2f UVOffset = Vector2f(0.0));
 
 				void AddToModelData(std::vector<Vector3f>& Tangents, std::vector<Vector3f>& Normals, std::vector<Vector3f>& Vertices, std::vector<Vector2f>& UVs); 
 

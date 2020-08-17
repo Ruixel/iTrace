@@ -118,7 +118,7 @@ vec2 hash2White() {
 	return fract(sin(vec2(seed += 0.1, seed += 0.1)) * vec2(43758.5453123, 22578.1459123));
 	}
 vec2 Kernels[51] = vec2[51](
-vec2(0.00390625,-0),
+vec2(0),
 vec2(0.0603367,-0.128936),
 vec2(-0.128061,-0.15346),
 vec2(-0.227301,0.0599167),
@@ -181,32 +181,38 @@ vec3 DepthOfFieldNew(float Radius, vec2 Hash, float CenterDepth) {
 
 	float Samples = 0.0; 
 
+	float MeanRadius = 0.0; 
 
 	for(int i = 0; i < 51; i++) {
 		
 		vec2 Coord = TexCoord + Kernels[i] * TexelSize * 1.25* Radius*0.0625; 
 
-		vec4 Input = texture(Input, Coord); 
+		vec4 Input = texelFetch(Input, ivec2(Coord/TexelSize),0); 
 
 		float CurrentRadius = GetDofRadius(Input.w, FocusPoint); 
 
 
 		
 
-		float Weight = 1.0 / (1.0 + abs(CurrentRadius-Radius)/min(CurrentRadius, Radius));  
+		float Weight = 1.0 / pow(1.0 + 10*abs(Radius-CurrentRadius)/min(Radius,CurrentRadius),1.0);  
 		if(Samples > 0.0) {
 			Result += mix(Result/Samples,Input.xyz,Weight); 
 			Samples += 1.0; 
 		}
 		else {
+			Weight = 1.0; 
 			Result += Input.xyz * Weight; 
 			Samples += Weight; 
 		}
+		MeanRadius += CurrentRadius; 
+
+
 
 	}
 
-	return Result / Samples; 
 
+	//return vec3(abs(MeanRadius/51.0 - Radius)); 
+	return Result / Samples; 
 }
 
 
@@ -216,7 +222,9 @@ void main() {
 
 	ivec2 HighResPixel = ivec2(gl_FragCoord.xy) * 4; 
 
-	float BaseDepth = texture(Input, TexCoord).w; 
+	float BaseDepth = texelFetch(Input, ivec2(gl_FragCoord),0).w; 
+
+	vec4 BaseInput = texture(Input, TexCoord); 
 
 	//float FocusPoint = LinearDepth(texelFetch(Depth, ivec2(960,540),0).x); 
 
@@ -231,5 +239,5 @@ void main() {
 	vec2 HashSample = hash2White(); 
 	
 	Lighting = vec4(DepthOfFieldNew(Radius, HashSample, BaseDepth),Radius / 2.0); 
-	Lighting.w = 0.0; 
+//	Lighting.w = 0.0; 
 }

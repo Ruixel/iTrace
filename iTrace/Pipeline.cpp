@@ -604,9 +604,9 @@ namespace iTrace {
 						case sf::Keyboard::H:
 							//Sounds.AddSoundInstance(SoundInstance(Camera.Position, 1.0), "MusicInstance", "Music");
 							//SoundEffects.GetSoundEffect("Thunder").Play(rand()%6); 
-
-							SoundEffects.GetSoundEffect("Music").Origin = -Camera.Position; 
-							SoundEffects.GetSoundEffect("Music").Play(); 
+							SoundEffects.GetSoundEffect("MUSIC").Stop(); 
+							SoundEffects.GetSoundEffect("MUSIC").Origin = -Camera.Position; 
+							SoundEffects.GetSoundEffect("MUSIC").Play(); 
 
 							break;
 						}

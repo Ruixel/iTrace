@@ -266,7 +266,7 @@ namespace iTrace {
 					int Dist = Height - MyY;
 
 					if (Dist == 1)
-						return (BiomeNoise > 0.7 ? 24 : BiomeNoise > 0.3 ? 7 : 35); 
+						return (BiomeNoise > 0.7 ? 24 : BiomeNoise > 0.3 ? 29 : 35); 
 					else if (Dist < 4)
 						return 6; //dirt
 					return 5; //stone 
@@ -902,11 +902,14 @@ namespace iTrace {
 
 				std::ifstream File; 
 
-				if (!File.good())
-					return; 
+				
 
 
 				File.open(Title, std::ios::out | std::ios::binary);
+
+				if (!File.good())
+					return;
+
 				File.read((char*)Blocks.data(), Blocks.size()); 
 				File.close(); 
 

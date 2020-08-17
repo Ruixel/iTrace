@@ -73,7 +73,7 @@ float GetDensity(vec3 WorldPosition) {
 
 	//Density peaks at 40, then quickly fades 
 
-	float dens = 30 / (max(WorldPosition.y-55,0.0)*.5+.5); 
+	float dens = 90 / pow(max(WorldPosition.y-55,0.0)*.5+.5,2.0); 
 
 	return dens; 
 
@@ -175,7 +175,7 @@ void main() {
 
 	ivec2 FragCoord = ivec2(gl_FragCoord); 
 	FragCoord.x *= 2; 
-	FragCoord.x += int(FragCoord.y % 2 == CheckerStep); 
+	FragCoord.x += int(FragCoord.y % 2 != 1); 
 
 	vec2 TexCoord = vec2(FragCoord) / vec2(960/2,540/2); 
 
@@ -199,10 +199,10 @@ void main() {
 	float RefractiveDepth = LinearDepth(texelFetch(PrimaryRefractiveDepth, Pixel * 2, 0).x); 
 	
 	if(ActualDistance > RefractiveDepth && RefractiveDepth < VOLUMETRIC_MAX_DISTANCE) {
-		ActualDistance = RefractiveDepth; 
+		//ActualDistance = RefractiveDepth; 
 		Vector = normalize(vec3(IncidentMatrix * vec4(TexCoord * 2.0 - 1.0, 1.0, 1.0)));
 	}
-	else if(L < 0.75 || L > 1.25) {
+	else if(L < 0.1 || L > 1.9) {
 		Vector = normalize(vec3(IncidentMatrix * vec4(TexCoord * 2.0 - 1.0, 1.0, 1.0)));
 		ActualDistance = texelFetch(CloudDepth, ivec2(FragCoord) / ivec2(2,1), 0).x; 
 	}
@@ -262,7 +262,7 @@ void main() {
 		Traversal += StepSize; 
 
 	}
-	Volumetrics.xyz *= 0.5; 
+	Volumetrics.xyz *= 0.125; 
 	Volumetrics.a = 1.0; 
 
 }

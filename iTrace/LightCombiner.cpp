@@ -12,7 +12,7 @@ namespace iTrace {
 		{
 
 			CombinedLighting = MultiPassFrameBufferObject(Window.GetResolution(), 2, { GL_RGB16F,GL_RGB16F }, false);
-			CombinedRefraction = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGB16F, GL_RGB16F, GL_R32F }, false, true); 
+			CombinedRefraction = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGBA16F, GL_RGB16F, GL_R32F }, false, true); 
 			LightCombinerShader = Shader("Shaders/LightCombiner"); 
 			RefractiveCombiner = Shader("Shaders/RefractiveCombiner"); 
 
@@ -118,6 +118,9 @@ namespace iTrace {
 			RefractiveCombiner.SetUniform("IdentityMatrix", Camera.Project * Camera.View);
 			RefractiveCombiner.SetUniform("CameraPosition", Camera.Position);
 			RefractiveCombiner.SetUniform("PixelFocusPoint", Window.GetResolution() / 2); 
+			RefractiveCombiner.SetUniform("znear", Camera.znear); 
+			RefractiveCombiner.SetUniform("zfar", Camera.zfar);
+
 
 			DrawPostProcessQuad(); 
 

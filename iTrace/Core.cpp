@@ -64,8 +64,8 @@ namespace iTrace {
 
 		Matrix4f ModelMatrix(Vector3f Position, Vector3f Rotation, Vector3f Scale) {
 			Matrix4f Temp = glm::translate(Matrix4f(1.0f), Vector3f(-Position.x, -Position.y, -Position.z));
-			Temp = glm::rotate(Temp, glm::radians(Rotation.x), { 1, 0, 0 });
 			Temp = glm::rotate(Temp, glm::radians(Rotation.y), { 0, 1, 0 });
+			Temp = glm::rotate(Temp, glm::radians(Rotation.x), { 1, 0, 0 });
 			Temp = glm::rotate(Temp, glm::radians(Rotation.z), { 0, 0, 1 });
 			Temp = glm::scale(Temp, Scale);
 			return Temp;

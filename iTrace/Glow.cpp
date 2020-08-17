@@ -16,17 +16,21 @@ namespace iTrace {
 			GlowBuffer[0] = MultiPassFrameBufferObject(Window.GetResolution() / 8, 4, { GL_RGBA16F, GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 			GlowBuffer[1] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 5, { GL_RGBA16F, GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGB16F }, false);
 
+
+
 			GlowPrepBuffer = MultiPassFrameBufferObject(Window.GetResolution() / 4, 4, { GL_RGBA16F, GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 
 
 
+			SmartDownScale[0] = FrameBufferObject(Window.GetResolution() / 2, GL_RGBA16F, false, false); 
+			SmartDownScale[1] = FrameBufferObject(Window.GetResolution() / 4, GL_RGBA16F, false, false);
 
 			DoFBuffer = FrameBufferObject(Window.GetResolution() / 4, GL_RGBA16F, false, false);
 			GlowShader = Shader("Shaders/Glow"); 
 			DofShader = Shader("Shaders/DoF"); 
 			GlowPrepShader = Shader("Shaders/BlurCombiner"); 
 			DoFPrepShader = Shader("Shaders/DoFPrep"); 
-
+			SmartDownScaler = Shader("Shaders/IntelligentDownScale"); 
 			LensDirt = LoadTextureGL("Resources/Post Process/Lens Dirt.png"); 
 
 			SetShaderUniforms(Window, Camera); 
@@ -49,7 +53,28 @@ namespace iTrace {
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::J)) {
 				FocusPoint -= 1.0 * Window.GetFrameTime();
 			}
+			/*
+			Combined.CombinedRefraction.BindImage(0, 0);
 
+			SmartDownScaler.Bind(); 
+
+			for (int i = 0; i < 2; i++) {
+
+				SmartDownScale[i].Bind(); 
+
+				DrawPostProcessQuad();
+
+				SmartDownScale[i].UnBind(); 
+
+				SmartDownScale[i].BindImage(0); 
+
+			}
+
+			SmartDownScaler.UnBind(); 
+
+			Profiler::SetPerformance("Smart downscaling"); 
+
+			*/
 			
 			Combined.CombinedRefraction.BindImage(1, 0); 
 
@@ -74,6 +99,7 @@ namespace iTrace {
 				GlowPrepBuffer.BindImage(2, 2);
 				GlowPrepBuffer.BindImage(3, 3);
 				Combined.CombinedRefraction.BindImage(0, 4);
+				//SmartDownScale[1].BindImage(4);
 
 				GlowShader.Bind(); 
 
@@ -148,6 +174,7 @@ namespace iTrace {
 			DofShader.Reload("Shaders/DoF");
 			GlowPrepShader.Reload("Shaders/BlurCombiner");
 			DoFPrepShader.Reload("Shaders/DoFPrep");
+			SmartDownScaler.Reload("Shaders/IntelligentDownScale"); 
 
 			SetShaderUniforms(Window, Camera); 
 		}
@@ -209,6 +236,13 @@ namespace iTrace {
 			DoFPrepShader.SetUniform("MaxRadius", 50.0f);
 
 			DoFPrepShader.UnBind();
+
+			SmartDownScaler.Bind(); 
+
+			SmartDownScaler.SetUniform("Input", 0); 
+
+			SmartDownScaler.UnBind(); 
+
 		}
 		
 	}

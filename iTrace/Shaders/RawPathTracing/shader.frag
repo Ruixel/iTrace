@@ -42,6 +42,7 @@ uniform sampler2D Depth;
 uniform sampler2D ParallaxData; 
 uniform sampler2D TCData; 
 uniform sampler2D LowFrequencyNormal; 
+uniform sampler2D Albedo; 
 
 uniform sampler1D TextureData;
 uniform samplerCube Sky;
@@ -743,6 +744,68 @@ float LinearDepth(float z)
     return 2.0 * znear * zfar / (zfar + znear - (z * 2.0 - 1.0) * (zfar - znear));
 } 
 
+vec4 ScreenSpaceTrace(vec3 Origin, vec3 Direction, float MaxTraversal, int Steps, float Hash, out vec3 Normal, out vec3 WorldPos, float Precision, bool EA) {
+
+	vec3 Step = (Direction * MaxTraversal) / float(Steps); 
+	vec3 Pos = Origin + Step * Hash; 
+	vec4 PreviousClip = CameraMatrix * vec4(Pos, 1.0); 
+	PreviousClip.xyz /= PreviousClip.w; 
+	if(abs(PreviousClip.x) > 1 || abs(PreviousClip.y) > 1 || abs(PreviousClip.z) > 1) 
+			return vec4(-1.0); 
+	PreviousClip.xyz = PreviousClip.xyz * 0.5 + 0.5; 
+	
+
+	float LinPrev = LinearDepth(PreviousClip.z); 
+
+	ivec2 TextureSize = textureSize(Depth, 0).xy; 
+
+	ivec2 Pixel = ivec2(-1); 
+
+	for(int i = 0; i < Steps; i++) {
+		
+		Pos += Step; 
+
+		vec4 CurrentClip = CameraMatrix * vec4(Pos, 1.0); 
+		CurrentClip.xyz /= CurrentClip.w; 
+
+		if(abs(CurrentClip.x) > 1 || abs(CurrentClip.y) > 1 || abs(CurrentClip.z) > 1) 
+			return vec4(-1.0); 
+
+		CurrentClip.xyz = CurrentClip.xyz * 0.5 + 0.5; 
+
+		
+
+		float zFetch = texelFetch(Depth, ivec2(CurrentClip.xy * TextureSize),0).x; 
+
+		//were we behind it and are we NOW ahead of it?
+
+		float LinCur = LinearDepth(CurrentClip.z); 
+		if(CurrentClip.z > zFetch)
+		if(abs(LinearDepth(zFetch)-LinCur) < max(Precision * abs(LinCur-LinPrev),0.1)) {
+			Pixel = ivec2(CurrentClip.xy * TextureSize); 
+			break; 
+		}
+		else if(EA){
+			return vec4(-1.0); 
+		}
+		LinPrev = LinCur;  
+		PreviousClip = CurrentClip; 
+
+	}
+
+	if(Pixel.x < 0) 
+		return vec4(-1.0); 
+
+	vec4 NormalFetch = texelFetch(LowFrequencyNormal, Pixel, 0);
+	vec4 WorldPosFetch = texelFetch(WorldPosition, Pixel, 0);
+
+	Normal.xyz = NormalFetch.xyz; 
+	WorldPos.xyz = WorldPosFetch.xyz; 
+
+	return vec4(texelFetch(Albedo, Pixel, 0).xyz, texelFetch(Normals, Pixel, 0).w); 
+
+}
+
 
 float ScreenSpaceTraceShadows(vec3 Origin, vec3 Direction, float MaxTraversal, int Steps, float Hash) {
 
@@ -811,14 +874,17 @@ vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 
 }
 
-vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4 ParallaxData, vec3 TC, vec3 LowFrequencyNormal, out vec4 Detail) {
+
+
+
+vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4 ParallaxData, vec3 TC, vec3 LowFrequencyNormal, out vec4 Detail, ivec2 Pixel) {
 
 
 	Detail = vec4(1.0); 
 	if(!DoRayTracing) {
 		
 		vec3 Diffuse = GetHemisphericalShadowMaphit(Origin, Normal, 0, 1); 
-		Diffuse += textureLod(LightingData, (Origin + Normal * .5).zyx / vec3(384,128,384), 0.0).xyz;
+		//Diffuse += textureLod(LightingData, (Origin + Normal * .5).zyx / vec3(384,128,384), 0.0).xyz;
 		return vec4(Diffuse, 1.0); 
 	
 	
@@ -874,6 +940,24 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 
 	}
+
+	vec3 NormalSS, PositionSS; 
+
+	if(true) {
+		
+		float Hash = hash(Pixel / 2, FrameCount / 4,35); 
+
+		
+
+		vec4 Trace = ScreenSpaceTrace(Origin, Direction, Specular ? 2.0 : 1.0,5, Hash, NormalSS, PositionSS, Specular ? 1.0 : 4.0, Specular); 
+	
+		if(Trace.x > -0.9) {
+			Hit = true; 
+			BlockColor = Trace.xyz; 
+			Emissive = Trace.w; 
+		}
+
+	}
 	
 	//return vec4(ParallaxData.www,1.0);
 
@@ -884,6 +968,12 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 	if(!Hit)
 		Hit = RawTraceOld(Direction, Origin - vec3(PositionBias.x, 0, PositionBias.y), Block, Face, OutNormal, TexCoord, Position, Specular ? 64 : 64,Color);
+
+	if(ParallaxHit) {
+		Position = PositionSS; 
+		OutNormal = NormalSS; 
+		Hit = true; 
+	}
 
 	if(!Hit) {
 		//Hit = RawTrace(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 256);
@@ -1117,7 +1207,7 @@ void main() {
 
 	FragCoord = ivec2(gl_FragCoord); 
 	FragCoord.x *= 2; 
-	FragCoord.x += int(FragCoord.y % 2 == CheckerStep); 
+	FragCoord.x += int(FragCoord.y % 2 != 1); 
 
 	ivec2 Pixel = FragCoord * 4 + States[FrameCount % 4] * 2;
 
@@ -1162,6 +1252,7 @@ void main() {
 	Incident /= IncidentLength; 
 
 	Direct.xyz = DirectHQ(WorldPos,max(Penum,0.007),vec2(Pixel) / 2, SmoothNessFactor) * DirectDensity; 
+//	Direct = vec3(1.0); 
 	Direct.xyz *= ScreenSpaceTraceShadows(WorldPos + Normal.xyz * mix(0.01,0.1,clamp(IncidentLength/30.0,0.0,1.0)), normalize(LightDirection), 0.75,20, hash(Pixel / 2, FrameCount / 4,32)); 
 
 
@@ -1195,9 +1286,9 @@ void main() {
 	vec3 Direction = cosWeightedRandomHemisphereDirection(LowFrequencyNormal.xyz, hash);
 
 	vec3 SpecularDirection = GetSpecularRayDirection(reflect(Incident, Normal.xyz), Normal.xyz, Incident, LowFrequencyNormal.w, Pixel);
-	vec4 Specular = GetRayShading(WorldPos + Normal.xyz * 0.025, SpecularDirection, Normal.xyz, true, ParallaxData,TC,LowFrequencyNormal.xyz, Detail); 
-	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.025, Direction,Normal.xyz, false, ParallaxData,TC,LowFrequencyNormal.xyz,Detail); 
-
+	vec4 Specular = GetRayShading(WorldPos + Normal.xyz * 0.025, reflect(Incident, Normal.xyz), Normal.xyz, true, ParallaxData,TC,LowFrequencyNormal.xyz, Detail, Pixel); 
+	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.025, Direction,Normal.xyz, false, ParallaxData,TC,LowFrequencyNormal.xyz,Detail, Pixel); 
+	//Specular.xyz = abs(reflect(Incident, Normal.xyz)); 
 	float L = length(Normal.xyz); 
 
 	if(L < 0.5 || L > 1.5) {
@@ -1225,5 +1316,4 @@ void main() {
 	//Direct.xyz = pow(texelFetch(DirectionalCascadesRaw[0], ivec2(RawTC * textureSize(DirectionalCascadesRaw[0],0)),0).xxx,vec3(1000.0)); 
 
 	PackedSpatialData = PackData(Normal.xyz, LowFrequencyNormal.w, LinearDepth(texelFetch(Depth, Pixel, 0).x)); 
-
 }

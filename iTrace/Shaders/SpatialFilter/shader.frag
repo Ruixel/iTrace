@@ -133,8 +133,12 @@ float NewNewWeightSpecular(vec3 Normal, vec3 NormalCenter,
 	
 	float DepthWeight = 1.0 / pow(1.0 + WeightFactor*(abs(Depth - DepthCenter)), 3.0); 
 	float NormalWeight = pow(max(dot(Normal.xyz, NormalCenter.xyz), 0.0), 15.0); 
-	float RoughnessDiffWeight = 1.0 / pow(1.0 + 50.0 * abs(Roughness - CenterRoughness), 3.0);
-	float RoughnessSqrWeight = 1.0 / (1.0 + 0.25*(1.0-min(Roughness, CenterRoughness)) * distanceSqr); 
+
+
+	float RoughNessFactor = mix(50.0,10.0,clamp(TraversalCenter, Traversal,1.0)); 
+
+	float RoughnessDiffWeight = 1.0 / pow(1.0 + 10.0 * abs(Roughness - CenterRoughness), 2.0);
+	float RoughnessSqrWeight = 1.0 / (1.0 + 15.0*pow(1.0-min(Roughness, CenterRoughness),3.0) * distanceSqr * distanceSqr); 
 	float TraversalFactor = sin(0.785398163 * Roughness) * max(Traversal, TraversalCenter); 
 
 	TraversalFactor = clamp((TraversalFactor - max(Traversal, TraversalCenter)) * 100.0, 0.0, 1.0); 
@@ -151,9 +155,9 @@ float NewNewWeightSpecular(vec3 Normal, vec3 NormalCenter,
 
 	float LuminanceWeight = 0.1 * abs(Lum-LumCenter); 
 
-	LuminanceWeight = mix( 0.0,LuminanceWeight, pow(1.0-min(2.0*Roughness*min(TraversalCenter, Traversal),1.0),2.0)); 
+	LuminanceWeight = mix( 0.0,LuminanceWeight, pow(1.0-min(5.0*Roughness*min(TraversalCenter, Traversal),1.0),2.0)); 
 	
-	return max(DepthWeight * NormalWeight * RoughnessDiffWeight * RoughnessSqrWeight* TraversalWeight - LuminanceWeight,0.0); 
+	return max(DepthWeight * NormalWeight *RoughnessDiffWeight * RoughnessSqrWeight* TraversalWeight - LuminanceWeight,0.0); 
 
 } 
 
@@ -166,7 +170,7 @@ void main() {
 
 	ivec2 CheckerPixel = ivec2(gl_FragCoord.xy);
 	CheckerPixel.x *= 2; 
-	CheckerPixel.x += int(Pixel.y % 2 == CheckerStep); 
+	CheckerPixel.x += int(Pixel.y % 2 != 1); 
 	
 	ivec2 HighResPixel = CheckerPixel * 2 + States[SubFrame];
 
@@ -299,6 +303,7 @@ void main() {
 	//IndirectSpecularCo.xyz = vec3(BaseRoughness); 
 	//IndirectSpecularCo.xyz = BaseDetail.yyy; 
 	SHCg /= TotalWeight; 
+	//IndirectSpecularCo.xyz = vec3(BaseRoughness); 
 
 	#ifdef SPATIAL_FINAL 
 

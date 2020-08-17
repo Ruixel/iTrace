@@ -3,6 +3,9 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
+#include <vector> 
+#include <filesystem>
+#include <fstream>
 constexpr double PI = 3.14159265;
 
 namespace iTrace {
@@ -112,6 +115,32 @@ namespace iTrace {
 			Pos.y += sin(RotationX * (PI / 180.)) * Speed * FrameTime;
 			Pos.z -= (sin(RotationY * (PI / 180.)) * HMultiplier) * Speed * FrameTime;
 		}
+
+		template<typename T> 
+		std::vector<T> GrabFromFile(std::string FileDir) {
+
+			std::ifstream File(FileDir, std::ios::out | std::ios::binary);
+
+			if (!File.good())
+				return {};
+
+			auto Size = std::filesystem::file_size(FileDir); 
+
+			std::vector<T> Vector(Size / sizeof(T)); 
+
+			File.read((char*)(Vector.data()), (Size / sizeof(T))*sizeof(T)); 
+			File.close(); 
+			return Vector; 
+
+		}
+		template<typename T>
+		void StoreToFile(std::string FileDir, const std::vector<T>& FileData) {
+
+			std::ofstream File(FileDir, std::ios::out | std::ios::binary); 
+			File.write((char*)(FileData.data()), FileData.size() * sizeof(T)); 
+			File.close(); 
+		}
+
 
 		Matrix4f ViewMatrix(Vector3f Position, Vector3f Rotation);
 		Matrix4f ModelMatrix(Vector3f Position, Vector3f Rotation, Vector3f Scale = Vector3f(1.0));
