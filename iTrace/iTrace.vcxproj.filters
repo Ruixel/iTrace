@@ -238,6 +238,9 @@
     <Filter Include="Shaders\RawWaterDeferred">
       <UniqueIdentifier>{6d1be742-7304-41fc-a3e7-62bb39214c35}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\WaterBaker">
+      <UniqueIdentifier>{c9c3619b-e98a-4ea9-814f-2e88919cfccb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -372,6 +375,9 @@
     <ClInclude Include="MeshBaker.h">
       <Filter>Header Files\Baker</Filter>
     </ClInclude>
+    <ClInclude Include="WaterBaker.h">
+      <Filter>Header Files\Baker</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">
@@ -492,6 +498,9 @@
       <Filter>Source Files\World</Filter>
     </ClCompile>
     <ClCompile Include="MeshBaker.cpp">
+      <Filter>Source Files\Baker</Filter>
+    </ClCompile>
+    <ClCompile Include="WaterBaker.cpp">
       <Filter>Source Files\Baker</Filter>
     </ClCompile>
   </ItemGroup>
@@ -831,6 +840,12 @@
     </None>
     <None Include="Shaders\RawWaterDeferred\shader.vert">
       <Filter>Shaders\RawWaterDeferred</Filter>
+    </None>
+    <None Include="Shaders\WaterBaker\shader.vert">
+      <Filter>Shaders\WaterBaker</Filter>
+    </None>
+    <None Include="Shaders\WaterBaker\shader.frag">
+      <Filter>Shaders\WaterBaker</Filter>
     </None>
   </ItemGroup>
 </Project>

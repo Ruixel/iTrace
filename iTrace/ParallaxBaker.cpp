@@ -52,6 +52,44 @@ namespace iTrace {
 
 		}
 
+		void ParallaxBaker::BakeParallaxMapCustom(const std::string& OutPutParallaxMap, float Strength, int Resolution, int Directions, FrameBufferObject& FBO, unsigned int HeightMap)
+		{
+			BakeShader.Bind();
+
+			BakeShader.SetUniform("TextureSize", Resolution);
+			BakeShader.SetUniform("RayCount", Directions);
+
+			FBO.Bind();
+
+			BakeShader.SetUniform("Strength", Strength);
+
+			glActiveTexture(GL_TEXTURE0); 
+			glBindTexture(GL_TEXTURE_2D, HeightMap); 
+
+			DrawPostProcessQuad();
+
+			FBO.UnBind();
+
+			BakeShader.SetUniform("TextureSize", BAKE_RESOLUTION);
+			BakeShader.SetUniform("RayCount", BAKE_DIRECTIONS);
+
+			BakeShader.UnBind();
+
+			unsigned char* Pixels = new unsigned char[(Resolution + 2) * Directions * Resolution * 4];
+
+			glBindTexture(GL_TEXTURE_2D, FBO.ColorBuffer);
+			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Pixels);
+			glBindTexture(GL_TEXTURE_2D, 0);
+
+			glFinish();
+
+			sf::Image* OutPutImage = new sf::Image();
+			OutPutImage->create((Resolution + 2) * Directions, Resolution, Pixels);
+			OutPutImage->saveToFile(OutPutParallaxMap);
+
+			delete[] Pixels;
+		}
+
 		void ParallaxBaker::ReloadParallaxBaker()
 		{
 			BakeShader.Reload("Shaders/ParallaxBakeShader"); 

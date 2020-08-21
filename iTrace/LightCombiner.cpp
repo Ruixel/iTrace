@@ -111,6 +111,9 @@ namespace iTrace {
 			Deferred.DeferredRefractive.BindImage(7);
 			Deferred.PrimaryDeferredRefractive.BindImage(2, 8);
 			Indirect.RefractedWater.BindImage(0, 9); 
+			Deferred.RawWaterDeferred.BindImage(3, 10);
+			Deferred.RawWaterDeferred.BindDepthImage(11);
+
 			FocusSSBO.Bind(0);
 			
 			
@@ -122,6 +125,15 @@ namespace iTrace {
 			RefractiveCombiner.SetUniform("PixelFocusPoint", Window.GetResolution() / 2); 
 			RefractiveCombiner.SetUniform("znear", Camera.znear); 
 			RefractiveCombiner.SetUniform("zfar", Camera.zfar);
+
+			for (int i = 0; i < 5; i++) {
+				Sky.ShadowMaps[i].BindDepthImage(i + 14);
+
+				std::string Title = "ShadowMatrices[" + std::to_string(i) + "]";
+
+				RefractiveCombiner.SetUniform(Title, Sky.ProjectionMatrices[i] * Sky.ViewMatrices[i]);
+
+			}
 
 
 			DrawPostProcessQuad(); 
@@ -207,6 +219,15 @@ namespace iTrace {
 			RefractiveCombiner.SetUniform("RefractiveBlocks", 7);
 			RefractiveCombiner.SetUniform("PrimaryRefractionNormalLF", 8);
 			RefractiveCombiner.SetUniform("WaterRefraction", 9);
+			RefractiveCombiner.SetUniform("WaterAlbedo", 10);
+			RefractiveCombiner.SetUniform("WaterDepth", 11);
+			RefractiveCombiner.SetUniform("WaterNormal", 12);
+			RefractiveCombiner.SetUniform("WaterPosition", 13);
+
+			RefractiveCombiner.SetUniform("ShadowMaps[0]", 14);
+			RefractiveCombiner.SetUniform("ShadowMaps[1]", 15);
+			RefractiveCombiner.SetUniform("ShadowMaps[2]", 16);
+			RefractiveCombiner.SetUniform("ShadowMaps[3]", 17);
 
 			RefractiveCombiner.UnBind(); 
 

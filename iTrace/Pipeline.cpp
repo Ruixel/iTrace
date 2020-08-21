@@ -6,6 +6,8 @@
 #include "Weather.h"
 #include "RainDropBaker.h"
 #include "CausticBaker.h"
+#include "WaterBaker.h"
+
 
 #ifdef _WIN32 or _WIN64
 
@@ -429,6 +431,11 @@ namespace iTrace {
 		Core::PrepareHaltonSequence();
 		PreparePostProcess();
 
+
+		WaterBaker WaterBaker;
+		WaterBaker.Bake("Resources/Water/Water", "Resources/Water/Water_Parallax", 192, 96, 100);
+
+
 		std::string Directory = "C:/Users/te17hw8/source/repos/iTrace/iTrace/Materials/Jelly/";
 		//CausticBaker Caustics;
 		//Caustics.BakeCausticMap(Directory + "Albedo.png", Directory + "Normal.png", Directory + "Caustic");
@@ -490,7 +497,6 @@ namespace iTrace {
 
 		RainBaker Baker;
 		Baker.BakeRain();
-
 
 		 
 

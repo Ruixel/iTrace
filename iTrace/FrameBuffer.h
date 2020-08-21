@@ -12,7 +12,7 @@ namespace iTrace {
 			GLuint FrameBuffer, ColorBuffer, DepthBuffer;
 			glm::ivec2 Resolution;
 			bool GenerateMip;
-			FrameBufferObject(glm::ivec2 Resolution, int Format = GL_RGB32F, bool HasDepth = true, bool generatemip = false);
+			FrameBufferObject(glm::ivec2 Resolution, int Format = GL_RGB32F, bool HasDepth = true, bool generatemip = false, bool repeat = false);
 			FrameBufferObject();
 			void Bind();
 			void BindImage(int Target) { glActiveTexture(GL_TEXTURE0 + Target); glBindTexture(GL_TEXTURE_2D, ColorBuffer); }
@@ -54,7 +54,7 @@ namespace iTrace {
 			std::vector<GLuint> ColorBuffers;
 			glm::ivec2 Resolution;
 			bool GenerateMip;
-			MultiPassFrameBufferObject(glm::ivec2 Resolution, int stages, std::vector<int> Formats, bool HasDepth = true, bool generatemip = false);
+			MultiPassFrameBufferObject(glm::ivec2 Resolution, int stages, std::vector<int> Formats, bool HasDepth = true, bool generatemip = false, bool repeat = false);
 			MultiPassFrameBufferObject();
 			void Bind();
 			void BindImage(int Target, int TargetImage) { glActiveTexture(GL_TEXTURE0 + TargetImage); glBindTexture(GL_TEXTURE_2D, ColorBuffers[Target]); }

@@ -2,7 +2,14 @@
 
 in vec2 TexCoord; 
 
-out vec4 Color; 
+out vec4 PackedNormal; //since we know the normal map is facing upwards, we don't need to encode the y-coordinate of the normal  
+//we also know the normal map is fairly low frequency, thus the normal map only needs to be about 256 * 256 resolution wise
+//and the parallax data only needs to be ~128x128x32
+//with 128 frames, thats ~85mb of vram
+
+out float Height; 
+//^ a to-be, supersampled height map that will then be yeeted into the parallax baker. 
+
 
 #define ITERATIONS_NORMAL 48
 
@@ -46,10 +53,10 @@ vec4 normal(vec2 pos, float e, float depth, float Time){
 	return vec4(R,H); 
 }
 
-float Zoom = 24.0; 
+float Zoom = 14.0; 
 float Power = 4.0; 
 
-int TIME = 120; 
+uniform int TIME; 
 float TimeMultiplier = 8.0; 
 
 void main()
@@ -83,19 +90,11 @@ void main()
     Primary.xyz = normalize(Primary.xyz); 
     Secondary.xyz = normalize(Secondary.xyz); 
 
-    
-    Color = mix(Secondary,Primary,Time); 
-    
-    Color.xyz = normalize(Color.xyz); 
-    Color.xz = Color.xz * 0.5 + 0.5; 
-    Color.w *= 0.476190476; 
-    
+	Height = mix(Secondary.w, Primary.w, Time) * 0.526759376; 
+	Height = clamp(Height, 0.0, 1.0); 
 
-
-    //fragColor.xyz = fragColor.www; 
-    
-  	//fragColor.xyz = mix(EdgePositiveX, fragColor.xyz, uv.x); 
-
-    // Output to screen
-    //fragColor.xyz = normal(fract(uv * 2.)*3.14, 0.01, 2.1);
+	PackedNormal.xy = mix(Secondary.xz, Primary.xz, Time); 
+	PackedNormal.xy = PackedNormal.xy * 0.5 + 0.5;
+	PackedNormal.zw = vec2(Height, 1.0); 
+	
 }

@@ -185,6 +185,7 @@
     <ClInclude Include="text.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="ViewBob.h" />
+    <ClInclude Include="WaterBaker.h" />
     <ClInclude Include="Weather.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="WorldManager.h" />
@@ -227,6 +228,7 @@
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureBaker.cpp" />
     <ClCompile Include="ViewBob.cpp" />
+    <ClCompile Include="WaterBaker.cpp" />
     <ClCompile Include="Weather.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="WorldManager.cpp" />
@@ -336,6 +338,8 @@
     <None Include="Shaders\UIShader\shader.vert" />
     <None Include="Shaders\Volumetrics\shader.frag" />
     <None Include="Shaders\Volumetrics\shader.vert" />
+    <None Include="Shaders\WaterBaker\shader.frag" />
+    <None Include="Shaders\WaterBaker\shader.vert" />
     <None Include="Shaders\WaterDepthPacker\shader.frag" />
     <None Include="Shaders\WaterDepthPacker\shader.vert" />
     <None Include="Shaders\WaterRefraction\shader.frag" />

@@ -101,7 +101,7 @@ vec2 ScreenSpaceTrace(vec3 Direction, vec3 Origin) {
 	vec3 ViewOrigin = vec3(ViewMatrix * vec4(Origin, 1.0)); 
 	//^ I think these are okay? 
 
-	float MaxTraversal = 100.0; //<- for now, hardcoded. 
+	float MaxTraversal = 10.0; //<- for now, hardcoded. 
 	//						^ this constant will be changed to the analytical intersection later 
 
 	vec3 RayStep = (ViewDirection * MaxTraversal) / vec3(TraceSteps); 
@@ -122,13 +122,13 @@ vec2 ScreenSpaceTrace(vec3 Direction, vec3 Origin) {
 		ProjectedPoint.xyz /= ProjectedPoint.w; 
 
 		if(abs(ProjectedPoint.x) > 1.0 || abs(ProjectedPoint.y) > 1.0) 
-			return vec2(0.0); //<- no suitable intersection point found 
+			return TexCoord; //<- no suitable intersection point found 
 		
 		float FetchedZ = texture(TraceDepth, ProjectedPoint.xy * 0.5 + 0.5).x; 
 		float CurrentZ = LinearDepth(ProjectedPoint.z * 0.5 + 0.5); 
 
 
-		if(FetchedZ < CurrentZ  && abs(FetchedZ-CurrentZ) <  16 * abs(PreviousZ-CurrentZ)) {
+		if(FetchedZ < CurrentZ  && abs(FetchedZ-CurrentZ) < abs(PreviousZ-CurrentZ)) {
 		
 			//do a bit of a binary search! 
 
@@ -175,7 +175,7 @@ void main() {
 	vec3 Normal = texture(LFNormal, TexCoord).xyz; 
 	vec3 WorldPos = texture(WorldPosition, TexCoord).xyz; 
 	vec3 Incident = normalize(WorldPos - CameraPosition); 
-	vec3 Direction = refract(Incident, Normal, 1.0/1.33); 
+	vec3 Direction = refract(Incident, Normal, 1.0/1.1); 
 	
 	RefractedTC = ScreenSpaceTrace(Direction, WorldPos); 
 }

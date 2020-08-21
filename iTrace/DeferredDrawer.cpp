@@ -26,11 +26,10 @@ namespace iTrace {
 			RawDeferred = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGBA16F, GL_RGBA16F, GL_RGB16F });
 			DeferredRefractive = FrameBufferObject(Window.GetResolution(), GL_RGBA8, false); 
 			PrimaryDeferredRefractive = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 3, { GL_RGBA8,GL_RGB16F,GL_RGB16F });
-			RawWaterDeferred = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGB16F, GL_RGB32F, GL_RGB16F }, true, false); 
+			RawWaterDeferred = MultiPassFrameBufferObject(Window.GetResolution(), 4, { GL_RGB16F, GL_RGB32F, GL_RGB16F, GL_RGB8 }, true, false); 
 			TestStoneTexture = LoadTextureGL("Materials/Stone/Albedo.png"); 
 
 			Noise = LoadTextureGL("Textures/Noise.png",GL_RED); 
-			WaterNormal = LoadTextureGL("Textures/waternormal.jpg", GL_RGB); 
 			RequestBoolean("parallax", false); 
 
 			SetUniforms(Window); 
@@ -54,8 +53,10 @@ namespace iTrace {
 
 			glBindTexture(GL_TEXTURE_2D_ARRAY, 0); 
 
+			LoadWaterData(); 
 
 		}
+
 
 		void DeferredRenderer::RenderDeferred(SkyRendering& Sky, Window& Window, Camera& Camera, WorldManager& World, Vector3f& SunDirection)
 		{
@@ -67,8 +68,14 @@ namespace iTrace {
 			WaterDeferred.Bind();
 
 			WaterDeferred.SetUniform("IdentityMatrix", Camera.Project * Camera.View); 
+			WaterDeferred.SetUniform("Time", Window.GetTimeOpened()); 
+			WaterDeferred.SetUniform("CameraPosition", Camera.Position);
 
-			WaterNormal.Bind(0); 
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, WaterNormal); 
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, WaterParallax);
 
 			DrawPostProcessQuad(); 
 
@@ -299,11 +306,10 @@ namespace iTrace {
 
 			DeferredManager.UnBind(); 
 
-
-
 			WaterDeferred.Bind(); 
 
 			WaterDeferred.SetUniform("WaterNormal", 0); 
+			WaterDeferred.SetUniform("WaterParallax", 1);
 
 			WaterDeferred.UnBind(); 
 
@@ -319,6 +325,106 @@ namespace iTrace {
 			PrimaryRefractiveDeferredManager.Reload("Shaders/PrimaryDeferredRefractive");
 			WaterDeferred.Reload("Shaders/RawWaterDeferred"); 
 			SetUniforms(Window); 
+		}
+
+		void DeferredRenderer::LoadWaterData()
+		{
+			glGenTextures(1, &WaterNormal); 
+			glGenTextures(1, &WaterParallax); 
+
+			glBindTexture(GL_TEXTURE_2D_ARRAY, WaterNormal);
+			
+			glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, 192, 192, 100, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT);
+
+			glTexParameteri(GL_TEXTURE_2D_ARRAY,
+				GL_TEXTURE_MIN_FILTER,
+				GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY,
+				GL_TEXTURE_MAG_FILTER,
+				GL_LINEAR_MIPMAP_LINEAR);
+
+			for (int i = 0; i < 100; i++) {
+
+				std::string FilePath = "Resources/Water/Water_" + std::to_string(i) + ".png"; 
+
+
+				sf::Image LoadingImage;
+				LoadingImage.loadFromFile(FilePath);
+
+				auto PixelData = std::vector<unsigned char>(LoadingImage.getSize().x * LoadingImage.getSize().y * 3, 255);
+				auto RawPixelData = LoadingImage.getPixelsPtr();
+
+				for (int pixel = 0; pixel < LoadingImage.getSize().x * LoadingImage.getSize().y; pixel++) {
+					for (int color = 0; color < 3; color++)
+						PixelData[pixel * 3 + color] = RawPixelData[pixel * 4 + color];
+				}
+
+				glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+					0,
+					0, 0, i,
+					192, 192, 1,
+					GL_RGB,
+					GL_UNSIGNED_BYTE,
+					PixelData.data());
+
+			}
+
+			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
+			glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+
+			glBindTexture(GL_TEXTURE_2D_ARRAY, WaterParallax);
+
+			glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, (96 + 2) * 16, 96, 100, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT);
+
+			glTexParameteri(GL_TEXTURE_2D_ARRAY,
+				GL_TEXTURE_MIN_FILTER,
+				GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY,
+				GL_TEXTURE_MAG_FILTER,
+				GL_LINEAR_MIPMAP_LINEAR);
+
+			for (int i = 0; i < 100; i++) {
+
+				std::string FilePath = "Resources/Water/Water_Parallax_" + std::to_string(i) + ".png";
+
+
+				sf::Image LoadingImage;
+				LoadingImage.loadFromFile(FilePath);
+
+				auto PixelData = std::vector<unsigned char>(LoadingImage.getSize().x * LoadingImage.getSize().y , 255);
+				auto RawPixelData = LoadingImage.getPixelsPtr();
+
+				for (int pixel = 0; pixel < LoadingImage.getSize().x * LoadingImage.getSize().y; pixel++) {
+					PixelData[pixel] = RawPixelData[pixel * 4];
+				}
+
+				glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+					0,
+					0, 0, i,
+					(96 + 2) * 16, 96, 1,
+					GL_RED,
+					GL_UNSIGNED_BYTE,
+					PixelData.data());
+
+			}
+
+			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
+			glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+
+
+
 		}
 
 	}

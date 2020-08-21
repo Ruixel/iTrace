@@ -18,6 +18,9 @@ namespace iTrace {
 			
 			void PrepareParallaxBaker(); 
 			void BakeParallaxMap(const std::string& HeightMap, const std::string& OutPutParallaxMap, float Strength); 
+
+			void BakeParallaxMapCustom(const std::string& OutPutParallaxMap, float Strength, int Resolution, int Directions, FrameBufferObject& FBO, unsigned int HeightMap); 
+
 			void ReloadParallaxBaker(); 
 
 		private: 

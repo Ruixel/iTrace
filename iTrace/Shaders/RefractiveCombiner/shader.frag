@@ -20,11 +20,23 @@ uniform sampler2D PrimaryRefractionNormal;
 uniform sampler2D PrimaryRefractionNormalLF; 
 uniform sampler2D Volumetrics; 
 uniform sampler2D WaterRefraction; 
+uniform sampler2D WaterAlbedo; 
+uniform sampler2D WaterDepth; 
+uniform sampler2D WaterNormal; 
+uniform sampler2D WaterPosition; 
+
+uniform sampler2D ShadowMaps[4];
+
+
+
 uniform ivec2 PixelFocusPoint; 
 
 uniform mat4 IdentityMatrix;
 uniform mat4 InverseView; 
 uniform mat4 InverseProj; 
+uniform mat4 ShadowMatrices[4]; 
+uniform vec3 LightDirection; 
+uniform vec3 SunColor; 
 uniform vec3 CameraPosition; 
 
 const bool ChromaticAbberation = false; 
@@ -147,6 +159,40 @@ vec2 TCFromWorldPos(vec3 WorldPos) {
 }
 
 
+
+
+void HandleRefraction(float InDepth, inout vec3 WaterColor, inout vec2 TC, out float RefractedDepth, out vec3 GlowAddon) {
+
+	float RefractiveDepth = texelFetch(WaterDepth, ivec2(gl_FragCoord), 0).x ; 
+
+	GlowAddon = vec3(0.0); 
+
+	if(RefractiveDepth < InDepth) {
+		
+		WaterColor = texture(WaterAlbedo, TC).xyz; 
+
+		vec2 NewTC = texture(WaterRefraction, InTexCoord).xy; 
+
+		float SecondaryDepth = texelFetch(Depth, ivec2(NewTC * textureSize(Depth,0)), 0).x; 
+
+
+
+		float Difference = abs(LinearDepth(RefractiveDepth)-LinearDepth(SecondaryDepth)); 
+
+		Difference = clamp(1.0 - Difference*4.0,0.0,1.0); 
+
+		WaterColor = mix(WaterColor, vec3(1.0), Difference); 
+		TC = NewTC; 
+
+		//figure out the shadow 
+
+
+
+
+	}
+
+}
+
 void main() {
 
 	vec3 Multiplier = vec3(1.0); 
@@ -157,7 +203,13 @@ void main() {
 	vec2 TC = InTexCoord; 
 	vec3 ColorSample = vec3(1.0); 
 
-	TC = texture(WaterRefraction, InTexCoord).xy; 
+	vec3 WaterMultiplier = vec3(1.0); 
+
+	//TC = texture(WaterRefraction, InTexCoord).xy; 
+	float WaterDepth; 
+	vec3 GlowAddon; 
+	HandleRefraction(DepthSample, WaterMultiplier, TC, WaterDepth, GlowAddon); 
+
 
 	if(RefractiveDepth < DepthSample) {
 		
@@ -269,9 +321,12 @@ void main() {
 		OcclusionDepth[0] = vec4(DofDepth); 
 
 	}
-	Lighting.w = LinearDepth(DofDepth); 
+	Lighting.w = LinearDepth(WaterDepth); 
 
-	Glow = vec3(0.0); 
-	
-
+	//Glow = vec3(0.0); 
+	//Lighting.xy = texture(WaterRefraction, InTexCoord).xy; 
+	//Lighting.z = 0.0; 
+	Lighting.xyz *= WaterMultiplier; 
+	Glow *= WaterMultiplier; 
+	Glow += GlowAddon; 
 }

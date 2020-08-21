@@ -9,7 +9,7 @@ out vec3 Pos;
 
 void main(void) {
 
-	Pos = vec3(Vert.x * 500.0,59.f, Vert.y * 500.0); 
+	Pos = vec3(Vert.x * 500.0,58.9f, Vert.y * 500.0); 
 
 	TexCoord = Texc; 
 	gl_Position = IdentityMatrix * vec4(Pos,1.0); 

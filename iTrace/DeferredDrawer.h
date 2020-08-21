@@ -15,13 +15,17 @@ namespace iTrace {
 			MultiPassFrameBufferObject RawDeferred, RawWaterDeferred;
 			MultiPassFrameBufferObjectPreviousData Deferred, PrimaryDeferredRefractive;
 			FrameBufferObject DeferredRefractive; //<- fallback refraction 
-			TextureGL Noise, WaterNormal;
+			TextureGL Noise;
 			unsigned int RainDrop; 
+			unsigned int WaterNormal, WaterParallax; 
 
 			void PrepareDeferredRenderer(Window& Window); 
 			void RenderDeferred(SkyRendering & Sky, Window& Window, Camera& Camera, WorldManager & World, Vector3f & SunDirection); 
 			void SetUniforms(Window& Window); 
 			void ReloadDeferred(Window& Window);
+			
+		private: 
+			void LoadWaterData(); 
 		};
 
 	}
