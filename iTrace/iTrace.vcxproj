@@ -302,6 +302,8 @@
     <None Include="Shaders\RainBaker\shader.vert" />
     <None Include="Shaders\RawPathTracing\shader.frag" />
     <None Include="Shaders\RawPathTracing\shader.vert" />
+    <None Include="Shaders\RawWaterDeferred\shader.frag" />
+    <None Include="Shaders\RawWaterDeferred\shader.vert" />
     <None Include="Shaders\RefractiveCombiner\shader.frag" />
     <None Include="Shaders\RefractiveCombiner\shader.vert" />
     <None Include="Shaders\RTMotionVectors\shader.frag" />
@@ -334,6 +336,10 @@
     <None Include="Shaders\UIShader\shader.vert" />
     <None Include="Shaders\Volumetrics\shader.frag" />
     <None Include="Shaders\Volumetrics\shader.vert" />
+    <None Include="Shaders\WaterDepthPacker\shader.frag" />
+    <None Include="Shaders\WaterDepthPacker\shader.vert" />
+    <None Include="Shaders\WaterRefraction\shader.frag" />
+    <None Include="Shaders\WaterRefraction\shader.vert" />
     <None Include="Stylizer\NormalMapBake\shader.frag" />
     <None Include="Stylizer\NormalMapBake\shader.vert" />
     <None Include="Stylizer\Stylizer\shader.frag" />

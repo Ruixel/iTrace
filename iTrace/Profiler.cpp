@@ -1,7 +1,7 @@
 #include "Profiler.h"
 #include <map>
 
-//#undef DISABLE_PROFILING 
+#undef DISABLE_PROFILING 
 
 struct PerformanceData {
 	float Time; 

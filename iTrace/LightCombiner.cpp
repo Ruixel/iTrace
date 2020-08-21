@@ -110,7 +110,9 @@ namespace iTrace {
 			Indirect.TemporallyFiltered.BindImage(1, 6);
 			Deferred.DeferredRefractive.BindImage(7);
 			Deferred.PrimaryDeferredRefractive.BindImage(2, 8);
+			Indirect.RefractedWater.BindImage(0, 9); 
 			FocusSSBO.Bind(0);
+			
 			
 
 			RefractiveCombiner.SetUniform("InverseProj", glm::inverse(Camera.Project));
@@ -204,6 +206,7 @@ namespace iTrace {
 			RefractiveCombiner.SetUniform("Volumetrics", 6);
 			RefractiveCombiner.SetUniform("RefractiveBlocks", 7);
 			RefractiveCombiner.SetUniform("PrimaryRefractionNormalLF", 8);
+			RefractiveCombiner.SetUniform("WaterRefraction", 9);
 
 			RefractiveCombiner.UnBind(); 
 

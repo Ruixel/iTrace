@@ -76,7 +76,7 @@ namespace iTrace {
 				glTexImage2D(GL_TEXTURE_2D, 0, GetFormat(PixelAccess), Image.getSize().x, Image.getSize().y, 0, PixelAccess, GL_UNSIGNED_BYTE, Pixels);
 				glGenerateMipmap(GL_TEXTURE_2D);
 				glBindTexture(GL_TEXTURE_2D, 0);
-
+				
 				std::cout << "Format1: " << GetFormatText(PixelAccess) << " Format2: " << GetFormatText(GetFormat(PixelAccess)) << '\n';
 
 

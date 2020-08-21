@@ -19,9 +19,6 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{b8be4bfa-529c-48e1-8a38-eada394c5c43}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\Deferred">
-      <UniqueIdentifier>{919c0b50-fa0e-4308-b1b5-7e08a92fd184}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shaders\RawPathTracing">
       <UniqueIdentifier>{f0cb27a1-9f73-4f06-b8ed-f6b3545dad9b}</UniqueIdentifier>
     </Filter>
@@ -228,6 +225,18 @@
     </Filter>
     <Filter Include="Shaders\IntelligentDownScale">
       <UniqueIdentifier>{7cfb3b20-c80f-4ce0-b4d9-7f12accd726a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Deferred">
+      <UniqueIdentifier>{919c0b50-fa0e-4308-b1b5-7e08a92fd184}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\WaterRefraction">
+      <UniqueIdentifier>{56fd8f78-d7eb-4c91-ab14-2961d45b5e27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\WaterDepthPacker">
+      <UniqueIdentifier>{4a186d41-0fde-4f75-9e5c-6ca3c0e7ce8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\RawWaterDeferred">
+      <UniqueIdentifier>{6d1be742-7304-41fc-a3e7-62bb39214c35}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -804,6 +813,24 @@
     </None>
     <None Include="Shaders\IntelligentDownScale\shader.frag">
       <Filter>Shaders\IntelligentDownScale</Filter>
+    </None>
+    <None Include="Shaders\WaterRefraction\shader.vert">
+      <Filter>Shaders\WaterRefraction</Filter>
+    </None>
+    <None Include="Shaders\WaterRefraction\shader.frag">
+      <Filter>Shaders\WaterRefraction</Filter>
+    </None>
+    <None Include="Shaders\WaterDepthPacker\shader.vert">
+      <Filter>Shaders\WaterDepthPacker</Filter>
+    </None>
+    <None Include="Shaders\WaterDepthPacker\shader.frag">
+      <Filter>Shaders\WaterDepthPacker</Filter>
+    </None>
+    <None Include="Shaders\RawWaterDeferred\shader.frag">
+      <Filter>Shaders\RawWaterDeferred</Filter>
+    </None>
+    <None Include="Shaders\RawWaterDeferred\shader.vert">
+      <Filter>Shaders\RawWaterDeferred</Filter>
     </None>
   </ItemGroup>
 </Project>

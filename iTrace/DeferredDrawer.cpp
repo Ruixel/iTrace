@@ -21,14 +21,16 @@ namespace iTrace {
 			TransparentDeferredManager = Shader("Shaders/DeferredTransparent"); 
 			RefractiveDeferredManager = Shader("Shaders/DeferredRefractive"); 
 			PrimaryRefractiveDeferredManager = Shader("Shaders/PrimaryDeferredRefractive"); 
+			WaterDeferred = Shader("Shaders/RawWaterDeferred"); 
 			Deferred = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 8, { GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_RGBA16F, GL_R16F,GL_RGBA16F,GL_RGB16F,GL_RGB16F }, false);
 			RawDeferred = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGBA16F, GL_RGBA16F, GL_RGB16F });
 			DeferredRefractive = FrameBufferObject(Window.GetResolution(), GL_RGBA8, false); 
 			PrimaryDeferredRefractive = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 3, { GL_RGBA8,GL_RGB16F,GL_RGB16F });
+			RawWaterDeferred = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGB16F, GL_RGB32F, GL_RGB16F }, true, false); 
 			TestStoneTexture = LoadTextureGL("Materials/Stone/Albedo.png"); 
 
 			Noise = LoadTextureGL("Textures/Noise.png",GL_RED); 
-
+			WaterNormal = LoadTextureGL("Textures/waternormal.jpg", GL_RGB); 
 			RequestBoolean("parallax", false); 
 
 			SetUniforms(Window); 
@@ -59,6 +61,20 @@ namespace iTrace {
 		{
 
 			Profiler::FlushTime(); 
+
+			RawWaterDeferred.Bind();
+
+			WaterDeferred.Bind();
+
+			WaterDeferred.SetUniform("IdentityMatrix", Camera.Project * Camera.View); 
+
+			WaterNormal.Bind(0); 
+
+			DrawPostProcessQuad(); 
+
+			WaterDeferred.UnBind();
+
+			RawWaterDeferred.UnBind();
 
 			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
@@ -284,6 +300,14 @@ namespace iTrace {
 			DeferredManager.UnBind(); 
 
 
+
+			WaterDeferred.Bind(); 
+
+			WaterDeferred.SetUniform("WaterNormal", 0); 
+
+			WaterDeferred.UnBind(); 
+
+
 		}
 
 		void DeferredRenderer::ReloadDeferred(Window& Window)
@@ -293,7 +317,7 @@ namespace iTrace {
 			TransparentDeferredManager.Reload("Shaders/DeferredTransparent"); 
 			RefractiveDeferredManager.Reload("Shaders/DeferredRefractive");
 			PrimaryRefractiveDeferredManager.Reload("Shaders/PrimaryDeferredRefractive");
-
+			WaterDeferred.Reload("Shaders/RawWaterDeferred"); 
 			SetUniforms(Window); 
 		}
 

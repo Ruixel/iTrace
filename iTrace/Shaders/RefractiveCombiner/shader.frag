@@ -19,6 +19,7 @@ uniform sampler2D PrimaryRefractionColor;
 uniform sampler2D PrimaryRefractionNormal; 
 uniform sampler2D PrimaryRefractionNormalLF; 
 uniform sampler2D Volumetrics; 
+uniform sampler2D WaterRefraction; 
 uniform ivec2 PixelFocusPoint; 
 
 uniform mat4 IdentityMatrix;
@@ -155,6 +156,9 @@ void main() {
 	
 	vec2 TC = InTexCoord; 
 	vec3 ColorSample = vec3(1.0); 
+
+	TC = texture(WaterRefraction, InTexCoord).xy; 
+
 	if(RefractiveDepth < DepthSample) {
 		
 		ColorSample = pow(texture(PrimaryRefractionColor, TC).xyz,vec3(2.2)); 
@@ -266,5 +270,8 @@ void main() {
 
 	}
 	Lighting.w = LinearDepth(DofDepth); 
+
+	Glow = vec3(0.0); 
+	
 
 }

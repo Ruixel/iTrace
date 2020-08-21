@@ -40,6 +40,7 @@ namespace iTrace {
 
 
 
+			RefractedWater = MultiPassFrameBufferObject(Window.GetResolution() / 2, 2, { GL_RG32F, GL_RGBA16F }, false);
 			DirectBlockerBuffer = FrameBufferObject(Window.GetResolution() / 8, GL_RG16F, false);
 			TemporalFrameCount = FrameBufferObjectPreviousData(Window.GetResolution() / 2, GL_R16F, false);
 			TemporalyUpscaled = MultiPassFrameBufferObject(Window.GetResolution() / 2, 5, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
@@ -48,6 +49,7 @@ namespace iTrace {
 			SpatialyUpscaled = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGBA16F,GL_RGBA16F, GL_RGBA16F }, false);
 			ProjectedClouds = FrameBufferObjectPreviousData(Vector2i(256), GL_RGBA16F, false); 
 			PreSpatialTemporal = FrameBufferObjectPreviousData(CheckerBoardedResolution, GL_RGBA16F, false);
+			PackedWaterData = FrameBufferObject(Window.GetResolution() / 2, GL_R16F, false); 
 
 			IndirectLightShader = Shader("Shaders/RawPathTracing", false, Chunk::GetInjectionCode());
 			TemporalUpscaler = Shader("Shaders/TemporalUpscaler");
@@ -64,6 +66,9 @@ namespace iTrace {
 			CloudProjection = Shader("Shaders/CloudProjection"); 
 			CheckerboardUpscaler = Shader("Shaders/CheckerBoardHandler"); 
 			PreSpatialTemporalFilter = Shader("Shaders/PreSpatialTemporal"); 
+			WaterRefraction = Shader("Shaders/WaterRefraction"); 
+			WaterDepthPacker = Shader("Shaders/WaterDepthPacker"); 
+
 
 			SetShaderUniforms(Window); 
 			
@@ -143,6 +148,9 @@ namespace iTrace {
 
 			SpatialyUpscale(Window, Camera, Deferred); 
 			Profiler::SetPerformance("Spatial upscaling");
+
+			DoWaterRayTrace(Window, Camera, Deferred); 
+			Profiler::SetPerformance("Water refraction"); 
 
 		}
 
@@ -642,6 +650,49 @@ namespace iTrace {
 			Checkerboarder[Window.GetFrameCount() % 4].UnBind(); 
 		}
 
+		void LightManager::DoWaterRayTrace(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
+		{
+
+			PackedWaterData.Bind(); 
+
+			WaterDepthPacker.Bind(); 
+
+			WaterDepthPacker.SetUniform("znear", Camera.znear); 
+			WaterDepthPacker.SetUniform("zfar", Camera.zfar);
+
+			Deferred.RawDeferred.BindDepthImage(0); 
+			Deferred.PrimaryDeferredRefractive.BindDepthImage(1); 
+
+			DrawPostProcessQuad(); 
+
+			WaterDepthPacker.Bind();
+
+			PackedWaterData.UnBind(); 
+			
+			RefractedWater.Bind(); 
+
+			WaterRefraction.Bind(); 
+
+			Deferred.RawWaterDeferred.BindImage(0, 0); 
+			Deferred.RawWaterDeferred.BindImage(1, 1);
+			Deferred.RawWaterDeferred.BindDepthImage(2);
+			PackedWaterData.BindImage(3); 
+
+			WaterRefraction.SetUniform("ViewMatrix", Camera.View); 
+			WaterRefraction.SetUniform("ProjectionMatrix", Camera.Project);
+			WaterRefraction.SetUniform("CameraPosition", Camera.Position);
+
+			WaterRefraction.SetUniform("znear", Camera.znear);
+			WaterRefraction.SetUniform("zfar", Camera.zfar);
+
+			DrawPostProcessQuad(); 
+
+			WaterRefraction.UnBind();
+
+			RefractedWater.UnBind(); 
+
+		}
+
 		void LightManager::RenderClouds(Window& Window, Camera& Camera, DeferredRenderer& Deferred, SkyRendering& Sky)
 		{
 		
@@ -755,6 +806,8 @@ namespace iTrace {
 			CloudProjection.Reload("Shaders/CloudProjection"); 
 			PreSpatialTemporalFilter.Reload("Shaders/PreSpatialTemporal"); 
 			CheckerboardUpscaler.Reload("Shaders/CheckerBoardHandler"); 
+			WaterRefraction.Reload("Shaders/WaterRefraction"); 
+			WaterDepthPacker.Reload("Shaders/WaterDepthPacker"); 
 
 			SetShaderUniforms(Window); 
 
@@ -762,281 +815,340 @@ namespace iTrace {
 
 		void LightManager::SetShaderUniforms(Window& Window)
 		{
-			IndirectLightShader.Bind();
 
-			IndirectLightShader.SetUniform("Normals", 0);
-			IndirectLightShader.SetUniform("WorldPosition", 1);
-			IndirectLightShader.SetUniform("Voxels", 2);
-			IndirectLightShader.SetUniform("Sobol", 3);
-			IndirectLightShader.SetUniform("Ranking", 4);
-			IndirectLightShader.SetUniform("Scrambling", 5);
-			IndirectLightShader.SetUniform("DiffuseTextures", 6);
-			IndirectLightShader.SetUniform("TextureData", 7);
-			IndirectLightShader.SetUniform("Sky", 8);
-			IndirectLightShader.SetUniform("LightingData", 14);
-			IndirectLightShader.SetUniform("EmissiveTextures", 15);
-			IndirectLightShader.SetUniform("TextureExData", 16);
-			IndirectLightShader.SetUniform("BlockData", 17);
-			IndirectLightShader.SetUniform("HemisphericalShadowMap", 10);
-			IndirectLightShader.SetUniform("Depth", 18);
-			IndirectLightShader.SetUniform("DirectionalCascades[0]", 19);
-			IndirectLightShader.SetUniform("DirectionalCascades[1]", 20);
-			IndirectLightShader.SetUniform("DirectionalCascades[2]", 21);
-			IndirectLightShader.SetUniform("DirectionalCascades[3]", 22);
-			IndirectLightShader.SetUniform("DirectionalCascadesRaw[0]", 19);
-			IndirectLightShader.SetUniform("DirectionalCascadesRaw[1]", 20);
-			IndirectLightShader.SetUniform("DirectionalCascadesRaw[2]", 21);
-			IndirectLightShader.SetUniform("DirectionalCascadesRaw[3]", 22);
-			IndirectLightShader.SetUniform("SkyNoMie", 23);
-			IndirectLightShader.SetUniform("BlockerData", 24);
-			IndirectLightShader.SetUniform("DisplacementTextures", 25);
-			IndirectLightShader.SetUniform("ParallaxDirections", BAKE_DIRECTIONS);
-			IndirectLightShader.SetUniform("ParallaxResolution", BAKE_RESOLUTION);
-			IndirectLightShader.SetUniform("ParallaxData", 26);
-			IndirectLightShader.SetUniform("TCData", 27);
-			IndirectLightShader.SetUniform("LowFrequencyNormal", 28);
-			IndirectLightShader.SetUniform("NormalTextures", 29);
-			IndirectLightShader.SetUniform("ProjectedClouds", 30);
+			//Indirect light -> 
+			{
 
-			IndirectLightShader.SetUniform("DirectionalRefractive[0]", 31);
-			IndirectLightShader.SetUniform("DirectionalRefractive[1]", 32);
-			IndirectLightShader.SetUniform("DirectionalRefractive[2]", 33);
-			IndirectLightShader.SetUniform("DirectionalRefractive[3]", 34);
+				IndirectLightShader.Bind();
 
-			IndirectLightShader.SetUniform("Albedo", 35); 
+				IndirectLightShader.SetUniform("Normals", 0);
+				IndirectLightShader.SetUniform("WorldPosition", 1);
+				IndirectLightShader.SetUniform("Voxels", 2);
+				IndirectLightShader.SetUniform("Sobol", 3);
+				IndirectLightShader.SetUniform("Ranking", 4);
+				IndirectLightShader.SetUniform("Scrambling", 5);
+				IndirectLightShader.SetUniform("DiffuseTextures", 6);
+				IndirectLightShader.SetUniform("TextureData", 7);
+				IndirectLightShader.SetUniform("Sky", 8);
+				IndirectLightShader.SetUniform("LightingData", 14);
+				IndirectLightShader.SetUniform("EmissiveTextures", 15);
+				IndirectLightShader.SetUniform("TextureExData", 16);
+				IndirectLightShader.SetUniform("BlockData", 17);
+				IndirectLightShader.SetUniform("HemisphericalShadowMap", 10);
+				IndirectLightShader.SetUniform("Depth", 18);
+				IndirectLightShader.SetUniform("DirectionalCascades[0]", 19);
+				IndirectLightShader.SetUniform("DirectionalCascades[1]", 20);
+				IndirectLightShader.SetUniform("DirectionalCascades[2]", 21);
+				IndirectLightShader.SetUniform("DirectionalCascades[3]", 22);
+				IndirectLightShader.SetUniform("DirectionalCascadesRaw[0]", 19);
+				IndirectLightShader.SetUniform("DirectionalCascadesRaw[1]", 20);
+				IndirectLightShader.SetUniform("DirectionalCascadesRaw[2]", 21);
+				IndirectLightShader.SetUniform("DirectionalCascadesRaw[3]", 22);
+				IndirectLightShader.SetUniform("SkyNoMie", 23);
+				IndirectLightShader.SetUniform("BlockerData", 24);
+				IndirectLightShader.SetUniform("DisplacementTextures", 25);
+				IndirectLightShader.SetUniform("ParallaxDirections", BAKE_DIRECTIONS);
+				IndirectLightShader.SetUniform("ParallaxResolution", BAKE_RESOLUTION);
+				IndirectLightShader.SetUniform("ParallaxData", 26);
+				IndirectLightShader.SetUniform("TCData", 27);
+				IndirectLightShader.SetUniform("LowFrequencyNormal", 28);
+				IndirectLightShader.SetUniform("NormalTextures", 29);
+				IndirectLightShader.SetUniform("ProjectedClouds", 30);
 
-			IndirectLightShader.UnBind();
+				IndirectLightShader.SetUniform("DirectionalRefractive[0]", 31);
+				IndirectLightShader.SetUniform("DirectionalRefractive[1]", 32);
+				IndirectLightShader.SetUniform("DirectionalRefractive[2]", 33);
+				IndirectLightShader.SetUniform("DirectionalRefractive[3]", 34);
 
-			TemporalUpscaler.Bind();
+				IndirectLightShader.SetUniform("Albedo", 35);
 
-			TemporalUpscaler.SetUniform("FramesNormal[0]", 0);
-			TemporalUpscaler.SetUniform("FramesNormal[1]", 1);
-			TemporalUpscaler.SetUniform("FramesNormal[2]", 2);
-			TemporalUpscaler.SetUniform("FramesNormal[3]", 3);
+				IndirectLightShader.UnBind();
 
-			TemporalUpscaler.SetUniform("FramesWorldPos[0]", 4);
-			TemporalUpscaler.SetUniform("FramesWorldPos[1]", 5);
-			TemporalUpscaler.SetUniform("FramesWorldPos[2]", 6);
-			TemporalUpscaler.SetUniform("FramesWorldPos[3]", 7);
+			}
 
-			TemporalUpscaler.SetUniform("FramesIndirectDiffuse[0]", 8);
-			TemporalUpscaler.SetUniform("FramesIndirectDiffuse[1]", 9);
-			TemporalUpscaler.SetUniform("FramesIndirectDiffuse[2]", 10);
-			TemporalUpscaler.SetUniform("FramesIndirectDiffuse[3]", 11);
+			//Temporal upscaling -> 
+			{
 
-			TemporalUpscaler.SetUniform("FramesVolumetric[0]", 12);
-			TemporalUpscaler.SetUniform("FramesVolumetric[1]", 13);
-			TemporalUpscaler.SetUniform("FramesVolumetric[2]", 14);
-			TemporalUpscaler.SetUniform("FramesVolumetric[3]", 15);
+				TemporalUpscaler.Bind();
 
-			TemporalUpscaler.SetUniform("MotionVectors[0]", 16);
-			TemporalUpscaler.SetUniform("MotionVectors[1]", 17);
-			TemporalUpscaler.SetUniform("MotionVectors[2]", 18);
-			TemporalUpscaler.SetUniform("MotionVectors[3]", 19);
+				TemporalUpscaler.SetUniform("FramesNormal[0]", 0);
+				TemporalUpscaler.SetUniform("FramesNormal[1]", 1);
+				TemporalUpscaler.SetUniform("FramesNormal[2]", 2);
+				TemporalUpscaler.SetUniform("FramesNormal[3]", 3);
 
-			TemporalUpscaler.SetUniform("WorldPos", 20);
-			TemporalUpscaler.SetUniform("Normal", 21);
+				TemporalUpscaler.SetUniform("FramesWorldPos[0]", 4);
+				TemporalUpscaler.SetUniform("FramesWorldPos[1]", 5);
+				TemporalUpscaler.SetUniform("FramesWorldPos[2]", 6);
+				TemporalUpscaler.SetUniform("FramesWorldPos[3]", 7);
 
-			TemporalUpscaler.SetUniform("FramesIndirectSpecular[0]", 22);
-			TemporalUpscaler.SetUniform("FramesIndirectSpecular[1]", 23);
-			TemporalUpscaler.SetUniform("FramesIndirectSpecular[2]", 24);
-			TemporalUpscaler.SetUniform("FramesIndirectSpecular[3]", 25);
+				TemporalUpscaler.SetUniform("FramesIndirectDiffuse[0]", 8);
+				TemporalUpscaler.SetUniform("FramesIndirectDiffuse[1]", 9);
+				TemporalUpscaler.SetUniform("FramesIndirectDiffuse[2]", 10);
+				TemporalUpscaler.SetUniform("FramesIndirectDiffuse[3]", 11);
 
-			TemporalUpscaler.SetUniform("FramesClouds[0]", 26);
-			TemporalUpscaler.SetUniform("FramesClouds[1]", 27);
-			TemporalUpscaler.SetUniform("FramesClouds[2]", 28);
-			TemporalUpscaler.SetUniform("FramesClouds[3]", 29);
+				TemporalUpscaler.SetUniform("FramesVolumetric[0]", 12);
+				TemporalUpscaler.SetUniform("FramesVolumetric[1]", 13);
+				TemporalUpscaler.SetUniform("FramesVolumetric[2]", 14);
+				TemporalUpscaler.SetUniform("FramesVolumetric[3]", 15);
 
-			TemporalUpscaler.SetUniform("FramesDirect[0]", 30);
-			TemporalUpscaler.SetUniform("FramesDirect[1]", 31);
-			TemporalUpscaler.SetUniform("FramesDirect[2]", 32);
-			TemporalUpscaler.SetUniform("FramesDirect[3]", 33);
+				TemporalUpscaler.SetUniform("MotionVectors[0]", 16);
+				TemporalUpscaler.SetUniform("MotionVectors[1]", 17);
+				TemporalUpscaler.SetUniform("MotionVectors[2]", 18);
+				TemporalUpscaler.SetUniform("MotionVectors[3]", 19);
 
+				TemporalUpscaler.SetUniform("WorldPos", 20);
+				TemporalUpscaler.SetUniform("Normal", 21);
 
-			TemporalUpscaler.SetUniform("Resolution", Window.GetResolution() / 4);
+				TemporalUpscaler.SetUniform("FramesIndirectSpecular[0]", 22);
+				TemporalUpscaler.SetUniform("FramesIndirectSpecular[1]", 23);
+				TemporalUpscaler.SetUniform("FramesIndirectSpecular[2]", 24);
+				TemporalUpscaler.SetUniform("FramesIndirectSpecular[3]", 25);
 
-			TemporalUpscaler.UnBind();
+				TemporalUpscaler.SetUniform("FramesClouds[0]", 26);
+				TemporalUpscaler.SetUniform("FramesClouds[1]", 27);
+				TemporalUpscaler.SetUniform("FramesClouds[2]", 28);
+				TemporalUpscaler.SetUniform("FramesClouds[3]", 29);
 
-			RTMotionVectorCalculator.Bind();
-
-			RTMotionVectorCalculator.SetUniform("WorldPosPrevious", 0);
-			RTMotionVectorCalculator.SetUniform("Normal", 1);
-			RTMotionVectorCalculator.SetUniform("NormalPrevious", 2);
-			RTMotionVectorCalculator.SetUniform("PreviousWorldPos", 3);
-			RTMotionVectorCalculator.SetUniform("CurrentLighting", 4);
-			RTMotionVectorCalculator.SetUniform("PreviousLighting", 5);
-			RTMotionVectorCalculator.SetUniform("CloudDepth", 6);
-
-			RTMotionVectorCalculator.SetUniform("Resolution", Vector2f(Window.GetResolution() / 2));
-
-			RTMotionVectorCalculator.UnBind();
-
-			SpatialPacker.Bind();
-
-			SpatialPacker.SetUniform("InputNormal", 0);
-			SpatialPacker.SetUniform("InputDepth", 1);
-
-			SpatialPacker.UnBind();
-
-			SpatialFilter.Bind();
-
-			SpatialFilter.SetUniform("InputPacked", 0);
-			SpatialFilter.SetUniform("InputLighting", 1);
-			SpatialFilter.SetUniform("FrameCount", 2);
-			SpatialFilter.SetUniform("InputSpecular", 3);
-			SpatialFilter.SetUniform("MotionVectors", 4);
-			SpatialFilter.SetUniform("Direct", 5);
-			SpatialFilter.SetUniform("Detail", 6);
-			SpatialFilter.SetUniform("InputSHCg", 7);
-
-			SpatialFilter.UnBind();
-
-			SpatialFilterFinal.Bind(); 
-
-			SpatialFilterFinal.SetUniform("InputPacked", 0);
-			SpatialFilterFinal.SetUniform("InputLighting", 1);
-			SpatialFilterFinal.SetUniform("FrameCount", 2);
-			SpatialFilterFinal.SetUniform("InputSpecular", 3);
-			SpatialFilterFinal.SetUniform("MotionVectors", 4);
-			SpatialFilterFinal.SetUniform("Direct", 5);
-			SpatialFilterFinal.SetUniform("Detail", 6);
-			SpatialFilterFinal.SetUniform("InputSHCg", 7);
-
-			SpatialFilterFinal.UnBind(); 
+				TemporalUpscaler.SetUniform("FramesDirect[0]", 30);
+				TemporalUpscaler.SetUniform("FramesDirect[1]", 31);
+				TemporalUpscaler.SetUniform("FramesDirect[2]", 32);
+				TemporalUpscaler.SetUniform("FramesDirect[3]", 33);
 
 
+				TemporalUpscaler.SetUniform("Resolution", Window.GetResolution() / 4);
 
-			SpatialUpscaler.Bind();
+				TemporalUpscaler.UnBind();
 
-			SpatialUpscaler.SetUniform("Depth", 0);
-			SpatialUpscaler.SetUniform("Normal", 1);
-			SpatialUpscaler.SetUniform("Lighting", 2);
-			SpatialUpscaler.SetUniform("PackedGeometryData", 3);
-			SpatialUpscaler.SetUniform("Specular", 5);
-			SpatialUpscaler.SetUniform("Direct", 6);
+			}
 
-			SpatialUpscaler.UnBind();
+			//Motion vectors -> 
+			{
+				RTMotionVectorCalculator.Bind();
 
-			TemporalFilter.Bind();
+				RTMotionVectorCalculator.SetUniform("WorldPosPrevious", 0);
+				RTMotionVectorCalculator.SetUniform("Normal", 1);
+				RTMotionVectorCalculator.SetUniform("NormalPrevious", 2);
+				RTMotionVectorCalculator.SetUniform("PreviousWorldPos", 3);
+				RTMotionVectorCalculator.SetUniform("CurrentLighting", 4);
+				RTMotionVectorCalculator.SetUniform("PreviousLighting", 5);
+				RTMotionVectorCalculator.SetUniform("CloudDepth", 6);
 
-			TemporalFilter.SetUniform("UpscaledDiffuse", 0);
-			TemporalFilter.SetUniform("PreviousDiffuse", 1);
-			TemporalFilter.SetUniform("UpscaledVolumetrics", 2);
-			TemporalFilter.SetUniform("PreviousVolumetrics", 3);
-			TemporalFilter.SetUniform("MotionVectors", 4);
-			TemporalFilter.SetUniform("FrameCount", 5);
-			TemporalFilter.SetUniform("NormalRoughness", 6);
+				RTMotionVectorCalculator.SetUniform("Resolution", Vector2f(Window.GetResolution() / 2));
 
-			TemporalFilter.SetUniform("UpscaledSpecular", 7);
-			TemporalFilter.SetUniform("PreviousSpecular", 8);
+				RTMotionVectorCalculator.UnBind();
 
-			TemporalFilter.SetUniform("UpscaledClouds", 9);
-			TemporalFilter.SetUniform("PreviousClouds", 10);
+			}
 
-			TemporalFilter.SetUniform("UpscaledDirect", 11); 
-			TemporalFilter.SetUniform("PreviousDirect", 12);
+			//Spatial packer -> 
+			{
+				SpatialPacker.Bind();
 
-			TemporalFilter.UnBind();
+				SpatialPacker.SetUniform("InputNormal", 0);
+				SpatialPacker.SetUniform("InputDepth", 1);
 
+				SpatialPacker.UnBind();
+			}
+
+			//Spatial filter -> 
+			{
+				SpatialFilter.Bind();
+
+				SpatialFilter.SetUniform("InputPacked", 0);
+				SpatialFilter.SetUniform("InputLighting", 1);
+				SpatialFilter.SetUniform("FrameCount", 2);
+				SpatialFilter.SetUniform("InputSpecular", 3);
+				SpatialFilter.SetUniform("MotionVectors", 4);
+				SpatialFilter.SetUniform("Direct", 5);
+				SpatialFilter.SetUniform("Detail", 6);
+				SpatialFilter.SetUniform("InputSHCg", 7);
+
+				SpatialFilter.UnBind();
+
+				SpatialFilterFinal.Bind();
+
+				SpatialFilterFinal.SetUniform("InputPacked", 0);
+				SpatialFilterFinal.SetUniform("InputLighting", 1);
+				SpatialFilterFinal.SetUniform("FrameCount", 2);
+				SpatialFilterFinal.SetUniform("InputSpecular", 3);
+				SpatialFilterFinal.SetUniform("MotionVectors", 4);
+				SpatialFilterFinal.SetUniform("Direct", 5);
+				SpatialFilterFinal.SetUniform("Detail", 6);
+				SpatialFilterFinal.SetUniform("InputSHCg", 7);
+
+				SpatialFilterFinal.UnBind();
+			}
+
+			//Spatial upscaler -> 
+			{
+				SpatialUpscaler.Bind();
+
+				SpatialUpscaler.SetUniform("Depth", 0);
+				SpatialUpscaler.SetUniform("Normal", 1);
+				SpatialUpscaler.SetUniform("Lighting", 2);
+				SpatialUpscaler.SetUniform("PackedGeometryData", 3);
+				SpatialUpscaler.SetUniform("Specular", 5);
+				SpatialUpscaler.SetUniform("Direct", 6);
+
+				SpatialUpscaler.UnBind();
+			}
+
+			//Temporal filter -> 
+			{
+				TemporalFilter.Bind();
+
+				TemporalFilter.SetUniform("UpscaledDiffuse", 0);
+				TemporalFilter.SetUniform("PreviousDiffuse", 1);
+				TemporalFilter.SetUniform("UpscaledVolumetrics", 2);
+				TemporalFilter.SetUniform("PreviousVolumetrics", 3);
+				TemporalFilter.SetUniform("MotionVectors", 4);
+				TemporalFilter.SetUniform("FrameCount", 5);
+				TemporalFilter.SetUniform("NormalRoughness", 6);
+
+				TemporalFilter.SetUniform("UpscaledSpecular", 7);
+				TemporalFilter.SetUniform("PreviousSpecular", 8);
+
+				TemporalFilter.SetUniform("UpscaledClouds", 9);
+				TemporalFilter.SetUniform("PreviousClouds", 10);
+
+				TemporalFilter.SetUniform("UpscaledDirect", 11);
+				TemporalFilter.SetUniform("PreviousDirect", 12);
+
+				TemporalFilter.UnBind();
+			}
 			
+			//Frame counter -> 
+			{
+				FrameCount.Bind();
 
-			FrameCount.Bind();
+				FrameCount.SetUniform("MotionVectors", 0);
+				FrameCount.SetUniform("PreviousFrame", 1);
 
-			FrameCount.SetUniform("MotionVectors", 0); 
-			FrameCount.SetUniform("PreviousFrame", 1); 
+				FrameCount.UnBind();
+			}
+
+			//Volumetrics -> 
+			{
+				Volumetrics.Bind();
+
+				Volumetrics.SetUniform("WorldPosition", 0);
+				Volumetrics.SetUniform("WindNoise", 1);
+				Volumetrics.SetUniform("ChunkLighting", 2);
+				Volumetrics.SetUniform("BasicBlueNoise", 3);
+				Volumetrics.SetUniform("HemisphericalShadowMap", 4);
+				Volumetrics.SetUniform("Sky", 5);
+				Volumetrics.SetUniform("Wind", 6);
+				Volumetrics.SetUniform("Normal", 7);
+				Volumetrics.SetUniform("DirectionalCascades[0]", 8);
+				Volumetrics.SetUniform("DirectionalCascades[1]", 9);
+				Volumetrics.SetUniform("DirectionalCascades[2]", 10);
+				Volumetrics.SetUniform("DirectionalCascades[3]", 11);
+				Volumetrics.SetUniform("ProjectedClouds", 12);
+				Volumetrics.SetUniform("CloudDepth", 13);
+				Volumetrics.SetUniform("DirectionalRefractive[0]", 14);
+				Volumetrics.SetUniform("DirectionalRefractive[1]", 15);
+				Volumetrics.SetUniform("DirectionalRefractive[2]", 16);
+				Volumetrics.SetUniform("DirectionalRefractive[3]", 17);
+				Volumetrics.SetUniform("DirectionalRefractiveDepth[0]", 18);
+				Volumetrics.SetUniform("DirectionalRefractiveDepth[1]", 19);
+				Volumetrics.SetUniform("DirectionalRefractiveDepth[2]", 20);
+				Volumetrics.SetUniform("DirectionalRefractiveDepth[3]", 21);
+				Volumetrics.SetUniform("PrimaryRefractiveDepth", 22);
+
+				Volumetrics.UnBind();
+			}
+
+			//Direct blocker -> 
+			{
+				DirectBlocker.Bind();
+
+				DirectBlocker.SetUniform("DirectionalCascades[0]", 19);
+				DirectBlocker.SetUniform("DirectionalCascades[1]", 20);
+				DirectBlocker.SetUniform("DirectionalCascades[2]", 21);
+				DirectBlocker.SetUniform("DirectionalCascades[3]", 22);
+				DirectBlocker.SetUniform("WorldPosition", 4);
+				DirectBlocker.SetUniform("Depth", 5);
+
+				DirectBlocker.UnBind();
+			}
 			
+			//Clouds -> 
+			{
+				CloudRenderer.Bind();
 
-			FrameCount.UnBind();
+				CloudRenderer.SetUniform("ProjectedClouds", 0);
+				CloudRenderer.SetUniform("BasicBlueNoise", 2);
+				CloudRenderer.SetUniform("CloudNoise", 3);
+				CloudRenderer.SetUniform("WeatherMap", 4);
+				CloudRenderer.SetUniform("CloudShape", 5);
+				CloudRenderer.SetUniform("Turbulence", 6);
+				CloudRenderer.SetUniform("Cirrus", 7);
 
+				CloudRenderer.SetUniform("TextureSize", Window.GetResolution() / 2);
 
-			Volumetrics.Bind(); 
+				CloudRenderer.UnBind();
 
-			Volumetrics.SetUniform("WorldPosition", 0); 
-			Volumetrics.SetUniform("WindNoise", 1);
-			Volumetrics.SetUniform("ChunkLighting", 2);
-			Volumetrics.SetUniform("BasicBlueNoise", 3);
-			Volumetrics.SetUniform("HemisphericalShadowMap", 4);
-			Volumetrics.SetUniform("Sky", 5);
-			Volumetrics.SetUniform("Wind", 6);
-			Volumetrics.SetUniform("Normal", 7);
-			Volumetrics.SetUniform("DirectionalCascades[0]", 8);
-			Volumetrics.SetUniform("DirectionalCascades[1]", 9);
-			Volumetrics.SetUniform("DirectionalCascades[2]", 10);
-			Volumetrics.SetUniform("DirectionalCascades[3]", 11);
-			Volumetrics.SetUniform("ProjectedClouds", 12); 
-			Volumetrics.SetUniform("CloudDepth", 13);
-			Volumetrics.SetUniform("DirectionalRefractive[0]", 14);
-			Volumetrics.SetUniform("DirectionalRefractive[1]", 15);
-			Volumetrics.SetUniform("DirectionalRefractive[2]", 16);
-			Volumetrics.SetUniform("DirectionalRefractive[3]", 17);
-			Volumetrics.SetUniform("DirectionalRefractiveDepth[0]", 18);
-			Volumetrics.SetUniform("DirectionalRefractiveDepth[1]", 19);
-			Volumetrics.SetUniform("DirectionalRefractiveDepth[2]", 20);
-			Volumetrics.SetUniform("DirectionalRefractiveDepth[3]", 21);
-			Volumetrics.SetUniform("PrimaryRefractiveDepth", 22);
+				CloudProjection.Bind();
 
-			Volumetrics.UnBind(); 
+				CloudProjection.SetUniform("PreviousCloudResult", 0);
+				CloudProjection.SetUniform("BasicBlueNoise", 2);
+				CloudProjection.SetUniform("CloudNoise", 3);
+				CloudProjection.SetUniform("WeatherMap", 4);
+				CloudProjection.SetUniform("CloudShape", 5);
+				CloudProjection.SetUniform("Turbulence", 6);
 
-			DirectBlocker.Bind(); 
+				CloudProjection.UnBind();
+			}
 
-			DirectBlocker.SetUniform("DirectionalCascades[0]", 19); 
-			DirectBlocker.SetUniform("DirectionalCascades[1]", 20);
-			DirectBlocker.SetUniform("DirectionalCascades[2]", 21);
-			DirectBlocker.SetUniform("DirectionalCascades[3]", 22);
-			DirectBlocker.SetUniform("WorldPosition", 4);
-			DirectBlocker.SetUniform("Depth", 5);
+			//Pre-spatial temporal -> 
+			{
+				PreSpatialTemporalFilter.Bind();
 
-			DirectBlocker.UnBind(); 
-			
-			CloudRenderer.Bind(); 
+				PreSpatialTemporalFilter.SetUniform("CurrentDetail", 0);
+				PreSpatialTemporalFilter.SetUniform("PreviousDetail", 1);
+				PreSpatialTemporalFilter.SetUniform("SpatialDenoiseData", 2);
+				PreSpatialTemporalFilter.SetUniform("MotionVectors", 3);
+				PreSpatialTemporalFilter.SetUniform("FrameCount", 4);
 
-			CloudRenderer.SetUniform("ProjectedClouds", 0); 
-			CloudRenderer.SetUniform("BasicBlueNoise", 2);
-			CloudRenderer.SetUniform("CloudNoise", 3);
-			CloudRenderer.SetUniform("WeatherMap", 4);
-			CloudRenderer.SetUniform("CloudShape", 5);
-			CloudRenderer.SetUniform("Turbulence", 6);
-			CloudRenderer.SetUniform("Cirrus", 7);
+				PreSpatialTemporalFilter.UnBind();
+			}
 
-			CloudRenderer.SetUniform("TextureSize", Window.GetResolution() / 2);
+			//Checkerboard upscaler -> 
+			{
+				CheckerboardUpscaler.Bind();
 
-			CloudRenderer.UnBind();
+				CheckerboardUpscaler.SetUniform("CloudsRaw", 0);
+				CheckerboardUpscaler.SetUniform("VolumetricsRaw", 1);
+				CheckerboardUpscaler.SetUniform("DiffuseLightingRaw", 2);
+				CheckerboardUpscaler.SetUniform("SpecularLightingRaw", 3);
+				CheckerboardUpscaler.SetUniform("DirectLightingRaw", 4);
+				CheckerboardUpscaler.SetUniform("CloudDepthRaw", 5);
+				CheckerboardUpscaler.SetUniform("UpscaleData", 6);
+				CheckerboardUpscaler.SetUniform("Depth", 7);
+				CheckerboardUpscaler.SetUniform("Normal", 8);
 
-			CloudProjection.Bind();
+				CheckerboardUpscaler.UnBind();
+			}
 
-			CloudProjection.SetUniform("PreviousCloudResult", 0);
-			CloudProjection.SetUniform("BasicBlueNoise", 2);
-			CloudProjection.SetUniform("CloudNoise", 3);
-			CloudProjection.SetUniform("WeatherMap", 4);
-			CloudProjection.SetUniform("CloudShape", 5);
-			CloudProjection.SetUniform("Turbulence", 6);
+			//Water -> 
+			{
 
-			CloudProjection.UnBind();
+				WaterDepthPacker.Bind(); 
 
-			PreSpatialTemporalFilter.Bind(); 
+				WaterDepthPacker.SetUniform("Depth", 0);
+				WaterDepthPacker.SetUniform("RefractedDepth", 1);
 
-			PreSpatialTemporalFilter.SetUniform("CurrentDetail", 0);
-			PreSpatialTemporalFilter.SetUniform("PreviousDetail", 1);
-			PreSpatialTemporalFilter.SetUniform("SpatialDenoiseData", 2);
-			PreSpatialTemporalFilter.SetUniform("MotionVectors", 3);
-			PreSpatialTemporalFilter.SetUniform("FrameCount", 4);
+				WaterDepthPacker.UnBind(); 
 
-			PreSpatialTemporalFilter.UnBind();
+				WaterRefraction.Bind(); 
 
-			CheckerboardUpscaler.Bind(); 
+				WaterRefraction.SetUniform("LFNormal", 0);
+				WaterRefraction.SetUniform("WorldPosition", 1);
+				WaterRefraction.SetUniform("Depth", 2);
+				WaterRefraction.SetUniform("TraceDepth", 3);
 
-			CheckerboardUpscaler.SetUniform("CloudsRaw", 0); 
-			CheckerboardUpscaler.SetUniform("VolumetricsRaw", 1);
-			CheckerboardUpscaler.SetUniform("DiffuseLightingRaw", 2);
-			CheckerboardUpscaler.SetUniform("SpecularLightingRaw", 3);
-			CheckerboardUpscaler.SetUniform("DirectLightingRaw", 4);
-			CheckerboardUpscaler.SetUniform("CloudDepthRaw", 5);
-			CheckerboardUpscaler.SetUniform("UpscaleData", 6);
-			CheckerboardUpscaler.SetUniform("Depth", 7);
-			CheckerboardUpscaler.SetUniform("Normal", 8);
+				WaterRefraction.UnBind();
 
-			CheckerboardUpscaler.UnBind(); 
-
+			}
 		}
 
 		void LightManager::SpatialyUpscale(Window& Window, Camera& Camera, DeferredRenderer& Deferred)

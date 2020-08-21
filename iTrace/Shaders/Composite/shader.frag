@@ -185,7 +185,6 @@ void main() {
 	}
 	Lighting.xyz = mix(DofFetch.xyz,Lighting.xyz,pow(1.0-min(DofFetch.w/2.0,1.0),2.0)); 
 
-	Lighting.xyz = DofFetch.xyz; 
 
 	ivec2 Pixel = ivec2(gl_FragCoord); 
 
