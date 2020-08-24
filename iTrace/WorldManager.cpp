@@ -75,7 +75,7 @@ namespace iTrace {
 				Chunk::AddBlock(Chunk::BlockType("jungle ground", { 50 }, true, false, false, SoundType::DIRT)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("leaves", { 51 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Asphalt", { 52 }, true, false, false, SoundType::STONE)); //CC0, good 
-				Chunk::AddBlock(Chunk::BlockType("melon", { 53 }, true, false, false, SoundType::STONE)); //CC0, good 
+				Chunk::AddBlock(Chunk::BlockType("melon", { 53 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::MELON)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Gold block", { 55 }, true, false, false, SoundType::STONE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Hop", { 56 }, true, false, false, SoundType::STONE)); //CC0, good 
 				Chunk::AddBlock(Chunk::BlockType("Diamond block", { 57 }, true, false, false, SoundType::STONE)); //CC0, good 
@@ -87,6 +87,7 @@ namespace iTrace {
 				Chunk::AddBlock(Chunk::BlockType("Stump", { 66 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::STUMP)); //CC0, good (50)
 				Chunk::AddBlock(Chunk::BlockType("Bush", { 67 }, false, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT, Chunk::BLOCK_MODEL::BUSH)); //CC0, good (50)
 				Chunk::AddBlock(Chunk::BlockType("Vines", { 68 }, false, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT, Chunk::BLOCK_MODEL::VINES)); //CC0, good (50)
+				Chunk::AddBlock(Chunk::BlockType("Vines", { 69 }, false, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT, Chunk::BLOCK_MODEL::SEAWEED)); //CC0, good (50)
 
 
 				Chunk::AddTexture("stone", 0.75);
@@ -109,7 +110,7 @@ namespace iTrace {
 				Chunk::AddTexture("orange tiles", 0.4);
 				Chunk::AddTexture("iron block MC", 0.125);
 				Chunk::AddTexture("solar panel", 0.01);
-				Chunk::AddTexture("sand", 0.6);
+				Chunk::AddTexture("sand", 0.3);
 				Chunk::AddTexture("marble", 0.1);
 				Chunk::AddTexture("iron ore", 0.75);
 				Chunk::AddTexture("farmland wet", 0.5f);
@@ -158,6 +159,7 @@ namespace iTrace {
 				Chunk::AddTexture("Stump", 0.0);
 				Chunk::AddTexture("Bush", 0.0);
 				Chunk::AddTexture("Vines", 0.0);
+				Chunk::AddTexture("Seaweed", 0.0);
 
 
 

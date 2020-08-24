@@ -7,7 +7,7 @@ namespace iTrace {
 
 		namespace Chunk {
 
-			const enum class BLOCK_MODEL {BASE=-1,FLOWER,WHEAT, STUMP, BUSH, VINES};
+			const enum class BLOCK_MODEL {BASE=-1,FLOWER,WHEAT, STUMP, BUSH, VINES, MELON, SEAWEED};
 
 			void AddBlockModels(); 
 

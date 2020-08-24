@@ -32,6 +32,7 @@ uniform sampler2D PrimaryRefractionDepth;
 uniform sampler2D PrimaryRefractionColor; 
 uniform sampler2D PrimaryRefractionNormal; 
 uniform sampler2D SkyReigh; 
+uniform sampler2D WaterDepth; 
 
 uniform bool NoAlbedo; 
 
@@ -90,6 +91,18 @@ vec3 SHToIrridiance(vec4 shY, vec2 CoCg, vec3 N)
 
     return max(vec3(R, G, B), vec3(0.0));
 
+}
+
+vec3 SHToIrradiance(vec4 shY, vec2 CoCg)
+{
+    float   Y       = shY.w / 0.282095;
+
+    float   T       = Y - CoCg.y * 0.5;
+    float   G       = CoCg.y + T;
+    float   B       = T - CoCg.x * 0.5;
+    float   R       = B + CoCg.x;
+
+    return max(vec3(R, G, B), vec3(0.0));
 }
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
@@ -219,6 +232,63 @@ vec4 textureBicubic(sampler2D sampler, vec2 texCoords){
     , sy);
 }
 
+float square(float x) { return x * x; }
+
+float G_Smith_over_NdotV(float roughness, float NdotV, float NdotL)
+{
+    float alpha = square(roughness);
+    float g1 = NdotV * sqrt(square(alpha) + (1.0 - square(alpha)) * square(NdotL));
+    float g2 = NdotL * sqrt(square(alpha) + (1.0 - square(alpha)) * square(NdotV));
+    return 2.0 *  NdotL / (g1 + g2);
+}
+
+float GGX(vec3 V, vec3 L, vec3 N, float roughness, float NoH_offset)
+{
+    vec3 H = normalize(L - V);
+    
+    float NoL = max(0, dot(N, L));
+    float VoH = max(0, -dot(V, H));
+    float NoV = max(0, -dot(N, V));
+    float NoH = clamp(dot(N, H) + NoH_offset, 0, 1);
+
+    if (NoL > 0)
+    {
+        float G = G_Smith_over_NdotV(roughness, NoV, NoL);
+        float alpha = square(max(roughness, 0.02));
+        float D = square(alpha) / (pi * square(square(NoH) * square(alpha) + (1 - square(NoH))));
+
+        // Incident light = SampleColor * NoL
+        // Microfacet specular = D*G*F / (4*NoL*NoV)
+        // F = 1, accounted for elsewhere
+        // NoL = 1, accounted for in the diffuse term
+        return D * G / 4;
+    }
+
+    return 0;
+}
+
+vec3 BuildApproximateSpecular(vec4 SHy, vec3 RawLighting, float Roughness, vec3 Incident, vec3 Normal) { //uses SH to project specular. 
+	vec3 IncomingDir = SHy.xyz / SHy.w * (0.282095 / 0.488603);
+	vec3 RawSpecularDir = reflect(Incident, Normal); 
+
+	float IncomingLen = length(IncomingDir);
+	float Directionality = IncomingLen;
+
+	if(Directionality >= 1.0) {
+			IncomingDir /= IncomingLen; 
+	}
+	else {
+		IncomingDir = mix(RawSpecularDir, IncomingDir / (IncomingLen + 1e-6), vec3(Directionality));
+	}
+
+	float brdf = GGX(Incident, IncomingDir, Normal, max(Roughness,0.3), 0);
+		
+	return RawLighting * brdf; 
+
+}
+
+
+
 void main() {
 
 	vec3 Multiplier = vec3(1.0); 
@@ -276,9 +346,15 @@ void main() {
 
 		IndirectDiffuse.xyz = SHToIrridiance(SHy, ShCoCg, HighfreqNormalSample.xyz); 
 
-	//	vec3 Direct = Shadow * max(dot(LightDirection, HighfreqNormalSample.xyz),0.0);
-	//	vec3 DirectSpecular = 10.0 * Shadow * pow(max(dot(LightDirection, SpecDir),0.0),1024.0); 
 
+		//if we are under water, the "real" specular is reserved for the water reflection 
+		//But! Because we are using SH, we can just project an approximate specular 
+		//-> not my original idea: the idea comes from the Quake2RTX project. Really clever stuff! 
+
+
+		if(texelFetch(WaterDepth, ivec2(gl_FragCoord), 0).x <= DepthSample) 
+			IndirectSpecular.xyz = BuildApproximateSpecular(SHy, IndirectDiffuse.xyz, Roughness, Incident, HighfreqNormalSample.xyz); 
+	
 		vec3 Direct, DirectSpecular; 
 
 		ManageDirect(WorldPosFetch, NormalFetch.xyz,normalize(HighfreqNormalSample.xyz), max(Roughness,0.03), F0, -Incident, Direct, DirectSpecular); 

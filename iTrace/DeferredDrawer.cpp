@@ -26,7 +26,7 @@ namespace iTrace {
 			RawDeferred = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGBA16F, GL_RGBA16F, GL_RGB16F });
 			DeferredRefractive = FrameBufferObject(Window.GetResolution(), GL_RGBA8, false); 
 			PrimaryDeferredRefractive = MultiPassFrameBufferObjectPreviousData(Window.GetResolution(), 3, { GL_RGBA8,GL_RGB16F,GL_RGB16F });
-			RawWaterDeferred = MultiPassFrameBufferObject(Window.GetResolution(), 4, { GL_RGB16F, GL_RGB32F, GL_RGB16F, GL_RGB8 }, true, false); 
+			RawWaterDeferred = MultiPassFrameBufferObject(Window.GetResolution(), 4, { GL_RGB16F, GL_RGB32F, GL_RGB16F, GL_RGBA8 }, true, false); 
 			TestStoneTexture = LoadTextureGL("Materials/Stone/Albedo.png"); 
 
 			Noise = LoadTextureGL("Textures/Noise.png",GL_RED); 

@@ -25,6 +25,11 @@ uniform sampler2D PreviousClouds;
 uniform sampler2D UpscaledDirect; 
 uniform sampler2D PreviousDirect; 
 
+uniform sampler2D Depth; 
+uniform sampler2D WaterDepth; 
+
+uniform sampler2D MotionVectorsSpecular; 
+
 uniform bool DoTemporal; 
 uniform bool NewFiltering; 
 
@@ -105,7 +110,7 @@ void main() {
 	IndirectDiffuse.xyz = vec3(1.0); 
 	
 	vec2 MotionVectors = texture(MotionVectors, TexCoord).xy; 
-	
+	vec2 MotionVectorsSpecular = texture(MotionVectorsSpecular, TexCoord).xy; 
 	float FrameCount = max(texture(FrameCount, TexCoord + MotionVectors).x - 1.0,0.0); 
 	
 	if(MotionVectors.x < -.5 || MotionVectors.y < -.5) {
@@ -141,18 +146,25 @@ void main() {
 
 	vec4 PreviousDiffuse = GetClamped(UpscaledDiffuse,PreviousDiffuse, TexCoord + MotionVectors,0.05); 
 	vec4 PreviousVolumetric = GetClamped(UpscaledVolumetrics,PreviousVolumetrics, TexCoord + MotionVectors,0.05);
-	vec4 PreviousSpecular = GetClamped(UpscaledSpecular, PreviousSpecular, TexCoord + MotionVectors, 0.05); 
+	float PreviousSpecularW = GetClamped(UpscaledSpecular, PreviousSpecular, TexCoord + MotionVectors, 0.05).w; 
+	vec3 PreviousSpecular = GetClamped(UpscaledSpecular, PreviousSpecular, TexCoord + MotionVectorsSpecular, 0.05).xyz; 
+
+
 	vec4 PreviousClouds = texture(PreviousClouds, TexCoord + MotionVectors); 
 	vec4 PreviousDirect = texture(PreviousDirect, TexCoord + MotionVectors); 
 
+	float MixFactorSpecular = min(MixFactor, SpecularTrustFactor); 
+
+	MixFactorSpecular = (texelFetch(WaterDepth, ivec2(gl_FragCoord)*2,0).x < texelFetch(Depth, ivec2(gl_FragCoord)*2,0).x) ? min(MixFactorSpecular,0.9) : MixFactorSpecular; 
+
 	IndirectDiffuse = mix(CurrentLightingSample, PreviousDiffuse, MixFactor); 
 	Volumetrics = mix(CurrentVolumetricSample, PreviousVolumetric, min(MixFactorClouds,0.9));
-	IndirectSpecular = mix(CurrentSpecularSample, PreviousSpecular, min(MixFactor, SpecularTrustFactor)); 
+	IndirectSpecular.xyz = mix(CurrentSpecularSample.xyz, PreviousSpecular, MixFactorSpecular); 
 	Clouds = mix(CurrentClouds, PreviousClouds,MixFactorClouds);  
 	Direct.xyz = CurrentDirect.xyz; 
 	Direct.xyz = mix(CurrentDirect.xyz, ClampDirect(UpscaledDirect,PreviousDirect.xyz), min(MixFactor,0.95)); 
 	Direct.w = mix(CurrentDirect.w, PreviousDirect.w, MixFactor); 
-	IndirectSpecular.w = mix(CurrentSpecularSample.w, PreviousSpecular.w, MixFactor); 
+	IndirectSpecular.w = mix(CurrentSpecularSample.w, PreviousSpecularW, MixFactor); 
 	//Volumetrics = CurrentVolumetricSample; 
 
 //	Volumetrics = CurrentVolumetricSample; 

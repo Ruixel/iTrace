@@ -16,7 +16,7 @@ uniform sampler2D FramesVolumetric[4];
 uniform sampler2D FramesIndirectSpecular[4]; 
 uniform sampler2D FramesClouds[4]; 
 uniform sampler2D FramesDirect[4]; 
-
+uniform sampler2D MotionVectorsSpecular[4]; 
 
 uniform sampler2D MotionVectors[4]; 
 uniform sampler2D WorldPos; 
@@ -63,6 +63,56 @@ bool ConfirmGood(vec4 GTNormal, vec4 CurrentNormal) {
 	return dot(normalize(GTNormal.xyz), normalize(CurrentNormal.xyz)) < 0.9 || abs(GTNormal.w - CurrentNormal.w) / min(GTNormal.w, CurrentNormal.w) > 0.5; 
 }
 
+bool ConstructMotionVector(int idx0, inout vec2 TC, inout vec2 SpecularTC) {
+	
+	vec2 MotionVector0 = texture(MotionVectors[idx0], TC).xy; 
+
+	TC = TC + MotionVector0; 
+	SpecularTC = SpecularTC + texture(MotionVectorsSpecular[idx0], SpecularTC).xy; 
+
+	return IsBadMotionVectors(MotionVector0); 
+
+}
+
+bool ConstructMotionVector(int idx0, int idx1, inout vec2 TC, inout vec2 SpecularTC) {
+	
+	vec2 MotionVector0 = texture(MotionVectors[idx0], TC).xy; 
+
+	TC = TC + texture(MotionVectors[idx0], TC).xy; 
+
+	vec2 MotionVector1 = texture(MotionVectors[idx1], TC).xy; 
+
+	TC = TC + MotionVector1; 
+
+	SpecularTC = SpecularTC + texture(MotionVectorsSpecular[idx0], SpecularTC).xy; 
+	SpecularTC = SpecularTC + texture(MotionVectorsSpecular[idx1], SpecularTC).xy; 
+
+	return IsBadMotionVectors(MotionVector0) || IsBadMotionVectors(MotionVector1); 
+
+}
+
+bool ConstructMotionVector(int idx0, int idx1, int idx2, inout vec2 TC, inout vec2 SpecularTC) {
+	
+	vec2 MotionVector0 = texture(MotionVectors[idx0], TC).xy; 
+
+	TC = TC + texture(MotionVectors[idx0], TC).xy; 
+
+	vec2 MotionVector1 = texture(MotionVectors[idx1], TC).xy; 
+
+	TC = TC + MotionVector1; 
+
+	vec2 MotionVector2 = texture(MotionVectors[idx2], TC).xy; 
+
+	TC = TC + MotionVector2; 
+
+	SpecularTC = SpecularTC + texture(MotionVectorsSpecular[idx0], SpecularTC).xy; 
+	SpecularTC = SpecularTC + texture(MotionVectorsSpecular[idx1], SpecularTC).xy; 
+	SpecularTC = SpecularTC + texture(MotionVectorsSpecular[idx2], SpecularTC).xy; 
+
+	return IsBadMotionVectors(MotionVector0) || IsBadMotionVectors(MotionVector1) || IsBadMotionVectors(MotionVector2); 
+
+}
+
 
 void main() {
 
@@ -83,6 +133,7 @@ void main() {
 	ivec2 Pixel = LowerRes; 
 
 	vec2 TC = TexCoord; 
+	vec2 SpecularTC = TexCoord; 
 
 	bool DoSpatialUpscaling = false; 
 
@@ -111,50 +162,17 @@ void main() {
 		//step 1: calculate motion vectors
 
 		if(CurrentFrame == 0) {
-			
-
-			vec2 MotionVectors0 = texture(MotionVectors[0], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TexCoord + MotionVectors0; 
-
-			vec2 MotionVectors3 = texture(MotionVectors[3], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TC + MotionVectors3; 
-
-			DoSpatialUpscaling = IsBadMotionVectors(MotionVectors3) || IsBadMotionVectors(MotionVectors0);
+			DoSpatialUpscaling = ConstructMotionVector(0, 3, TC, SpecularTC); 
 		}
 		else if(CurrentFrame == 1) {
-
-
-			vec2 MotionVectors1 = texture(MotionVectors[1], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TexCoord + MotionVectors1; 
-
-			vec2 MotionVectors0 = texture(MotionVectors[0], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TC + MotionVectors0; 
-
-			vec2 MotionVectors3 = texture(MotionVectors[3], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TC + MotionVectors3; 
-
-			DoSpatialUpscaling = IsBadMotionVectors(MotionVectors0) || IsBadMotionVectors(MotionVectors3) || IsBadMotionVectors(MotionVectors1);
-		}
-		else if(CurrentFrame == 2) {
-			
+			DoSpatialUpscaling = ConstructMotionVector(1,0,3, TC, SpecularTC); 
 		}
 		else if(CurrentFrame == 3) {
-
-
-			vec2 MotionVectors3 = texture(MotionVectors[3], NewFiltering ? TC : TexCoord).xy; 
-
-			TC = TC + MotionVectors3; 
-
-			DoSpatialUpscaling = IsBadMotionVectors(MotionVectors3);
-
+			DoSpatialUpscaling = ConstructMotionVector(3, TC, SpecularTC); 
 		}
 	
 		Pixel = ivec2(TC * Resolution); 
+		ivec2 SpecularPixel = ivec2(SpecularTC * Resolution); 
 
 		if(Pixel.x < 0 || Pixel.x >= Resolution.x || Pixel.y < 0 || Pixel.y >= Resolution.y) 
 			DoSpatialUpscaling = true; 
@@ -171,7 +189,8 @@ void main() {
 
 			IndirectDiffuse = texelFetch(FramesIndirectDiffuse[2], Pixel, 0); 
 			Volumetrics = texelFetch(FramesVolumetric[2], Pixel, 0); 
-			IndirectSpecular = texelFetch(FramesIndirectSpecular[2], Pixel, 0); 
+			IndirectSpecular.xyz = texelFetch(FramesIndirectSpecular[2], SpecularPixel,0).xyz; 
+			IndirectSpecular.w = texelFetch(FramesIndirectSpecular[2], Pixel, 0).w; 
 			Clouds = texelFetch(FramesClouds[2], Pixel, 0); 
 			Direct = texelFetch(FramesDirect[2], Pixel, 0); 
 
@@ -180,52 +199,18 @@ void main() {
 	else if(State == 1) {
 
 		if(CurrentFrame == 0) {
-
-			vec2 MotionVectors0 = texelFetch(MotionVectors[0], BasePixel, 0).xy; 
-			
-			Pixel = LowerRes + ivec2((MotionVectors0) * Resolution); 
-
-			TC = TC + MotionVectors0; 
-
-
-			DoSpatialUpscaling = IsBadMotionVectors(MotionVectors0);
-
+			DoSpatialUpscaling = ConstructMotionVector(0, TC, SpecularTC); 
 		}
 		else if(CurrentFrame == 1) {
-
-			vec2 MotionVectors1 = texelFetch(MotionVectors[1], BasePixel, 0).xy; 
-
-
-			TC = TC + MotionVectors1;
-
-			vec2 MotionVectors0 = texture(MotionVectors[0], NewFiltering ? TC : TexCoord, 0).xy;
-
-			TC = TC + MotionVectors0; 
-
-			DoSpatialUpscaling = IsBadMotionVectors(MotionVectors1) || IsBadMotionVectors(MotionVectors0);
-
+			DoSpatialUpscaling = ConstructMotionVector(1,0,TC,SpecularTC); 
 		}
 		else if(CurrentFrame == 2) {
-
-			vec2 MotionVectors2 = texelFetch(MotionVectors[2], BasePixel, 0).xy; 
-
-			TC = TC + MotionVectors2; 
-
-			vec2 MotionVectors1 = texture(MotionVectors[1], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TC + MotionVectors1; 
-
-			vec2 MotionVectors0 = texture(MotionVectors[0], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TC + MotionVectors0; 
-
-			DoSpatialUpscaling = IsBadMotionVectors(MotionVectors1) || IsBadMotionVectors(MotionVectors0) || IsBadMotionVectors(MotionVectors2);
-
+			DoSpatialUpscaling = ConstructMotionVector(2,1,0, TC, SpecularTC); 
 		}
-		else if(CurrentFrame == 3) {
-		
-		}
+
 		Pixel = ivec2(TC * Resolution); 
+		ivec2 SpecularPixel = ivec2(SpecularTC * Resolution); 
+
 
 		if(Pixel.x < 0 || Pixel.x >= Resolution.x || Pixel.y < 0 || Pixel.y >= Resolution.y) 
 			DoSpatialUpscaling = true; 
@@ -240,61 +225,27 @@ void main() {
 
 			IndirectDiffuse = texelFetch(FramesIndirectDiffuse[3], Pixel, 0); 
 			Volumetrics = texelFetch(FramesVolumetric[3], Pixel, 0); 
-			IndirectSpecular = texelFetch(FramesIndirectSpecular[3], Pixel, 0); 
+			IndirectSpecular.xyz = texelFetch(FramesIndirectSpecular[3], SpecularPixel,0).xyz; 
+			IndirectSpecular.w = texelFetch(FramesIndirectSpecular[3], Pixel, 0).w; 
 			Clouds = texelFetch(FramesClouds[3], Pixel, 0); 
 			Direct = texelFetch(FramesDirect[3], Pixel, 0); 
 
 		}
 	}
 	else if(State == 2) {
-
-		if(CurrentFrame == 0) {
-			
-		}
-		else if(CurrentFrame == 1) {
-
-
-			vec2 MotionVectors1 = texelFetch(MotionVectors[1], BasePixel, 0).xy; 
-
-			TC = TC + MotionVectors1; 
-
-			DoSpatialUpscaling = IsBadMotionVectors(MotionVectors1);
-
+		
+		if(CurrentFrame == 1) {
+			DoSpatialUpscaling = ConstructMotionVector(1, TC, SpecularTC); 
 		}
 		else if(CurrentFrame == 2) {
-
-
-			vec2 MotionVectors2 = texelFetch(MotionVectors[2], BasePixel, 0).xy; 
-
-			TC = TC + MotionVectors2;
-
-			vec2 MotionVectors1 = texture(MotionVectors[1], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TC + MotionVectors1; 
-
-			DoSpatialUpscaling = IsBadMotionVectors(MotionVectors1) || IsBadMotionVectors(MotionVectors2);
-
+			DoSpatialUpscaling = ConstructMotionVector(2,1, TC, SpecularTC); 
 		}
 		else if(CurrentFrame == 3) {
-
-
-			vec2 MotionVectors3 = texelFetch(MotionVectors[3], BasePixel, 0).xy; 
-
-			TC = TC + MotionVectors3;
-
-			vec2 MotionVectors2 = texture(MotionVectors[2], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TC + MotionVectors2;
-
-			vec2 MotionVectors1 = texture(MotionVectors[1], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TC + MotionVectors1; 
-
-			DoSpatialUpscaling = IsBadMotionVectors(MotionVectors1) || IsBadMotionVectors(MotionVectors3) || IsBadMotionVectors(MotionVectors2);
-
+			DoSpatialUpscaling = ConstructMotionVector(3,2,1, TC, SpecularTC); 
 		}
 
 		Pixel = ivec2(TC * Resolution); 
+		ivec2 SpecularPixel = ivec2(SpecularTC * Resolution); 
 
 		if(Pixel.x < 0 || Pixel.x >= Resolution.x || Pixel.y < 0 || Pixel.y >= Resolution.y) 
 			DoSpatialUpscaling = true; 
@@ -309,7 +260,8 @@ void main() {
 
 			IndirectDiffuse = texelFetch(FramesIndirectDiffuse[0], Pixel, 0); 
 			Volumetrics = texelFetch(FramesVolumetric[0], Pixel, 0); 
-			IndirectSpecular = texelFetch(FramesIndirectSpecular[0], Pixel, 0); 
+			IndirectSpecular.xyz = texelFetch(FramesIndirectSpecular[0], SpecularPixel,0).xyz; 
+			IndirectSpecular.w = texelFetch(FramesIndirectSpecular[0], Pixel, 0).w; 
 			Clouds = texelFetch(FramesClouds[0], Pixel, 0); 
 			Direct = texelFetch(FramesDirect[0], Pixel, 0); 
 
@@ -319,50 +271,18 @@ void main() {
 	else if(State == 3) {
 
 		if(CurrentFrame == 0) {
-
-			vec2 MotionVectors0 = texelFetch(MotionVectors[0], BasePixel, 0).xy; 
-
-			TC = TC + MotionVectors0; 
-
-			vec2 MotionVectors3 = texture(MotionVectors[3], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TC + MotionVectors3; 
-
-			vec2 MotionVectors2 = texture(MotionVectors[2], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TC + MotionVectors2; 
-
-			DoSpatialUpscaling = IsBadMotionVectors(MotionVectors0) || IsBadMotionVectors(MotionVectors3) || IsBadMotionVectors(MotionVectors2);
-			
-
-		}
-		else if(CurrentFrame == 1) {
+			DoSpatialUpscaling = ConstructMotionVector(0,3,2,TC,SpecularTC); 
 		}
 		else if(CurrentFrame == 2) {
-
-			vec2 MotionVectors2 = texelFetch(MotionVectors[2], BasePixel, 0).xy; 
-
-			TC = TC + MotionVectors2; 
-
-			DoSpatialUpscaling = IsBadMotionVectors(MotionVectors2);
-
+			DoSpatialUpscaling = ConstructMotionVector(2,TC,SpecularTC); 
 		}
 		else if(CurrentFrame == 3) {
-	
-			vec2 MotionVectors3 = texelFetch(MotionVectors[3], BasePixel, 0).xy; 
-
-			TC = TC + MotionVectors3;
-
-			vec2 MotionVectors2 = texture(MotionVectors[2], NewFiltering ? TC : TexCoord, 0).xy; 
-
-			TC = TC + MotionVectors2; 
-
-			DoSpatialUpscaling = IsBadMotionVectors(MotionVectors3) || IsBadMotionVectors(MotionVectors2);
-
+			DoSpatialUpscaling = ConstructMotionVector(3,2, TC, SpecularTC);
 		}
 
 
 		Pixel = ivec2(TC * Resolution); 
+		ivec2 SpecularPixel = ivec2(SpecularTC * Resolution); 
 
 		if(Pixel.x < 0 || Pixel.x >= Resolution.x || Pixel.y < 0 || Pixel.y >= Resolution.y) 
 			DoSpatialUpscaling = true; 
@@ -376,7 +296,8 @@ void main() {
 
 			IndirectDiffuse = texelFetch(FramesIndirectDiffuse[1], Pixel, 0); 
 			Volumetrics = texelFetch(FramesVolumetric[1], Pixel, 0); 
-			IndirectSpecular = texelFetch(FramesIndirectSpecular[1], Pixel, 0); 
+			IndirectSpecular.xyz = texelFetch(FramesIndirectSpecular[1], SpecularPixel,0).xyz; 
+			IndirectSpecular.w = texelFetch(FramesIndirectSpecular[1], Pixel, 0).w; 
 			Clouds = texelFetch(FramesClouds[1], Pixel, 0); 
 			Direct = texelFetch(FramesDirect[1], Pixel, 0); 
 

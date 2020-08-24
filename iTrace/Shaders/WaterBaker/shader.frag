@@ -93,7 +93,9 @@ void main()
 	Height = mix(Secondary.w, Primary.w, Time) * 0.526759376; 
 	Height = clamp(Height, 0.0, 1.0); 
 
-	PackedNormal.xy = mix(Secondary.xz, Primary.xz, Time); 
+	vec3 Norm = normalize(mix(Secondary.xyz, Primary.xyz, Time)); 
+
+	PackedNormal.xy = Norm.xz; 
 	PackedNormal.xy = PackedNormal.xy * 0.5 + 0.5;
 	PackedNormal.zw = vec2(Height, 1.0); 
 	

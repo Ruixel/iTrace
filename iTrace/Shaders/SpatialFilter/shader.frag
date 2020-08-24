@@ -17,6 +17,9 @@ uniform sampler2D MotionVectors;
 uniform sampler2D Direct; 
 uniform sampler2D Detail;
 uniform sampler2D InputSHCg; 
+uniform sampler2D RawDepth; 
+uniform sampler2D RawWaterDepth; 
+
 uniform int CheckerStep; 
 
 uniform bool DoSpatial; 
@@ -128,7 +131,11 @@ float NewNewWeightSpecular(vec3 Normal, vec3 NormalCenter,
 				float FrameCount, float Facing, 
 				float Roughness, float CenterRoughness,
 				float distanceSqr, 
-				float Lum, float LumCenter) {
+				float Lum, float LumCenter, bool NoDenoise) {
+
+	if(NoDenoise) 
+		return 0.0; 
+
 	float WeightFactor = mix(0.5,6.0,abs(Facing)); 
 	
 	float DepthWeight = 1.0 / pow(1.0 + WeightFactor*(abs(Depth - DepthCenter)), 3.0); 
@@ -229,7 +236,8 @@ void main() {
 	float phiIndirect = sqrt(max(0.0, 1e-10+Var)); 
 
 	phiIndirect = phiIndirect / (StepSize > 1 ? 0.5 : 1.0); 
-	
+
+	bool NoDenoise = (texelFetch(RawDepth, HighResPixel * 2, 0).x > texelFetch(RawWaterDepth, HighResPixel * 2, 0).x); 
 	for(int x = -1; x <= 1; x++) {
 		for(int y = -2; y <= 2; y++) {
 			
@@ -277,7 +285,8 @@ void main() {
 												Frame, Facing, 
 												CurrentRoughness, BaseRoughness, 
 												distSqr, 
-												Luminance(SpecularLightingSampleCo.xyz), Luminance(BaseIndirectSpecular.xyz)); 
+												Luminance(SpecularLightingSampleCo.xyz), Luminance(BaseIndirectSpecular.xyz),
+												NoDenoise); 
 
 					
 

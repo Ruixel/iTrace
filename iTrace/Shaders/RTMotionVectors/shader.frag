@@ -2,7 +2,7 @@
 
 in vec2 TexCoord; 
 layout(location = 0) out vec3 MotionVectors; //z component stores light-based culling 
-
+layout(location = 1) out vec3 MotionVectorsSpecular; //<- same stucture as previous one 
 
 uniform sampler2D WorldPosPrevious; 
 uniform sampler2D Normal; 
@@ -12,6 +12,13 @@ uniform sampler2D CloudDepth;
 
 uniform sampler2D CurrentLighting; 
 uniform sampler2D PreviousLighting;
+
+uniform sampler2D WorldPosWaterPrevious;
+uniform sampler2D PreviousWorldPosWater; 
+uniform sampler2D NormalWater; 
+uniform sampler2D PreviousNormalWater; 
+uniform sampler2D Depth; 
+uniform sampler2D WaterDepth; 
 
 
 uniform vec3 CameraPosition; 
@@ -50,6 +57,11 @@ void main() {
 	vec4 CurrentNormal = texture(Normal, TexCoord); 
 	vec3 CurrentLighting = texture(CurrentLighting, TexCoord).xyz; 
 
+	float BaseDepth = texelFetch(Depth, ivec2(gl_FragCoord)*2, 0).x; 
+	float WaterDepth = texelFetch(WaterDepth, ivec2(gl_FragCoord)*2, 0).x; 
+
+
+
 	float L = length(CurrentNormal.xyz); 
 
 	bool Clouds = false; 
@@ -86,6 +98,30 @@ void main() {
 
 
 	}
+	MotionVectorsSpecular = MotionVectors; 
+
+	if(WaterDepth < BaseDepth) {
+		
+		vec3 WorldPosSample = texture(WorldPosWaterPrevious, TexCoord).xyz; 
+
+		
+		vec4 ClipSpaceWater = MotionMatrix * vec4(WorldPosSample, 1.0); 
+		ClipSpaceWater.xyz /= ClipSpaceWater.w; 
+
+		if(abs(ClipSpaceWater.x) <= 1.0 && abs(ClipSpaceWater.y) <= 1.0) {
+			
+			MotionVectorsSpecular.xy = ClipSpaceWater.xy * 0.5 + 0.5; //<- for now, start with this 
+			MotionVectorsSpecular.xy -= TexCoord; 
+
+		}
+		else {
+			//weird, but okay... 
+			//MotionVectorsSpecular = vec3(-1.0); 
+		}
+
+
+	}
+
 
 
 }

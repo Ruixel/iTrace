@@ -343,7 +343,7 @@ void main() {
 	ivec2 RawPixel = ivec2(gl_FragCoord.xy); 
 
 	RawPixel.x *= 2; 
-	RawPixel.x += int(RawPixel.y % 2 == 0); 
+	RawPixel.x += int(RawPixel.y % 2 != CheckerStep); 
 
 
 	Pixel = RawPixel * 2 + States[SubFrame]; 

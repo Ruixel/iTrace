@@ -24,8 +24,10 @@ uniform sampler2D WaterAlbedo;
 uniform sampler2D WaterDepth; 
 uniform sampler2D WaterNormal; 
 uniform sampler2D WaterPosition; 
+uniform sampler2D IndirectSpecular; 
+uniform sampler2D WaterReflection; 
 
-uniform sampler2D ShadowMaps[4];
+uniform sampler2DShadow ShadowMaps[4];
 
 
 
@@ -160,8 +162,128 @@ vec2 TCFromWorldPos(vec3 WorldPos) {
 
 
 
+float DirectBasic(vec3 Position) {
 
-void HandleRefraction(float InDepth, inout vec3 WaterColor, inout vec2 TC, out float RefractedDepth, out vec3 GlowAddon) {
+	vec3 NDC = vec3(-1.0); 
+
+	int Cascade = -1; 
+
+	for(int i = 0; i < 4; i++) {
+		
+		vec4 Clip = ShadowMatrices[i] * vec4(Position, 1.0); 
+	
+		NDC = Clip.xyz / Clip.w; 
+
+		if((abs(NDC.x) < 0.9 && abs(NDC.y) < 0.9) || (abs(NDC.x) < 1.0 && abs(NDC.y) < 1.0 && i == 3)) {
+			Cascade = i; 
+			break; 
+		}
+
+	}
+	if(Cascade == -1) 
+		return 0.0; 
+
+	return texture(ShadowMaps[Cascade], vec3(NDC.xy * 0.5 + 0.5, (NDC.z * 0.5 + 0.5)-0.00009)); 
+
+}
+
+float RaySphereIntersect(vec3 rd, vec3 s0, float sr) {
+    // - r0: ray origin
+    // - rd: normalized ray direction
+    // - s0: sphere center
+    // - sr: sphere radius
+    // - Returns distance from r0 to first intersecion with sphere,
+    //   or -1.0 if no intersection.
+    float a = dot(rd, rd);
+    vec3 s0_r0 = s0;
+    float b = 2.0 * dot(rd, s0_r0);
+    float c = dot(s0_r0, s0_r0) - (sr * sr);
+    if (b*b - 4.0*a*c < 0.0) {
+        return 0.0;
+    }
+    return 1.0;
+}
+
+vec4 cubic(float v){
+    vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;
+    vec4 s = n * n * n;
+    float x = s.x;
+    float y = s.y - 4.0 * s.x;
+    float z = s.z - 4.0 * s.y + 6.0 * s.x;
+    float w = 6.0 - x - y - z;
+    return vec4(x, y, z, w) * (1.0/6.0);
+}
+
+vec4 textureBicubic(sampler2D sampler, vec2 texCoords){
+
+   vec2 texSize = textureSize(sampler, 0);
+   vec2 invTexSize = 1.0 / texSize;
+
+   texCoords = texCoords * texSize - 0.5;
+
+
+    vec2 fxy = fract(texCoords);
+    texCoords -= fxy;
+
+    vec4 xcubic = cubic(fxy.x);
+    vec4 ycubic = cubic(fxy.y);
+
+    vec4 c = texCoords.xxyy + vec2 (-0.5, +1.5).xyxy;
+
+    vec4 s = vec4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
+    vec4 offset = c + vec4 (xcubic.yw, ycubic.yw) / s;
+
+    vec4 sample0 = texelFetch(sampler, ivec2(offset.xz), 0);
+    vec4 sample1 = texelFetch(sampler, ivec2(offset.yz), 0);
+    vec4 sample2 = texelFetch(sampler, ivec2(offset.xw), 0);
+    vec4 sample3 = texelFetch(sampler, ivec2(offset.yw), 0);
+
+	if(sample0.x < 0.0 && sample1.x < 0.0 && sample2.x < 0.0 && sample3.x < 0.0) 
+		return vec4(-1.0); 
+
+    float sx = s.x / (s.x + s.y);
+    float sy = s.z / (s.z + s.w);
+
+	if(sample0.x < 0.0) 
+		sample0 = sample1; 
+	if(sample1.x < 0.0) 
+		sample1 = sample0; 
+	if(sample3.x < 0.0) 
+		sample2 = sample1; 
+	if(sample2.x < 0.0) 
+		sample3 = sample0; 
+
+	if(sample0.x < 0.0) {
+		sample1 = sample2; 
+		sample0 = sample2; 
+	}
+	if(sample2.x < 0.0) {
+		sample2 = sample0; 
+		sample3 = sample0; 
+	}
+
+	if(sample0.x < 0.0 || sample1.x < 0.0 || sample2.x < 0.0 || sample3.x < 0.0) 
+		return vec4(-1.0); 
+
+    return mix(
+       mix(sample3, sample2, sx), mix(sample1, sample0, sx)
+    , sy);
+}
+
+vec2 GetWaterTC(vec2 TC, float InDepth) {
+
+	float RefractiveDepth = texelFetch(WaterDepth, ivec2(gl_FragCoord), 0).x ; 
+
+	if(RefractiveDepth < InDepth) {
+		TC = textureBicubic(WaterRefraction, InTexCoord).xy; ; 
+	}
+	return TC; 
+
+}
+
+
+
+void HandleRefraction(float InDepth, inout vec3 WaterColor, inout vec2 TC, out float RefractedDepth, out vec3 GlowAddon, out vec3 LightingAddon) {
 
 	float RefractiveDepth = texelFetch(WaterDepth, ivec2(gl_FragCoord), 0).x ; 
 
@@ -169,29 +291,145 @@ void HandleRefraction(float InDepth, inout vec3 WaterColor, inout vec2 TC, out f
 
 	if(RefractiveDepth < InDepth) {
 		
-		WaterColor = texture(WaterAlbedo, TC).xyz; 
+		vec3 WaterPosition = texture(WaterPosition, TC).xyz; 
+		vec3 WaterNormal = texture(WaterNormal, TC).xyz; 
+		vec3 Incident = normalize(WaterPosition-CameraPosition); 
+		vec3 IndirectSpecular = texture(IndirectSpecular, TC).xyz; 
 
-		vec2 NewTC = texture(WaterRefraction, InTexCoord).xy; 
+		float Fresnel = 1-abs(dot(Incident, WaterNormal)); 
+		Fresnel = Fresnel * Fresnel * Fresnel * Fresnel; 
+
+		vec4 RawAlbedoSample = texture(WaterAlbedo, TC); 
+		float FoamFactor = RawAlbedoSample.w; 
+
+		vec2 NewTC = textureBicubic(WaterRefraction, InTexCoord).xy; 
+		//vec2 TCReflective = textureBicubic(WaterReflection, InTexCoord).xy; 
+
+		//if(abs(TCReflective.x * 2.0 - 1.0) < 1.0 && abs(TCReflective.y * 2.0 - 1.0) < 1.0)
+		//	IndirectSpecular.xyz = texture(CombinedLighting, TCReflective).xyz; 
 
 		float SecondaryDepth = texelFetch(Depth, ivec2(NewTC * textureSize(Depth,0)), 0).x; 
-
-
 
 		float Difference = abs(LinearDepth(RefractiveDepth)-LinearDepth(SecondaryDepth)); 
 
 		Difference = clamp(1.0 - Difference*4.0,0.0,1.0); 
 
+		FoamFactor *= (1.0-Difference); 
+
+		WaterColor = texture(WaterAlbedo, TC).xyz * (1.0-Fresnel) * (1.0-FoamFactor); 
+		
+
+
+
+
+		
+
 		WaterColor = mix(WaterColor, vec3(1.0), Difference); 
 		TC = NewTC; 
 
-		//figure out the shadow 
+		//figure out the 
+
+		
+		float ShadowFactor = DirectBasic(WaterPosition); 
+
+		float SpecularWaterFactor = ShadowFactor * RaySphereIntersect(reflect(Incident, WaterNormal), LightDirection*10.0,0.5); 
+		float DiffuseWaterFactor = ShadowFactor * max(dot(WaterNormal, LightDirection), 0.0); 
+
+		//ShadowFactor *= pow(max(dot(reflect(Incident,WaterNormal), LightDirection),0.0),100.0); 
 
 
-
-
+		GlowAddon = SunColor * SpecularWaterFactor * Fresnel * (1.0-FoamFactor);
+		LightingAddon = GlowAddon; 
+		LightingAddon += SunColor * DiffuseWaterFactor * FoamFactor * 0.08; 
+		LightingAddon += IndirectSpecular * Fresnel; 
+		//GlowAddon = SunColor * ShadowFactor; 
 	}
 
 }
+
+float WaterDiffuse(vec3 Normal, vec3 LightDirection, float Power) {
+	return pow(dot(Normal, LightDirection) * 0.4 + 0.6, Power); 
+}
+
+
+void HandleWater(inout vec3 Lighting, inout vec3 Glow, vec2 RawTC, vec2 TC, float InDepth) {
+	float RefractiveDepth = texelFetch(WaterDepth, ivec2(gl_FragCoord), 0).x ; 
+
+	if(RefractiveDepth < InDepth) {
+		
+		vec3 RefractedFactor = Lighting; 
+		vec3 RefractedGlowFactor = Lighting; 
+
+		vec3 IndirectSpecular = texture(IndirectSpecular, RawTC).xyz; 
+
+		vec3 WaterPosition = texture(WaterPosition, RawTC).xyz; 
+		vec3 WaterNormal = normalize(texture(WaterNormal, RawTC).xyz); 
+		vec3 Incident = normalize(WaterPosition-CameraPosition); 
+		vec4 RawAlbedoFetch = texture(WaterAlbedo, RawTC); 
+	
+		//vec2 TCReflective = textureBicubic(WaterReflection, InTexCoord).xy; 
+
+		//if(abs(TCReflective.x * 2.0 - 1.0) < 1.0 && abs(TCReflective.y * 2.0 - 1.0) < 1.0)
+		//	IndirectSpecular.xyz = texture(CombinedLighting, TCReflective).xyz; 
+
+
+		float Density = 2.0; 
+		vec3 SEA_BASE = vec3(0.0,0.09,0.18); 
+		vec3 SEA_WATER_COLOR = vec3(0.8,0.9,0.6);
+		vec3 ScatteringWater = vec3(0.01, 0.025, 0.05) * 2 * Density; 
+		vec3 AbsorptionWater = vec3(0.8,0.08,0.01) * 0.5 * Density; 
+		vec3 ExtinctionWater = ScatteringWater + AbsorptionWater; 
+
+		float z = texelFetch(Depth, ivec2(TC * textureSize(Depth, 0)), 0).x; 
+
+		vec3 WP = GetWorldPosition(z, TC); 
+
+		float Traversal = distance(WP, WaterPosition); 
+
+		vec3 Transmission = vec3(exp(-ExtinctionWater.x * Traversal),exp(-ExtinctionWater.y * Traversal),exp(-ExtinctionWater.z * Traversal)); 
+		vec3 S = vec3(0.04); 
+
+		vec3 SIntegrated = (S - S * Transmission) / ExtinctionWater; 
+
+		
+
+
+		//-> volume interaction 
+		RefractedFactor = mix(SIntegrated*Lighting,Lighting,Transmission); 
+		RefractedGlowFactor = mix(SIntegrated*Glow,Glow,Transmission); 
+
+		//-> surface interaction 
+
+		vec3 SEA_WATER = SEA_WATER_COLOR * pow(max(dot(LightDirection, WaterNormal),0.0) * 0.7 + 0.3,16.0);  
+
+		float WaveFactor = pow(WaterNormal.y,256.0); 
+		vec3 SEA_SURFACE = mix(SEA_BASE ,SEA_WATER, WaveFactor*pow(1.0-RawAlbedoFetch.w,3.0)) ; 
+
+		float ShadowFactor = DirectBasic(WaterPosition); 
+
+		float SpecularWaterFactor = ShadowFactor * RaySphereIntersect(reflect(Incident, WaterNormal), LightDirection*10.0,0.5); 
+		float DiffuseWaterFactor = ShadowFactor * max(dot(WaterNormal, LightDirection), 0.0); 
+		
+		
+
+		float Fresnel = pow(clamp(1-dot(WaterNormal, -Incident),0.0,1.0),6.0) * 0.5; 
+
+
+		Lighting.xyz = mix(SEA_SURFACE * RefractedFactor, IndirectSpecular, Fresnel); 
+		Glow.xyz = SEA_SURFACE * RefractedGlowFactor * (1.0-Fresnel); 
+		
+		Lighting.xyz += SpecularWaterFactor * SunColor ; 
+		Glow += SpecularWaterFactor * SunColor; 
+		//Lighting.xyz *= vec3(WaveFactor * 0.7 + 0.3); 
+		//Lighting.xyz = SEA_SURFACE; 
+		
+		
+
+	}
+	
+}
+
+
 
 void main() {
 
@@ -206,10 +444,14 @@ void main() {
 	vec3 WaterMultiplier = vec3(1.0); 
 
 	//TC = texture(WaterRefraction, InTexCoord).xy; 
-	float WaterDepth; 
-	vec3 GlowAddon; 
-	HandleRefraction(DepthSample, WaterMultiplier, TC, WaterDepth, GlowAddon); 
+	//float WaterDepth; 
+	//vec3 GlowAddon; 
+	//vec3 LightingAddon; 
+	//HandleRefraction(DepthSample, WaterMultiplier, TC, WaterDepth, GlowAddon,LightingAddon); 
 
+	TC = GetWaterTC(TC,DepthSample); 
+
+	DepthSample = texelFetch(Depth, ivec2(TC * textureSize(Depth,0).xy),0).x; 
 
 	if(RefractiveDepth < DepthSample) {
 		
@@ -221,7 +463,6 @@ void main() {
 		vec3 WorldPosition = GetWorldPosition(RefractiveDepth, TC); 
 		
 		vec3 Incident = normalize(WorldPosition - CameraPosition); 
-
 
 		if(ChromaticAbberation) { //<- temporarily removed 
 			vec3 RayDirR = refract(Incident, Normal, 1.0/(1.3*CAMultiplier.r)); 
@@ -315,18 +556,26 @@ void main() {
 	gl_FragDepth = min(DofDepth,0.9999999); 
 
 	ivec2 Pixel = ivec2(gl_FragCoord); 
+	HandleWater(Lighting.xyz, Glow, InTexCoord, TC, DepthSample); 
 
 	if(Pixel.x == PixelFocusPoint.x && Pixel.y == PixelFocusPoint.y) {
 		
 		OcclusionDepth[0] = vec4(DofDepth); 
 
 	}
-	Lighting.w = LinearDepth(WaterDepth); 
+	//Lighting.w = LinearDepth(WaterDepth); 
 
 	//Glow = vec3(0.0); 
 	//Lighting.xy = texture(WaterRefraction, InTexCoord).xy; 
 	//Lighting.z = 0.0; 
-	Lighting.xyz *= WaterMultiplier; 
-	Glow *= WaterMultiplier; 
-	Glow += GlowAddon; 
+	//Lighting.xyz *= WaterMultiplier; 
+	//Glow *= WaterMultiplier; 
+	//Lighting.xyz += GlowAddon + LightingAddon; 
+	//Glow += GlowAddon; 
+
+	//Lighting.xyz = texture(IndirectSpecular, InTexCoord).xyz; 
+
+	//Glow = vec3(0.0); 
+	//Lighting.xyz = WaterMultiplier; 
+
 }

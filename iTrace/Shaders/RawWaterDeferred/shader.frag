@@ -3,7 +3,7 @@
 layout(location = 0) out vec3 LFNormal;
 layout(location = 1) out vec3 WorldPos; 
 layout(location = 2) out vec3 HFNormal; 
-layout(location = 3) out vec3 Albedo; 
+layout(location = 3) out vec4 Albedo; 
 
 in vec3 Pos; 
 
@@ -58,15 +58,35 @@ float GetTraversal(vec3 TC, vec3 Direction, inout vec3 DirectionProjected) {
 	
 	float Angle = atan(DirectionXZ.x, DirectionXZ.y); 
 
-	return SampleParallaxMap(vec4(TC.x, (Angle-1.57079633) / 6.28318531,TC.y, TC.z)) * 0.25; //temporary! 
+	return SampleParallaxMap(vec4(TC.x, (Angle-1.57079633) / 6.28318531,TC.y, TC.z)) * 0.3; //temporary! 
 }
+
+
+
+vec4 GetNormalData(vec2 TC, float Time, vec3 Incident) {
+
+	vec3 TC3D = vec3(TC, fract(Time/12.0)*100.0); 
+	
+
+	vec3 NormalSample = TextureInterp(WaterNormal, TC3D).xyz * vec3(2.0,2.0,1.0) - vec3(1.0,1.0,0.0); 
+
+	float z = length(NormalSample.xy); 
+	vec3 NormalActual = normalize(vec3(NormalSample.x, z*16.0,NormalSample.z)); 
+
+	return vec4(NormalActual, NormalSample.z); 
+
+} 
+
+
+
+
 
 
 void main() {
 
-	vec2 TC = Pos.xz * 0.25; 
+	vec2 TC = Pos.xz * 0.125; 
 	
-	vec3 TC3D = vec3(TC, fract(Time/12.0)*100); 
+	vec3 TC3D = vec3(TC, fract(Time/36.0)*100); 
 
 	vec3 Incident = normalize(Pos-CameraPosition); 
 	vec3 IncidentProjected ; 
@@ -77,14 +97,30 @@ void main() {
 	TC3D.y = 1.0 - TC3D.y; 
 	vec3 NormalSample = TextureInterp(WaterNormal, TC3D).xyz * vec3(2.0,2.0,1.0) - vec3(1.0,1.0,0.0); 
 
-	float z = length(NormalSample.xy);  
+	float z = sqrt(1 - dot(NormalSample.xy, NormalSample.xy));  
 
-	vec3 NormalSampleActual = normalize(vec3(NormalSample.x, z*6, NormalSample.y)); 
+	//remember, x^2 + y^2 + z^2 = 1
+
+	//therefor z^2 = 1 - (x^2+y^2)
+	//or z = sqrt(1-x^2-y^2)
+
+	vec3 NormalSampleActual = normalize(vec3(NormalSample.x, z * 6, NormalSample.y)); 
 
 	LFNormal = NormalSampleActual.xyz; 
 	//LFNormal.xy = fract(TC3D.xy); 
 	HFNormal = LFNormal; //<- todo: LFNormal + HFNormal split 
-	WorldPos = Pos; 
+	WorldPos = Pos - vec3(0.0,0.00,0.0) * NormalSample.z; 
 	//LFNormal.xyz = vec3(NormalSample.z); 
-	Albedo = pow(vec3(0.3,0.7,1.0),vec3(NormalSample.z+1.0)) * pow(NormalSample.z,2.0); 
+	Albedo.xyz = pow(vec3(0.3,0.7,1.0),vec3(NormalSample.z+1.0)) * pow(NormalSample.z,2.0); 
+	//simple foam trick -> 
+
+	//HFNormal = vec3(0.0,1.0,0.0); 
+
+	vec4 SamplePrevious = GetNormalData(TC3D.xy, Time-0.1, Incident); 
+
+
+	//foam factor (todo: add #ifdef WATER_HQ here, as foam should only be used for high quality water) 
+	Albedo.w = pow(max(SamplePrevious.w - NormalSample.z,0.0),2.0) * (1.0-pow(dot(HFNormal,SamplePrevious.xyz),32.0)) * 1000.0; 
+	Albedo.w = pow(clamp(Albedo.w, 0.0,1.0), 3.0); 
+	Albedo.w = NormalSample.z; 
 }

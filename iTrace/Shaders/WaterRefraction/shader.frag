@@ -4,6 +4,7 @@ in vec2 TexCoord;
 
 layout(location = 0) out vec2 RefractedTC; 
 layout(location = 1) out vec4 PackedUpscaleData; 
+layout(location = 2) out vec2 ReflectedTC; 
 
 uniform sampler2D LFNormal; //<- low frequency normal 
 uniform sampler2D WorldPosition; //<- world position 
@@ -92,7 +93,7 @@ float SolveIntersectionLength(vec3 Direction, vec3 Origin, mat4 ProjectionMatrix
 }
 
 //The base depth is used to compute expected ray thickness, thus allowing for more accurate ray intersection on the primary step -> -> 
-vec2 ScreenSpaceTrace(vec3 Direction, vec3 Origin) {
+vec2 ScreenSpaceTrace(vec3 Direction, vec3 Origin, int Steps, int BinarySearchSteps, bool Specular, float Thickness) {
 
 	
 	//project everything to view space 
@@ -101,10 +102,10 @@ vec2 ScreenSpaceTrace(vec3 Direction, vec3 Origin) {
 	vec3 ViewOrigin = vec3(ViewMatrix * vec4(Origin, 1.0)); 
 	//^ I think these are okay? 
 
-	float MaxTraversal = 10.0; //<- for now, hardcoded. 
+	float MaxTraversal = 30.0; //<- for now, hardcoded. 
 	//						^ this constant will be changed to the analytical intersection later 
 
-	vec3 RayStep = (ViewDirection * MaxTraversal) / vec3(TraceSteps); 
+	vec3 RayStep = (ViewDirection * MaxTraversal) / vec3(Steps); 
 
 	vec3 RayPoint = ViewOrigin + RayStep; 
 
@@ -114,7 +115,7 @@ vec2 ScreenSpaceTrace(vec3 Direction, vec3 Origin) {
 
 	float PreviousZ = LinearDepth((BaseProj.z / BaseProj.w) * 0.5 + 0.5);
 	
-	for(int Step = 0; Step < TraceSteps; Step++) {
+	for(int Step = 0; Step < Steps; Step++) {
 	
 
 
@@ -122,13 +123,13 @@ vec2 ScreenSpaceTrace(vec3 Direction, vec3 Origin) {
 		ProjectedPoint.xyz /= ProjectedPoint.w; 
 
 		if(abs(ProjectedPoint.x) > 1.0 || abs(ProjectedPoint.y) > 1.0) 
-			return TexCoord; //<- no suitable intersection point found 
+			return Specular ? vec2(-1.0) : TexCoord; //<- no suitable intersection point found 
 		
 		float FetchedZ = texture(TraceDepth, ProjectedPoint.xy * 0.5 + 0.5).x; 
 		float CurrentZ = LinearDepth(ProjectedPoint.z * 0.5 + 0.5); 
 
 
-		if(FetchedZ < CurrentZ  && abs(FetchedZ-CurrentZ) < abs(PreviousZ-CurrentZ)) {
+		if(FetchedZ < CurrentZ  && abs(FetchedZ-CurrentZ) < Thickness * abs(PreviousZ-CurrentZ)) {
 		
 			//do a bit of a binary search! 
 
@@ -165,7 +166,7 @@ vec2 ScreenSpaceTrace(vec3 Direction, vec3 Origin) {
 
 	}
 
-	return TexCoord; 
+	return Specular ? vec2(-1.0 ) : TexCoord; 
 
 }
 
@@ -175,7 +176,11 @@ void main() {
 	vec3 Normal = texture(LFNormal, TexCoord).xyz; 
 	vec3 WorldPos = texture(WorldPosition, TexCoord).xyz; 
 	vec3 Incident = normalize(WorldPos - CameraPosition); 
-	vec3 Direction = refract(Incident, Normal, 1.0/1.1); 
+	vec3 Direction = refract(Incident, Normal, 1.0/1.2); 
 	
-	RefractedTC = ScreenSpaceTrace(Direction, WorldPos); 
+	vec3 SpecularDirection = reflect(Incident, Normal); 
+	
+	RefractedTC = ScreenSpaceTrace(Direction, WorldPos, TraceSteps , BinarySearchSteps, false,1.0); 
+	//ReflectedTC = ScreenSpaceTrace(SpecularDirection, WorldPos, TraceSteps * 4, BinarySearchSteps * 4, true); 
+	ReflectedTC = vec2(-1.0); 
 }

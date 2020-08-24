@@ -79,6 +79,7 @@ namespace iTrace {
 			Deferred.PrimaryDeferredRefractive.BindImage(0,23);
 			Deferred.PrimaryDeferredRefractive.BindImage(1,24);
 			Sky.SkyIncident.BindImage(1, 25);
+			Deferred.RawWaterDeferred.BindDepthImage(26);
 
 
 			LightCombinerShader.SetUniform("LightDirection", Sky.Orientation);
@@ -113,6 +114,10 @@ namespace iTrace {
 			Indirect.RefractedWater.BindImage(0, 9); 
 			Deferred.RawWaterDeferred.BindImage(3, 10);
 			Deferred.RawWaterDeferred.BindDepthImage(11);
+			Deferred.RawWaterDeferred.BindImage(1, 12);
+			Deferred.RawWaterDeferred.BindImage(2, 13);
+			Indirect.SpatialyUpscaled.BindImage(1, 18);
+			Indirect.RefractedWater.BindImage(2, 19);
 
 			FocusSSBO.Bind(0);
 			
@@ -125,8 +130,10 @@ namespace iTrace {
 			RefractiveCombiner.SetUniform("PixelFocusPoint", Window.GetResolution() / 2); 
 			RefractiveCombiner.SetUniform("znear", Camera.znear); 
 			RefractiveCombiner.SetUniform("zfar", Camera.zfar);
+			RefractiveCombiner.SetUniform("LightDirection", Sky.Orientation);
+			RefractiveCombiner.SetUniform("SunColor", Sky.SunColor);
 
-			for (int i = 0; i < 5; i++) {
+			for (int i = 0; i < 4; i++) {
 				Sky.ShadowMaps[i].BindDepthImage(i + 14);
 
 				std::string Title = "ShadowMatrices[" + std::to_string(i) + "]";
@@ -201,6 +208,7 @@ namespace iTrace {
 			LightCombinerShader.SetUniform("PrimaryRefractionColor", 23);
 			LightCombinerShader.SetUniform("PrimaryRefractionNormal", 24);
 			LightCombinerShader.SetUniform("SkyReigh", 25);
+			LightCombinerShader.SetUniform("WaterDepth", 26);
 
 			
 			LightCombinerShader.UnBind();
@@ -221,13 +229,17 @@ namespace iTrace {
 			RefractiveCombiner.SetUniform("WaterRefraction", 9);
 			RefractiveCombiner.SetUniform("WaterAlbedo", 10);
 			RefractiveCombiner.SetUniform("WaterDepth", 11);
-			RefractiveCombiner.SetUniform("WaterNormal", 12);
-			RefractiveCombiner.SetUniform("WaterPosition", 13);
+			RefractiveCombiner.SetUniform("WaterPosition", 12);
+			RefractiveCombiner.SetUniform("WaterNormal", 13);
 
 			RefractiveCombiner.SetUniform("ShadowMaps[0]", 14);
 			RefractiveCombiner.SetUniform("ShadowMaps[1]", 15);
 			RefractiveCombiner.SetUniform("ShadowMaps[2]", 16);
 			RefractiveCombiner.SetUniform("ShadowMaps[3]", 17);
+
+			RefractiveCombiner.SetUniform("IndirectSpecular", 18);
+			RefractiveCombiner.SetUniform("WaterReflection", 19);
+
 
 			RefractiveCombiner.UnBind(); 
 

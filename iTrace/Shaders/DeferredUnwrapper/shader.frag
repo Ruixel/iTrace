@@ -345,7 +345,7 @@ void main() {
 	SimpleLighting = 64.0 * SimpleLighting * SimpleLighting; 
 	Normal.w  = textureLod(RoughnessTextures, vec3(TC, TextureIdx),QueriedLod).x; 
 	//	Normal.w = 0.0; 
-		//HighFreqNormal.xyz = Normal.xyz; 
+	//	HighFreqNormal.xyz = Normal.xyz; 
 
 	_TC.xy = fract(TC);
 	_TC.z = TextureIdx; 
@@ -358,4 +358,5 @@ void main() {
 	HighFreqNormal.xyz = !Facing ? -HighFreqNormal.xyz : HighFreqNormal.xyz; 
 	//Normal.xyz = HighFreqNormal.xyz; 
 	Normal.xyz = normalize(Normal.xyz); 
+	HighFreqNormal.xyz = normalize(HighFreqNormal.xyz); 
 }

@@ -52,6 +52,9 @@ uniform sampler1D TextureExData;
 uniform sampler1D BlockData; 
 uniform sampler2D BlockerData; 
 uniform sampler2D ProjectedClouds;
+uniform sampler2D WaterWorldPos; 
+uniform sampler2D WaterNormal; 
+uniform sampler2D WaterDepth; 
 
 uniform sampler2D DeferredNormalData; 
 uniform sampler2DArray Deferred; 
@@ -877,7 +880,7 @@ vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 
 
 
-vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4 ParallaxData, vec3 TC, vec3 LowFrequencyNormal, out vec4 Detail, ivec2 Pixel) {
+vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4 ParallaxData, vec3 TC, vec3 LowFrequencyNormal, out vec4 Detail, ivec2 Pixel, bool Water) {
 
 
 	Detail = vec4(1.0); 
@@ -945,11 +948,12 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 	if(true) {
 		
-		float Hash = hash(Pixel / 2, FrameCount / 4,35); 
-
+		float Hash = hash(Pixel / 2, Water ? 0 : FrameCount / 4,35); 
+		if(Water) 
+			Hash = 0.0; 
 		
 
-		vec4 Trace = ScreenSpaceTrace(Origin, Direction, Specular ? 2.0 : 1.0,5, Hash, NormalSS, PositionSS, Specular ? 1.0 : 4.0, Specular); 
+		vec4 Trace = ScreenSpaceTrace(Origin, Direction, Specular ? (Water ? 4.0 : 2.0) : 1.0, Water ? 48 : 5, Hash, NormalSS, PositionSS, Specular ? 1.0 : 4.0, Specular); 
 	
 		if(Trace.x > -0.9) {
 			Hit = true; 
@@ -1004,8 +1008,10 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 		int TextureIdx = GetTextureIdx(Block, SidesTranslated[Face]); 
 		ivec2 TextureExData = ivec2(texelFetch(TextureExData, TextureIdx,0).xy * 255); 
-		BlockColor = pow(texture(DiffuseTextures, vec3(TexCoord.xy, TextureIdx)).xyz, vec3(2.2)); 
-
+		if(!Water) 
+		BlockColor = pow(texture(DiffuseTextures, vec3(TexCoord.xy, TextureIdx)).xyz,vec3(2.2)); 
+		else 
+		BlockColor = pow(textureLod(DiffuseTextures, vec3(TexCoord.xy, TextureIdx), 2.0).xyz,vec3(2.2)); 
 		
 
 		if(TextureExData.y != 0) {
@@ -1035,6 +1041,8 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 		int j = 0; 
 		int i = 0; 
+
+
 
 		while(i<12) {
 
@@ -1067,7 +1075,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 		}
 
 		HemiSpherical /= 12.0; 
-		HemiSpherical *= HemiSpherical  * SkyColor;  
+		HemiSpherical *= HemiSpherical*  SkyColor;  
 
 		//HemiSpherical =  GetHemisphericalShadowMaphit(Position, OutNormal, 0, 1); 
 	
@@ -1077,7 +1085,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 		Diffuse.xyz += HemiSpherical * BlockColor; 
 
-		Diffuse.xyz += DirectBasic(Position) * max(dot(OutNormal, LightDirection), 0.0) * SunColor * BlockColor * DirectMultiplier * DirectDensity; 
+		Diffuse.xyz += DirectBasic(Position) * max(dot(OutNormal, LightDirection), 0.0) * SunColor * BlockColor  * DirectDensity; 
 
 		vec4 LightingData = textureLod(LightingData, (Position - vec3(PositionBias.x, 0.0, PositionBias.y) + OutNormal * .5).zyx / vec3(384.0,128.0,384.0), 0.0); 
 		
@@ -1108,6 +1116,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 		vec4 Cloud = SampleCloud(Origin, Direction); 
 
 		Diffuse.xyz = mix(Cloud.xyz, Diffuse.xyz, Cloud.w); 
+
 
 		Diffuse.w = 4.0; 
 		Detail = Diffuse * vec4(0.1,0.1,0.1,1.0); 
@@ -1207,17 +1216,21 @@ void main() {
 
 	FragCoord = ivec2(gl_FragCoord); 
 	FragCoord.x *= 2; 
-	FragCoord.x += int(FragCoord.y % 2 != 1); 
+	FragCoord.x += int(FragCoord.y % 2 != CheckerStep); 
 
 	ivec2 Pixel = FragCoord * 4 + States[FrameCount % 4] * 2;
 
+	float RawDepthSample = texelFetch(Depth, Pixel, 0).x; 
+
 	Rand_Seed = (Pixel.x * 540 + Pixel.y) * 0.01; 
+
+
 
 	vec4 RawNormal = texelFetch(Normals, Pixel, 0); 
 
 	WorldPos = texelFetch(WorldPosition, Pixel, 0).rgb;
 	Normal.xyz = RawNormal.rgb;
-	Normal.w = LinearDepth(texelFetch(Depth, Pixel, 0).x); 
+	Normal.w = LinearDepth(RawDepthSample); 
 
 	float Penum = 0.0; 
 	float PenumWeight = 0.0; 
@@ -1285,9 +1298,33 @@ void main() {
 
 	vec3 Direction = cosWeightedRandomHemisphereDirection(LowFrequencyNormal.xyz, hash);
 
+
+
+	
+
+
+	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.025, Direction,Normal.xyz, false, ParallaxData,TC,LowFrequencyNormal.xyz,Detail, Pixel, false); 
+	
+
+	vec3 SpecularWorldPos = WorldPos; 
+	vec3 SpecularNormal = Normal.xyz; 
 	vec3 SpecularDirection = GetSpecularRayDirection(reflect(Incident, Normal.xyz), Normal.xyz, Incident, LowFrequencyNormal.w, Pixel);
-	vec4 Specular = GetRayShading(WorldPos + Normal.xyz * 0.025, reflect(Incident, Normal.xyz), Normal.xyz, true, ParallaxData,TC,LowFrequencyNormal.xyz, Detail, Pixel); 
-	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.025, Direction,Normal.xyz, false, ParallaxData,TC,LowFrequencyNormal.xyz,Detail, Pixel); 
+
+	bool Water = false; 
+
+	if(texelFetch(WaterDepth, Pixel, 0).x < RawDepthSample) {
+		
+		SpecularNormal = texelFetch(WaterNormal, Pixel, 0).xyz; 
+		SpecularWorldPos = texelFetch(WaterWorldPos, Pixel, 0).xyz; 
+
+		SpecularDirection = reflect(normalize(WorldPos - CameraPosition), SpecularNormal); 
+		Water = true; 
+	}
+
+
+	vec4 Specular = GetRayShading(SpecularWorldPos + SpecularNormal.xyz * 0.025, SpecularDirection, SpecularNormal.xyz, true, ParallaxData,TC,LowFrequencyNormal.xyz, Detail, Pixel, Water); 
+
+	
 	//Specular.xyz = abs(reflect(Incident, Normal.xyz)); 
 	float L = length(Normal.xyz); 
 

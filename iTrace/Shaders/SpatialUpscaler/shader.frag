@@ -16,6 +16,10 @@ uniform sampler2D Lighting;
 uniform sampler2D PackedGeometryData; 
 uniform sampler2D Specular; 
 uniform sampler2D Direct; 
+uniform sampler2D PackedGeometryDataSpecular; 
+uniform sampler2D DepthWater; 
+uniform sampler2D NormalHF; 
+uniform sampler2D WaterNormal; 
 
 uniform mat4 IncidentMatrix; 
 uniform bool SpatialUpscaling; 
@@ -48,26 +52,35 @@ void main() {
 
 	vec4 BaseNormal = texture(Normal, TexCoord); 
 
-	vec4 BaseData = vec4(BaseNormal.xyz, LinearDepth(texture(Depth,TexCoord).x)); 
+	float BaseDepth = texelFetch(Depth, ivec2(gl_FragCoord), 0).x; 
+	float WaterDepth = texelFetch(DepthWater, ivec2(gl_FragCoord), 0).x; 
 
+	vec4 BaseData = vec4(BaseNormal.xyz, LinearDepth(BaseDepth)); 
 	float BaseRoughness = BaseNormal.w; 
+	float BaseRoughnessSpecular = BaseNormal.w; 
+
+	vec4 BaseDataSpecular; 
+
+	if(WaterDepth < BaseDepth) {
+		BaseDataSpecular = vec4(texture(WaterNormal, TexCoord).xyz, LinearDepth(WaterDepth)); 
+		BaseRoughnessSpecular = 0.0; 
+	}
+	else {
+		BaseDataSpecular = vec4(texture(NormalHF, TexCoord).xyz, BaseData.w); 
+	}
+
 
 	float BestWeight = -1.0;
 	float BestShadowWeight = BestWeight; 
+	float BestSpecularWeight = BestWeight; 
 
 	
 	vec2 BestTC = TexCoord; 
 	vec2 BestShadowTC = TexCoord; 
-
+	vec2 BestSpecularTC = TexCoord; 
 
 	vec2 Res = textureSize(Lighting, 0).xy; 
 
-
-	vec3 BaseIncident = GetIncident(TexCoord); 
-
-	vec3 BaseReflection = reflect(BaseIncident, BaseNormal.xyz); 
-	
-	
 
 	float r = 0.0; 
 	if(SpatialUpscaling)
@@ -82,16 +95,22 @@ void main() {
 			vec2 CurrentTC = TexCoord + vec2(x,y) / Res; 
 
 			vec4 CurrentData = texture(PackedGeometryData, CurrentTC); 
+			vec4 CurrentDataSpecular = texture(PackedGeometryDataSpecular, CurrentTC); 
+
 
 			float CurrentRoughness = GetRoughness(CurrentData.xyz); 
+			float CurrentRoughnessSpecular = GetRoughness(CurrentDataSpecular.xyz); 
 
-			vec3 CurrentReflection = reflect(GetIncident(CurrentTC), CurrentData.xyz); 
 
 			float Weight = 0.0; 
 			
 			float BaseWeight = abs(BaseData.w - CurrentData.w) + 0.25 * length(vec2(x,y));
 
 			Weight = 100.0 * (1.0-pow(dot(CurrentData.xyz, BaseData.xyz),3.0)) + BaseWeight + 100.0*abs(BaseRoughness - CurrentRoughness); 
+
+
+			float WeightSpecular = abs(BaseDataSpecular.w - CurrentDataSpecular.w) + 0.25 * length(vec2(x,y)); 
+			WeightSpecular = 100.0 * (1.0-pow(dot(CurrentDataSpecular.xyz, BaseData.xyz),128.0)) + WeightSpecular; 
 
 
 			if(Weight < BestWeight || BestWeight < 0.0f) {
@@ -105,13 +124,20 @@ void main() {
 				BestShadowTC = CurrentTC; 
 			}
 
+			if(WeightSpecular < BestSpecularWeight || BestSpecularWeight < 0.0) {
+				BestSpecularWeight = WeightSpecular; 
+				BestSpecularTC = CurrentTC; 
+			}
+			
+
 
 
 		}
 	}
 
 	IndirectDiffuse = texture(Lighting, BestTC); 
-	IndirectSpecular = texture(Specular, BestTC); 
+	IndirectSpecular.w = texture(Specular, BestTC).w;
+	IndirectSpecular.xyz = texture(Specular, BestSpecularTC).xyz; 
 	OutDirect.xyz = texture(Direct, BestShadowTC).xyz;
 	OutDirect.w = texture(Direct, BestTC).w; 
 }
