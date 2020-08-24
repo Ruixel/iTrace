@@ -170,6 +170,7 @@
     <ClInclude Include="ItemRenderer.h" />
     <ClInclude Include="LightCombiner.h" />
     <ClInclude Include="MeshBaker.h" />
+    <ClInclude Include="PackedShaders.h" />
     <ClInclude Include="ParallaxBaker.h" />
     <ClInclude Include="Particles.h" />
     <ClInclude Include="Pipeline.h" />
@@ -178,6 +179,7 @@
     <ClInclude Include="RainDropBaker.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="ShaderBuffer.h" />
+    <ClInclude Include="ShaderPacker.h" />
     <ClInclude Include="SkyRenderer.h" />
     <ClInclude Include="Sound.h" />
     <ClInclude Include="SoundEffectManager.h" />
@@ -221,6 +223,7 @@
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="RainDropBaker.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="ShaderPacker.cpp" />
     <ClCompile Include="SkyRenderer.cpp" />
     <ClCompile Include="Sound.cpp" />
     <ClCompile Include="SoundEffectManager.cpp" />

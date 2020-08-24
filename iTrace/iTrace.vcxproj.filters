@@ -384,6 +384,12 @@
     <ClInclude Include="WaterBaker.h">
       <Filter>Header Files\Baker</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderPacker.h">
+      <Filter>Header Files\Engine Core</Filter>
+    </ClInclude>
+    <ClInclude Include="PackedShaders.h">
+      <Filter>Header Files\Engine Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Pipeline.cpp">
@@ -508,6 +514,9 @@
     </ClCompile>
     <ClCompile Include="WaterBaker.cpp">
       <Filter>Source Files\Baker</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderPacker.cpp">
+      <Filter>Source Files\Engine Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

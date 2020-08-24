@@ -338,3 +338,6 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+
+#PackedShaders.h is an auto-generated header file. No need to store it on git
+PackedShaders.h

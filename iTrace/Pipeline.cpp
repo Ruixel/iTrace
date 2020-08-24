@@ -7,6 +7,7 @@
 #include "RainDropBaker.h"
 #include "CausticBaker.h"
 #include "WaterBaker.h"
+#include "ShaderPacker.h"
 
 
 #ifdef _WIN32 or _WIN64
@@ -400,6 +401,7 @@ namespace iTrace {
 	void Pipeline::PreparePipeline(Camera& Camera, Window& Window)
 	{
 
+		Rendering::PrepareShaderLoading();
 
 
 #ifdef _WIN32 or _WIN64
@@ -498,7 +500,8 @@ namespace iTrace {
 		RainBaker Baker;
 		Baker.BakeRain();
 
-		 
+		Rendering::UpdateShaderBinaryStructure(); 
+
 
 	}
 

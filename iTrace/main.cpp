@@ -152,6 +152,8 @@ int main(int *argc, char*argv[]) {
 	//ComputeDofKernels(1.0/float(8.0), 8.0);
 
 
+	std::cin.get(); 
+
 	alutInit(argc, argv); 
 
 	Window Screen = Window(Vector2i(1920, 1080), true); 

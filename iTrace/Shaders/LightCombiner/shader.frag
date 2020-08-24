@@ -357,15 +357,13 @@ void main() {
 		if(WorldPosFetch.y < 58.9) {
 		
 			
-			//run a ray intersection function -> -> 
+			//run a ray-plane intersection function 
 
 			float Traversal = (58.9 - WorldPosFetch.y) / LightDirection.y; 
 
 			vec2 TC = WorldPosFetch.xz + LightDirection.xz * Traversal; 
 
-		
-			Shadow.xyz *= pow(TextureInterp(WaterCaustics, vec3(TC * 0.5, Time * 12.0)).x,4.0) * 2.0; 
-
+			Shadow.xyz *= pow(TextureInterp(WaterCaustics, vec3(TC * 0.5, Time * 12.0)).x,4.0) * 4.0; 
 
 		}
 			

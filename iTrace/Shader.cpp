@@ -3,6 +3,7 @@
 #include <string> 
 #include <fstream> 
 #include <iostream> 
+#include "ShaderPacker.h"
 
 #define throwerror(s) std::cout << s
 
@@ -10,6 +11,9 @@
 
 
 unsigned int iTrace::Rendering::LoadShader(unsigned int ShaderType, const std::string& File, unsigned int& Buffer, unsigned int BaseID, bool ReCreate, std::string Inject) {
+	
+	Rendering::LoadShader(File, Inject); 
+	
 	std::string source = ""; //all the shader code
 	std::ifstream file(File);
 
