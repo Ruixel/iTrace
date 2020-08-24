@@ -331,6 +331,7 @@ namespace iTrace {
 		{
 			glGenTextures(1, &WaterNormal); 
 			glGenTextures(1, &WaterParallax); 
+			glGenTextures(1, &WaterCaustics);
 
 			glBindTexture(GL_TEXTURE_2D_ARRAY, WaterNormal);
 			
@@ -423,6 +424,49 @@ namespace iTrace {
 			glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
 
+			glBindTexture(GL_TEXTURE_2D_ARRAY, WaterCaustics);
+
+			glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, 128, 128, 128, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT);
+
+			glTexParameteri(GL_TEXTURE_2D_ARRAY,
+				GL_TEXTURE_MIN_FILTER,
+				GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D_ARRAY,
+				GL_TEXTURE_MAG_FILTER,
+				GL_LINEAR_MIPMAP_LINEAR);
+
+			for (int i = 0; i < 128; i++) {
+
+				std::string FilePath = "Resources/Water/Caustic_" + std::to_string(i) + ".png";
+
+
+				sf::Image LoadingImage;
+				LoadingImage.loadFromFile(FilePath);
+
+				auto PixelData = std::vector<unsigned char>(LoadingImage.getSize().x * LoadingImage.getSize().y, 255);
+				auto RawPixelData = LoadingImage.getPixelsPtr();
+
+				for (int pixel = 0; pixel < LoadingImage.getSize().x * LoadingImage.getSize().y; pixel++) {
+					PixelData[pixel] = RawPixelData[pixel * 4];
+				}
+
+				glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+					0,
+					0, 0, i,
+					128, 128, 1,
+					GL_RED,
+					GL_UNSIGNED_BYTE,
+					PixelData.data());
+
+			}
+
+			glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
+			glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
 
 		}

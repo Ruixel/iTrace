@@ -17,7 +17,7 @@ namespace iTrace {
 			FrameBufferObject DeferredRefractive; //<- fallback refraction 
 			TextureGL Noise;
 			unsigned int RainDrop; 
-			unsigned int WaterNormal, WaterParallax; 
+			unsigned int WaterNormal, WaterParallax, WaterCaustics; 
 
 			void PrepareDeferredRenderer(Window& Window); 
 			void RenderDeferred(SkyRendering & Sky, Window& Window, Camera& Camera, WorldManager & World, Vector3f & SunDirection); 

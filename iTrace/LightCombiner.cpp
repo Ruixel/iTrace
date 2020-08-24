@@ -80,7 +80,8 @@ namespace iTrace {
 			Deferred.PrimaryDeferredRefractive.BindImage(1,24);
 			Sky.SkyIncident.BindImage(1, 25);
 			Deferred.RawWaterDeferred.BindDepthImage(26);
-
+			glActiveTexture(GL_TEXTURE27);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, Deferred.WaterCaustics);
 
 			LightCombinerShader.SetUniform("LightDirection", Sky.Orientation);
 			LightCombinerShader.SetUniform("SunColor", Sky.SunColor);
@@ -90,6 +91,7 @@ namespace iTrace {
 			LightCombinerShader.SetUniform("InverseProj", glm::inverse(Camera.Project));
 			LightCombinerShader.SetUniform("InverseView", glm::inverse(Camera.View));
 			LightCombinerShader.SetUniform("IdentityMatrix", Camera.Project * Camera.View); 
+			LightCombinerShader.SetUniform("Time", Window.GetTimeOpened());
 
 			DrawPostProcessQuad();
 
@@ -118,6 +120,9 @@ namespace iTrace {
 			Deferred.RawWaterDeferred.BindImage(2, 13);
 			Indirect.SpatialyUpscaled.BindImage(1, 18);
 			Indirect.RefractedWater.BindImage(2, 19);
+
+
+			
 
 			FocusSSBO.Bind(0);
 			
@@ -209,6 +214,7 @@ namespace iTrace {
 			LightCombinerShader.SetUniform("PrimaryRefractionNormal", 24);
 			LightCombinerShader.SetUniform("SkyReigh", 25);
 			LightCombinerShader.SetUniform("WaterDepth", 26);
+			LightCombinerShader.SetUniform("WaterCaustics", 27);
 
 			
 			LightCombinerShader.UnBind();

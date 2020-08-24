@@ -33,6 +33,8 @@ uniform sampler2D PrimaryRefractionColor;
 uniform sampler2D PrimaryRefractionNormal; 
 uniform sampler2D SkyReigh; 
 uniform sampler2D WaterDepth; 
+uniform sampler2DArray WaterCaustics; 
+
 
 uniform bool NoAlbedo; 
 
@@ -43,9 +45,20 @@ uniform mat4 ShadowMatrices[5];
 uniform vec3 LightDirection; 
 uniform vec3 SunColor; 
 uniform vec3 CameraPosition; 
+uniform float Time; 
 
 uniform samplerCube SkyCube; 
 
+vec4 TextureInterp(sampler2DArray Sampler, vec3 TC) {
+
+	float BaseTime = mod(TC.z, 128.); 
+
+	int Coord1 = int(floor(BaseTime)); 
+	int Coord2 = int(ceil(BaseTime))%128; 
+
+	return mix(texture(Sampler, vec3(TC.xy, Coord1)), texture(Sampler,vec3(TC.xy, Coord2)), fract(BaseTime)); 
+
+}
 
 int FetchFromTexture(sampler2D Texture, int Index) {
 	
@@ -340,6 +353,23 @@ void main() {
 
 
 		vec4 Shadow = texture(DirectShadow, TexCoord); 
+
+		if(WorldPosFetch.y < 58.9) {
+		
+			
+			//run a ray intersection function -> -> 
+
+			float Traversal = (58.9 - WorldPosFetch.y) / LightDirection.y; 
+
+			vec2 TC = WorldPosFetch.xz + LightDirection.xz * Traversal; 
+
+		
+			Shadow.xyz *= pow(TextureInterp(WaterCaustics, vec3(TC * 0.5, Time * 12.0)).x,4.0) * 2.0; 
+
+
+		}
+			
+
 
 		vec2 ShCoCg = vec2(IndirectSpecular.w, Shadow.w); 
 		vec4 SHy = IndirectDiffuse; 

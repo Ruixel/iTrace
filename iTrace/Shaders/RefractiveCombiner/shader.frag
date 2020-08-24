@@ -26,6 +26,7 @@ uniform sampler2D WaterNormal;
 uniform sampler2D WaterPosition; 
 uniform sampler2D IndirectSpecular; 
 uniform sampler2D WaterReflection; 
+uniform sampler2DArray WaterCaustics; 
 
 uniform sampler2DShadow ShadowMaps[4];
 
