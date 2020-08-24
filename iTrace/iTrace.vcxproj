@@ -340,6 +340,8 @@
     <None Include="Shaders\Volumetrics\shader.vert" />
     <None Include="Shaders\WaterBaker\shader.frag" />
     <None Include="Shaders\WaterBaker\shader.vert" />
+    <None Include="Shaders\WaterCausticsBaker\shader.frag" />
+    <None Include="Shaders\WaterCausticsBaker\shader.vert" />
     <None Include="Shaders\WaterDepthPacker\shader.frag" />
     <None Include="Shaders\WaterDepthPacker\shader.vert" />
     <None Include="Shaders\WaterRefraction\shader.frag" />

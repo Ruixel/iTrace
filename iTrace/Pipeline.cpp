@@ -434,7 +434,7 @@ namespace iTrace {
 
 		WaterBaker WaterBaker;
 		WaterBaker.Bake("Resources/Water/Water", "Resources/Water/Water_Parallax", 192, 96, 100);
-
+		WaterBaker.BakeCaustics("Resources/Water/Caustic", 128, 128); 
 
 		std::string Directory = "C:/Users/te17hw8/source/repos/iTrace/iTrace/Materials/Jelly/";
 		//CausticBaker Caustics;

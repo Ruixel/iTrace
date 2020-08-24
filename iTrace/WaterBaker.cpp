@@ -64,6 +64,64 @@ namespace iTrace {
 
 			}
 
+			delete[] Pixels; 
+
+		}
+		void WaterBaker::BakeCaustics(const std::string& BaseDir, int Resolution, int Frames)
+		{
+
+			auto FileExists = [](const std::string& FilePath) {
+				return (std::ifstream(FilePath)).good();
+			};
+
+			if (FileExists(BaseDir + "_" + std::to_string(Frames - 1) + ".png") )
+				return; //<- water is already baked! 
+
+			WaterCausticMap = FrameBufferObject(Vector2i(Resolution), GL_R8, false); 
+			WaterCausticBakeShader = Shader("Shaders/WaterCausticsBaker"); 
+
+			
+
+			unsigned char* Pixels = new unsigned char[Resolution * Resolution * 4];
+
+
+			for (int Frame = 0; Frame < Frames; Frame++) {
+					
+				std::string OutPutDir = BaseDir + "_" + std::to_string(Frame) + ".png";
+
+				WaterCausticMap.Bind(); 
+
+				WaterCausticBakeShader.Bind();
+
+				WaterCausticBakeShader.SetUniform("Divisor", 0.31231273f * 0.375f);
+
+				WaterCausticBakeShader.SetUniform("Time", float(Frame) / float(Frames)); 
+
+				DrawPostProcessQuad(); 
+
+				WaterCausticBakeShader.UnBind();
+
+				WaterCausticMap.UnBind(); 
+
+
+
+				glBindTexture(GL_TEXTURE_2D, WaterCausticMap.ColorBuffer);
+				glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Pixels);
+				glBindTexture(GL_TEXTURE_2D, 0);
+
+				glFinish();
+
+				sf::Image* OutPutImage = new sf::Image();
+				OutPutImage->create(Resolution, Resolution, Pixels);
+				OutPutImage->saveToFile(OutPutDir);
+
+				delete OutPutImage;
+
+			}
+
+
+			
+
 
 		}
 	}

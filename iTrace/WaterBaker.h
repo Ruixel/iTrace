@@ -8,11 +8,12 @@ namespace iTrace {
 
 		struct WaterBaker {
 
-			Shader WaterBakingShader; 
+			Shader WaterBakingShader, WaterCausticBakeShader; 
 			MultiPassFrameBufferObject WaterMap; 
 			FrameBufferObject WaterParallaxMap; 
-
+			FrameBufferObject WaterCausticMap; 
 			void Bake(const std::string & BaseDir, const std::string & BaseParallaxDir, int ResolutionBase, unsigned int ResolutionParallax, unsigned int Frames); 
+			void BakeCaustics(const std::string& BaseDir, int Resolution, int Frames); 
 
 		};
 

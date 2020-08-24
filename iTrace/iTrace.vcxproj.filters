@@ -241,6 +241,12 @@
     <Filter Include="Shaders\WaterBaker">
       <UniqueIdentifier>{c9c3619b-e98a-4ea9-814f-2e88919cfccb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\WaterCausticBaker">
+      <UniqueIdentifier>{aeabc058-ba81-4344-a9e9-f2d9df78f566}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\WaterCausticsBaker">
+      <UniqueIdentifier>{77db05ad-3e30-46cc-be08-bbd89c827ca9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -846,6 +852,12 @@
     </None>
     <None Include="Shaders\WaterBaker\shader.frag">
       <Filter>Shaders\WaterBaker</Filter>
+    </None>
+    <None Include="Shaders\WaterCausticsBaker\shader.vert">
+      <Filter>Shaders\WaterCausticsBaker</Filter>
+    </None>
+    <None Include="Shaders\WaterCausticsBaker\shader.frag">
+      <Filter>Shaders\WaterCausticsBaker</Filter>
     </None>
   </ItemGroup>
 </Project>
