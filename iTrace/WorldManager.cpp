@@ -88,6 +88,23 @@ namespace iTrace {
 				Chunk::AddBlock(Chunk::BlockType("Bush", { 67 }, false, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT, Chunk::BLOCK_MODEL::BUSH)); //CC0, good (50)
 				Chunk::AddBlock(Chunk::BlockType("Vines", { 68 }, false, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT, Chunk::BLOCK_MODEL::VINES)); //CC0, good (50)
 				Chunk::AddBlock(Chunk::BlockType("Vines", { 69 }, false, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::TRANSPARENT, Chunk::BLOCK_MODEL::SEAWEED)); //CC0, good (50)
+				Chunk::AddBlock(Chunk::BlockType("Coral", { 70 }, true, false, false, SoundType::SAND)); //CC0, good texture
+				Chunk::AddBlock(Chunk::BlockType("CoralModel", { 71 }, true, true, false, SoundType::SAND, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::CORAL)); //CC0, good texture
+				Chunk::AddBlock(Chunk::BlockType("Searock", { 72 }, true, false, false, SoundType::SAND)); //CC0, good texture				Chunk::AddBlock(Chunk::BlockType("CoralModel", { 71 }, true, true, false, SoundType::SAND, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::CORAL)); //CC0, good texture
+				Chunk::AddBlock(Chunk::BlockType("Chess", { 73 }, true, true, false, SoundType::WOOD, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::CHEST)); //CC0, good texture
+
+				Chunk::AddBlock(Chunk::BlockType("Fence_Side1", { 6 }, true, true, false, SoundType::WOOD, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::FENCE_SIDE1)); //CC0, good texture
+				Chunk::AddBlock(Chunk::BlockType("Fence_Side2", { 6 }, true, true, false, SoundType::WOOD, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::FENCE_SIDE2)); //CC0, good texture
+
+				Chunk::AddBlock(Chunk::BlockType("Fence_Full", { 6 }, true, true, false, SoundType::WOOD, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::FENCE_FULL)); //CC0, good texture
+
+				Chunk::AddBlock(Chunk::BlockType("Fence_Corner1", { 6 }, true, true, false, SoundType::WOOD, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::FENCE_CORNER_1)); //CC0, good texture
+				Chunk::AddBlock(Chunk::BlockType("Fence_Corner2", { 6 }, true, true, false, SoundType::WOOD, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::FENCE_CORNER_2)); //CC0, good texture
+				Chunk::AddBlock(Chunk::BlockType("Fence_Corner3", { 6 }, true, true, false, SoundType::WOOD, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::FENCE_CORNER_3)); //CC0, good texture
+				Chunk::AddBlock(Chunk::BlockType("Fence_Corner4", { 6 }, true, true, false, SoundType::WOOD, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::FENCE_CORNER_4)); //CC0, good texture
+				Chunk::AddBlock(Chunk::BlockType("Fence_Empty", { 6 }, true, true, false, SoundType::WOOD, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::FENCE_EMPTY)); //CC0, good texture
+
+				Chunk::AddBlock(Chunk::BlockType("Fence_Empty", { 74 }, true, true, false, SoundType::STONE, 0.0, Chunk::BLOCK_RENDER_TYPE::OPAQUE, Chunk::BLOCK_MODEL::POT)); //CC0, good texture
 
 
 				Chunk::AddTexture("stone", 0.75);
@@ -160,6 +177,11 @@ namespace iTrace {
 				Chunk::AddTexture("Bush", 0.0);
 				Chunk::AddTexture("Vines", 0.0);
 				Chunk::AddTexture("Seaweed", 0.0);
+				Chunk::AddTexture("Coral", 0.0);
+				Chunk::AddTexture("NewCoral", 0.0);
+				Chunk::AddTexture("Searock", 0.0);
+				Chunk::AddTexture("Chest", 0.0);
+				Chunk::AddTexture("Ceramic", 0.0);
 
 
 

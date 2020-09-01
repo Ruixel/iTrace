@@ -60,8 +60,8 @@ const vec3 PlayerOrigin = vec3(0,6200,0);
 const float PlanetRadius = 6573; 
 const float AtmosphereRadius = 7773; 
 const float Size = AtmosphereRadius - PlanetRadius; 
-const int Steps = 16; 
-const int LightSteps = 6; 
+const int Steps = 64; 
+const int LightSteps = 16; 
 const float Epsilon = 1e-4; 
 
 //Cloud properties 
@@ -73,6 +73,9 @@ const vec3 CloudColor = vec3(1.0); //<- is this really physically plausible?
 vec2 hash2() {
 	return clamp(texelFetch(BasicBlueNoise, ivec2(Pixel + ivec2((State++) * 217))%256, 0).xy,0.0,0.99); 
 }
+
+int Random[16] = int[16](2,15,4,1,3,8,14,11,12,5,0,6,10,7,13,9); 
+
 
 uniform float ScatteringMultiplier; 
 uniform float AbsorptionMultiplier; 
@@ -87,16 +90,16 @@ float Density(vec3 Position) {
 
 	Position.y -= PlanetRadius; 
 
-	Position.x += Time * 6.0; 
+	Position.x += Time * 0.0; 
 
-	vec3 WeatherSample = texture(WeatherMap, (Position.xz) / 16384).xyz; 
+	vec3 WeatherSample = texture(WeatherMap, (Position.xz) / 8192).xyz; 
 
 	float WeatherNoise =  (1.0-pow(1.0-WeatherSample.x,3.0)); ; 
 
 	if(WeatherNoise < 1.0/256.0)
 		return 0.0; 
 
-	vec4 NoiseFetch1 = texture(CloudNoise, ((Position + vec3(0.0,-Time*10,0.0)) * vec3(1.0,1,1.0)) / 8192); 
+	vec4 NoiseFetch1 = texture(CloudNoise, ((Position + vec3(0.0,-Time*0,0.0)) * vec3(1.0,1,1.0)) / 4096.0); 
 	
 	float HighFrequencyNoise = dot(NoiseFetch1.yzw, vec3(0.25,0.125,0.625)); 
 
@@ -131,7 +134,7 @@ float Density(vec3 Position) {
 	if(BaseShape < 1.0/25.0)
 		return 0.; 
 
-	vec4 NoiseFetch2 = texture(CloudShape, (Position + vec3(0.0,Time*2,0.0)) / 384*2); 
+	vec4 NoiseFetch2 = texture(CloudShape, (Position + vec3(0.0,Time*0.0,0.0)) / 384); 
 
 	float ErosionNoise = dot(NoiseFetch2.xyz, vec3(0.25,0.125,0.625)); 
 
@@ -342,14 +345,12 @@ void main() {
 
 	ivec2 RawPixel = ivec2(gl_FragCoord.xy); 
 
-	RawPixel.x *= 2; 
-	RawPixel.x += int(RawPixel.y % 2 != CheckerStep); 
-
-
-	Pixel = RawPixel * 2 + States[SubFrame]; 
+	int UpscaleFrame = Random[Frame%16]; 
+	
+	Pixel = RawPixel * 4 + ivec2(UpscaleFrame % 4, (UpscaleFrame / 4)%4); 
 	vec2 NewTexCoord = vec2(Pixel) * TexelSize;  
 
-	vec3 Direction = normalize(vec3(IncidentMatrix * vec4(NewTexCoord * 2.0 - 1.0, 1.0, 1.0)));
+	vec3 Direction = normalize(vec3(IncidentMatrix * vec4(clamp(NewTexCoord * 2.0 - 1.0,vec2(-1.0),vec2(1.0)), 1.0, 1.0)));
 
 	//assume player is never in the atmosphere -> 
 
@@ -382,9 +383,8 @@ void main() {
 	vec3 EndPosition = Origin + Direction * End; 
 
 	float PreviousTraversal = 0.0; 
-	State = Frame / 4; 
+	State = 0; 
 	vec2 hash = hash2(); 
-	
 
 	float DitherStart = hash.x; 
 

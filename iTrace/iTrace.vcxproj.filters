@@ -247,6 +247,15 @@
     <Filter Include="Shaders\WaterCausticsBaker">
       <UniqueIdentifier>{77db05ad-3e30-46cc-be08-bbd89c827ca9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\ErrorMaskBlur">
+      <UniqueIdentifier>{55ca6e00-687d-4a1a-b5c6-276aef83207c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\PreUpscaler">
+      <UniqueIdentifier>{fa954e10-3318-4e63-96d0-fdf31ed5a09b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\CheckerUpscaler">
+      <UniqueIdentifier>{778b56d5-8863-4d1b-98d4-52642e31c2a8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -867,6 +876,24 @@
     </None>
     <None Include="Shaders\WaterCausticsBaker\shader.frag">
       <Filter>Shaders\WaterCausticsBaker</Filter>
+    </None>
+    <None Include="Shaders\ErrorMaskBlur\shader.vert">
+      <Filter>Shaders\ErrorMaskBlur</Filter>
+    </None>
+    <None Include="Shaders\ErrorMaskBlur\shader.frag">
+      <Filter>Shaders\ErrorMaskBlur</Filter>
+    </None>
+    <None Include="Shaders\PreUpscaler\shader.vert">
+      <Filter>Shaders\PreUpscaler</Filter>
+    </None>
+    <None Include="Shaders\PreUpscaler\shader.frag">
+      <Filter>Shaders\PreUpscaler</Filter>
+    </None>
+    <None Include="Shaders\CheckerUpscaler\shader.vert">
+      <Filter>Shaders\CheckerUpscaler</Filter>
+    </None>
+    <None Include="Shaders\CheckerUpscaler\shader.frag">
+      <Filter>Shaders\CheckerUpscaler</Filter>
     </None>
   </ItemGroup>
 </Project>

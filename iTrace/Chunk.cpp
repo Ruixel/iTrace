@@ -266,10 +266,10 @@ namespace iTrace {
 					int Dist = Height - MyY;
 
 					if (Dist == 1)
-						return (BiomeNoise > 0.7 ? 24 : BiomeNoise > 0.3 ? 29 : 35); 
+						return Height < 65 ? 24 : (BiomeNoise > 0.7 ? 24 : BiomeNoise > 0.3 ? 29 : 35);
 					else if (Dist < 4)
-						return 6; //dirt
-					return 5; //stone 
+						return Height < 65 ? 24 : 6; //dirt
+					return Height < 65 ? 42 : 5; //stone 
 
 				};
 
@@ -339,7 +339,14 @@ namespace iTrace {
 				for (int x = 0; x < CHUNK_SIZE; x++) {
 
 					for (int z = 0; z < CHUNK_SIZE; z++) {
-						HeightMap[x*CHUNK_SIZE+z] = (fractalnoise((x + X * CHUNK_SIZE) / 2048.0, (z + Y * CHUNK_SIZE) / 2048.0, -1238, 3) * 0.5 + 0.5) * 20 + 50;
+
+						Vector2f Position = Vector2f((x + X * CHUNK_SIZE), (z + Y * CHUNK_SIZE)); 
+
+						float Height = (fractalnoise(Position.x / 384.0, Position.y / 384.0, 7, -1231) * 0.5 + 0.5);
+						float Rivers = glm::pow(1.0 - abs(fractalnoise(Position.x / 4096.0, Position.y / 4096.0, 0, 3)), 48.0);
+						
+
+						HeightMap[x*CHUNK_SIZE+z] = glm::clamp(Height-Rivers,0.0f,1.0f) * 50 + 50;
 					}
 
 				}

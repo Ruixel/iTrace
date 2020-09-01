@@ -253,6 +253,8 @@
     <None Include="Shaders\Checkerboarder\shader.vert" />
     <None Include="Shaders\CheckerBoardHandler\shader.frag" />
     <None Include="Shaders\CheckerBoardHandler\shader.vert" />
+    <None Include="Shaders\CheckerUpscaler\shader.frag" />
+    <None Include="Shaders\CheckerUpscaler\shader.vert" />
     <None Include="Shaders\CloudProjection\shader.frag" />
     <None Include="Shaders\CloudProjection\shader.vert" />
     <None Include="Shaders\Clouds\shader.frag" />
@@ -279,6 +281,8 @@
     <None Include="Shaders\DoFVertical\shader.vert" />
     <None Include="Shaders\DoF\shader.frag" />
     <None Include="Shaders\DoF\shader.vert" />
+    <None Include="Shaders\ErrorMaskBlur\shader.frag" />
+    <None Include="Shaders\ErrorMaskBlur\shader.vert" />
     <None Include="Shaders\Glow\shader.frag" />
     <None Include="Shaders\Glow\shader.vert" />
     <None Include="Shaders\HemiSphericalShadowMapCopy\shader.frag" />
@@ -299,6 +303,8 @@
     <None Include="Shaders\PrepShader\shader.vert" />
     <None Include="Shaders\PreSpatialTemporal\shader.frag" />
     <None Include="Shaders\PreSpatialTemporal\shader.vert" />
+    <None Include="Shaders\PreUpscaler\shader.frag" />
+    <None Include="Shaders\PreUpscaler\shader.vert" />
     <None Include="Shaders\PrimaryDeferredRefractive\shader.frag" />
     <None Include="Shaders\PrimaryDeferredRefractive\shader.vert" />
     <None Include="Shaders\PrimarySoundTracing\shader.frag" />

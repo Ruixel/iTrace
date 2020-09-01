@@ -15,13 +15,14 @@ namespace iTrace {
 				TemporalUpscaler,SpatialPacker, SpatialFilter, 
 				SpatialUpscaler, TemporalFilter, FrameCount, Volumetrics, 
 				DirectBlocker, CloudRenderer, CloudProjection, CheckerboardUpscaler,
-				PreSpatialTemporalFilter, SpatialFilterFinal, WaterRefraction, WaterDepthPacker; 
+				PreSpatialTemporalFilter, SpatialFilterFinal, WaterRefraction, 
+				WaterDepthPacker, WaterErrorBlur, PreUpscaler, CheckerUpscaler; 
 			//																	- gives out 2 4d floats, 1 float-	 - gives out 3 4d floats -
-			MultiPassFrameBufferObject RawPathTrace[4], TemporalyUpscaled, SpatialyFilteredTemporary[2],			SpatialyFiltered[4], SpatialyUpscaled, Clouds[4], Checkerboarder[4],  RefractedWater, MotionVectors[4], PackedSpatialData;
+			MultiPassFrameBufferObject RawPathTrace[4], TemporalyUpscaled, SpatialyFilteredTemporary[2],			SpatialyFiltered[4], SpatialyUpscaled, Clouds, Checkerboarder[4],  RefractedWater, MotionVectors[4], PackedSpatialData;
 			FrameBufferObject PackedData, DirectBlockerBuffer;
-			MultiPassFrameBufferObjectPreviousData TemporallyFiltered;
+			MultiPassFrameBufferObjectPreviousData TemporallyFiltered, PreUpscaled;
 			FrameBufferObjectPreviousData TemporalFrameCount, ProjectedClouds, PreSpatialTemporal;
-			FrameBufferObject VolumetricFBO[4], PackedWaterData;
+			FrameBufferObject VolumetricFBO[4], PackedWaterData, ErrorMaskBlur[2], CheckerUpscaledDetail;
 
 			TextureGL WindNoise, SimplifiedBlueNoise, WeatherMap, Turbulence, Cirrus; 
 			TextureGL3D CloudNoise, CloudShape; 
@@ -43,6 +44,7 @@ namespace iTrace {
 			void CheckerboardUpscale(Window& Window, Camera & Camera,DeferredRenderer & Deferred); 
 			void DoWaterRayTrace(Window& Window, Camera& Camera, DeferredRenderer& Deferred); 
 			void RenderClouds(Window & Window,Camera& Camera, DeferredRenderer & Deferred, SkyRendering& Sky);
+			void DoPreUpscaling(Window& Window, Camera& Camera, DeferredRenderer & Deferred); 
 
 			void ReloadIndirect(Window& Window); 
 			void SetShaderUniforms(Window& Window); 

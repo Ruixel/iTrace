@@ -61,7 +61,7 @@ namespace iTrace {
 			}
 
 			Deferred.Deferred.BindImage(7, 14);
-			Indirect.TemporallyFiltered.BindImage(3, 15);
+			Indirect.PreUpscaled.BindImage(0, 15); 
 			//Indirect.ProjectedClouds.BindImage(15); 
 
 			Particles.ParticleSystemFBO.BindImage(16); 
@@ -82,6 +82,9 @@ namespace iTrace {
 			Deferred.RawWaterDeferred.BindDepthImage(26);
 			glActiveTexture(GL_TEXTURE27);
 			glBindTexture(GL_TEXTURE_2D_ARRAY, Deferred.WaterCaustics);
+			
+
+			Indirect.PreUpscaled.BindImage(2, 28);
 
 			LightCombinerShader.SetUniform("LightDirection", Sky.Orientation);
 			LightCombinerShader.SetUniform("SunColor", Sky.SunColor);
@@ -120,7 +123,7 @@ namespace iTrace {
 			Deferred.RawWaterDeferred.BindImage(2, 13);
 			Indirect.SpatialyUpscaled.BindImage(1, 18);
 			Indirect.RefractedWater.BindImage(2, 19);
-
+			Indirect.ErrorMaskBlur[1].BindImage(20); 
 
 			
 
@@ -215,6 +218,7 @@ namespace iTrace {
 			LightCombinerShader.SetUniform("SkyReigh", 25);
 			LightCombinerShader.SetUniform("WaterDepth", 26);
 			LightCombinerShader.SetUniform("WaterCaustics", 27);
+			LightCombinerShader.SetUniform("Detail", 28);
 
 			
 			LightCombinerShader.UnBind();
@@ -245,6 +249,7 @@ namespace iTrace {
 
 			RefractiveCombiner.SetUniform("IndirectSpecular", 18);
 			RefractiveCombiner.SetUniform("WaterReflection", 19);
+			RefractiveCombiner.SetUniform("WaterError", 20);
 
 
 			RefractiveCombiner.UnBind(); 

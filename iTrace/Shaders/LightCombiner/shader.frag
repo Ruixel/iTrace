@@ -34,6 +34,7 @@ uniform sampler2D PrimaryRefractionNormal;
 uniform sampler2D SkyReigh; 
 uniform sampler2D WaterDepth; 
 uniform sampler2DArray WaterCaustics; 
+uniform sampler2D Detail; 
 
 
 uniform bool NoAlbedo; 
@@ -363,7 +364,7 @@ void main() {
 
 			vec2 TC = WorldPosFetch.xz + LightDirection.xz * Traversal; 
 
-			Shadow.xyz *= pow(TextureInterp(WaterCaustics, vec3(TC * 0.5, Time * 12.0)).x,4.0) * 4.0; 
+			Shadow.xyz *= pow(TextureInterp(WaterCaustics, vec3(TC * 0.5, Time * 12.0 + TC.x*10.0)).x,4.0) * 4.0; 
 
 		}
 			
@@ -371,6 +372,8 @@ void main() {
 
 		vec2 ShCoCg = vec2(IndirectSpecular.w, Shadow.w); 
 		vec4 SHy = IndirectDiffuse; 
+
+
 
 		IndirectDiffuse.xyz = SHToIrridiance(SHy, ShCoCg, HighfreqNormalSample.xyz); 
 
@@ -399,6 +402,11 @@ void main() {
 		//Lighting.xyz = IndirectSpecular.xyz; 	
 		//Lighting.xyz = Shadow.xyz; 
 		//Lighting.xyz = NormalFetch.xyz; 
+
+		//Lighting.xyz = SHy.xyz; 
+
+		//Lighting.xyz = texelFetch(Detail, ivec2(gl_FragCoord)/2, 0).xxx; 
+
 	}
 	else {
 		vec4 CloudSample = textureBicubic(Clouds, TexCoord); 

@@ -63,9 +63,9 @@ float WeightNew(float Luminance, float LuminanceCenter,
 
 	//normal weight -> 
 
-	float FavorMixer = clamp((FrameCount-6.0)/4.0,0.0,1.0); 
+	float FavorMixer = clamp((FrameCount-6.0)/12.0,0.0,1.0); 
 
-	phiIndirect = mix(10.0, phiIndirect, FavorMixer); 
+	phiIndirect = mix(100.0, phiIndirect, FavorMixer); 
 	
 	float WeightFactor = mix(0.5,6.0,Facing); 
 	WeightFactor = 0.5; 
@@ -77,7 +77,6 @@ float WeightNew(float Luminance, float LuminanceCenter,
 	float WeightTraversal = 1.0 / (1.0 + 4.0 * abs(Traversal-TraversalCenter)/max(min(Traversal, TraversalCenter),0.01)); 
 
 	FavorMixer = clamp((FrameCount-8.0)/24.0,0.0,1.0); 
-
 	WeightDetail = mix(1.0, WeightDetail, FavorMixer); 
 	WeightTraversal = mix(1.0, WeightTraversal, FavorMixer); 
 
@@ -85,7 +84,7 @@ float WeightNew(float Luminance, float LuminanceCenter,
 
 	float NormalWeight = pow(max(dot(Normal.xyz, NormalCenter.xyz), 0.0), NormalBias); 
 
-	float CombinedWeight = max(DepthWeight * NormalWeight * WeightTraversal -WeightIndirectLuminance,0.0);  
+	float CombinedWeight = max(DepthWeight * NormalWeight -WeightIndirectLuminance,0.0);  
 
 
 	return CombinedWeight; 
@@ -218,12 +217,21 @@ void main() {
 	vec3 Direction = normalize(vec3(IncidentMatrix * vec4(NewTexCoord * 2.0 - 1.0, 1.0, 1.0)));
 	float Facing = abs(dot(BasePacked.xyz, Direction)); 
 
-	vec4 BaseDetail = texelFetch(Detail, Pixel, 0); 
+	vec4 BaseDetail = texelFetch(Detail, HighResPixel, 0); 
+
+	float Var = abs(BaseDetail.x * BaseDetail.x - BaseDetail.z); 
+
+	float phiIndirect = sqrt(max(0.0, 1e-10+Var)); 
+
+	phiIndirect = phiIndirect; // (StepSize > 1 ? 0.5 : 1.0); 
 
 	if(!DoSpatial ) {
 		SHy /= TotalWeight; 
 		IndirectSpecularCo /= TotalWeightSpecular; 
 		//IndirectSpecularCo.xyz = vec3(Facing); 
+
+		SHy.xyz = vec3(BaseDetail.x); 
+
 		return; 
 	}
 
@@ -231,11 +239,7 @@ void main() {
 
 	
 
-	float Var = abs(BaseDetail.x * BaseDetail.x - BaseDetail.z); 
 
-	float phiIndirect = sqrt(max(0.0, 1e-10+Var)); 
-
-	phiIndirect = phiIndirect / (StepSize > 1 ? 0.5 : 1.0); 
 
 	bool NoDenoise = (texelFetch(RawDepth, HighResPixel * 2, 0).x > texelFetch(RawWaterDepth, HighResPixel * 2, 0).x); 
 	for(int x = -1; x <= 1; x++) {
@@ -251,7 +255,7 @@ void main() {
 
 			float distSqr = dot(Vec,Vec) * 0.25; 
 
-			vec4 CurrentDetail = texelFetch(Detail, NewPixel, 0); 
+			vec4 CurrentDetail = texelFetch(Detail, NewPixelHighRes, 0); 
 
 			vec4 CurrentPackedData = texelFetch(InputPacked, NewPixel, 0); 
 

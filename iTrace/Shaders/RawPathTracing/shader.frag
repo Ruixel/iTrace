@@ -953,7 +953,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 			Hash = 0.0; 
 		
 
-		vec4 Trace = ScreenSpaceTrace(Origin, Direction, Specular ? (Water ? 4.0 : 2.0) : 1.0, Water ? 48 : 5, Hash, NormalSS, PositionSS, Specular ? 1.0 : 4.0, Specular); 
+		vec4 Trace = ScreenSpaceTrace(Origin, Direction, Specular ? (Water ? 4.0 : 2.0) : 1.0, Water ? 48 : 5, Hash, NormalSS, PositionSS, Specular ? 1.2 : 4.0, Specular); 
 	
 		if(Trace.x > -0.9) {
 			Hit = true; 
@@ -973,6 +973,8 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 	if(!Hit)
 		Hit = RawTraceOld(Direction, Origin - vec3(PositionBias.x, 0, PositionBias.y), Block, Face, OutNormal, TexCoord, Position, Specular ? 64 : 64,Color);
 
+		Position += vec3(PositionBias.x, 0, PositionBias.y); 
+
 	if(ParallaxHit) {
 		Position = PositionSS; 
 		OutNormal = NormalSS; 
@@ -982,7 +984,7 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 	if(!Hit) {
 		//Hit = RawTrace(Direction, Origin, Block, Face, OutNormal, TexCoord, Position, 256);
 	}
-	Position += vec3(PositionBias.x, 0, PositionBias.y); 
+	
 
 
 	vec4 Diffuse = vec4(0.0); 
@@ -1351,6 +1353,5 @@ void main() {
 	vec2 RawTC = vec2(Pixel) / vec2(textureSize(TCData, 0).xy); 
 
 	//Direct.xyz = pow(texelFetch(DirectionalCascadesRaw[0], ivec2(RawTC * textureSize(DirectionalCascadesRaw[0],0)),0).xxx,vec3(1000.0)); 
-
 	PackedSpatialData = PackData(Normal.xyz, LowFrequencyNormal.w, LinearDepth(texelFetch(Depth, Pixel, 0).x)); 
 }

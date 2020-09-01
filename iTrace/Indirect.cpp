@@ -27,20 +27,20 @@ namespace iTrace {
 			
 			for (int x = 0; x < 4; x++) {
 				RawPathTrace[x] = MultiPassFrameBufferObject(CheckerBoardedResolution, 8, { GL_RGBA16F, GL_RGBA16F, GL_RGB32F,GL_RGBA16F, GL_RGB16F,GL_RGBA16F, GL_R16F,GL_RGBA16F }, false);
-				MotionVectors[x] = MultiPassFrameBufferObject(Window.GetResolution() / 2, 2, { GL_RGB16F,GL_RGB16F }, false);
+				MotionVectors[x] = MultiPassFrameBufferObject(Window.GetResolution() / 2, 3, { GL_RGB16F,GL_RGB16F, GL_RG16F }, false);
 				SpatialyFiltered[x] = MultiPassFrameBufferObject(CheckerBoardedResolution, 3, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 				VolumetricFBO[x] = FrameBufferObject(CheckerBoardedResolution, GL_RGBA16F, false);
-				Clouds[x] = MultiPassFrameBufferObject(CheckerBoardedResolution, 2, { GL_RGBA16F, GL_R32F }, false);
 				Checkerboarder[x] = MultiPassFrameBufferObject(Window.GetResolution() / 4, 7, { GL_RGBA16F, GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_R32F,GL_RGBA16F }, false);
 
 			}
 
-			for (int i = 0; i < 2; i++)
+			for (int i = 0; i < 2; i++) {
 				SpatialyFilteredTemporary[i] = MultiPassFrameBufferObject(CheckerBoardedResolution, 3, { GL_RGBA16F, GL_RGBA16F, GL_R16F });
+				ErrorMaskBlur[i] = FrameBufferObject(Window.GetResolution() / 4, GL_R8, false); 
+			}
 
-
-
-			RefractedWater = MultiPassFrameBufferObject(Window.GetResolution() / 4, 3, { GL_RG32F, GL_RGBA16F, GL_RG32F }, false);
+			Clouds = MultiPassFrameBufferObject(Window.GetResolution() / 8, 2, { GL_RGBA16F, GL_R32F }, false);
+			RefractedWater = MultiPassFrameBufferObject(Window.GetResolution() / 4, 4, { GL_RG32F, GL_RGBA16F, GL_RG32F, GL_R8 }, false);
 			DirectBlockerBuffer = FrameBufferObject(Window.GetResolution() / 8, GL_RG16F, false);
 			TemporalFrameCount = FrameBufferObjectPreviousData(Window.GetResolution() / 2, GL_R16F, false);
 			TemporalyUpscaled = MultiPassFrameBufferObject(Window.GetResolution() / 2, 5, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
@@ -48,8 +48,10 @@ namespace iTrace {
 			TemporallyFiltered = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 2, 5, { GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F,GL_RGBA16F }, false);
 			SpatialyUpscaled = MultiPassFrameBufferObject(Window.GetResolution(), 3, { GL_RGBA16F,GL_RGBA16F, GL_RGBA16F }, false);
 			ProjectedClouds = FrameBufferObjectPreviousData(Vector2i(256), GL_RGBA16F, false); 
-			PreSpatialTemporal = FrameBufferObjectPreviousData(CheckerBoardedResolution, GL_RGBA16F, false);
+			PreSpatialTemporal = FrameBufferObjectPreviousData(Window.GetResolution() / 4, GL_RGBA16F, false);
 			PackedWaterData = FrameBufferObject(Window.GetResolution() / 2, GL_R16F, false); 
+			PreUpscaled = MultiPassFrameBufferObjectPreviousData(Window.GetResolution() / 2, 4, { GL_RGBA16F, GL_RGBA16F, GL_RGBA16F, GL_R16F }, false); 
+			CheckerUpscaledDetail = FrameBufferObject(Window.GetResolution() / 4, GL_RGBA16F, false);
 
 			IndirectLightShader = Shader("Shaders/RawPathTracing", false, Chunk::GetInjectionCode());
 			TemporalUpscaler = Shader("Shaders/TemporalUpscaler");
@@ -68,7 +70,9 @@ namespace iTrace {
 			PreSpatialTemporalFilter = Shader("Shaders/PreSpatialTemporal"); 
 			WaterRefraction = Shader("Shaders/WaterRefraction"); 
 			WaterDepthPacker = Shader("Shaders/WaterDepthPacker"); 
-
+			WaterErrorBlur = Shader("Shaders/ErrorMaskBlur"); 
+			PreUpscaler = Shader("Shaders/PreUpscaler"); 
+			CheckerUpscaler = Shader("Shaders/CheckerUpscaler"); 
 
 			SetShaderUniforms(Window); 
 			
@@ -130,6 +134,9 @@ namespace iTrace {
 
 			GenerateMotionVectors(Window, Camera, Deferred);
 			Profiler::SetPerformance("Motion vectors");
+
+			DoPreUpscaling(Window, Camera, Deferred); 
+			Profiler::SetPerformance("Pre upscaling"); 
 
 			DoVolumetricLighting(Window, Camera, Deferred, World, Sky);
 			Profiler::SetPerformance("Volumetric lighting");
@@ -306,50 +313,7 @@ namespace iTrace {
 		void LightManager::SpatialyFilter(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
 		{
 
-			int Addon = (Window.GetFrameCount() % 4) * 2; 
-
-			PackedSpatialData.Bind();
-
-			SpatialPacker.Bind();
-
-			Deferred.Deferred.BindImage(0, 0);
-			Deferred.RawDeferred.BindDepthImage(1);
-			Deferred.Deferred.BindImage(3, 2);
-			Deferred.RawWaterDeferred.BindDepthImage(3);
-			Deferred.RawWaterDeferred.BindImage(2,4);
-
-			SpatialPacker.SetUniform("znear", Camera.znear);
-			SpatialPacker.SetUniform("zfar", Camera.zfar);
-
-			DrawPostProcessQuad();
-
-			SpatialPacker.UnBind();
-
-			PackedSpatialData.UnBind();
 			
-			PreSpatialTemporalFilter.Bind(); 
-
-			PreSpatialTemporal.Bind(); 
-
-			RawPathTrace[Window.GetFrameCount() % 4].BindImage(5, 0);
-
-			PreSpatialTemporal.BindImagePrevious(1);
-			
-			PackedSpatialData.BindImage(0,2);
-
-			RawPathTrace[Window.GetFrameCount() % 4].BindImage(7, 2); 
-
-			MotionVectors[Window.GetFrameCount() % 4].BindImage(0,3);
-			TemporalFrameCount.BindImage(4);
-
-			PreSpatialTemporalFilter.SetUniform("SubFrame", Window.GetFrameCount() % 4); 
-			PreSpatialTemporalFilter.SetUniform("CheckerStep", (Window.GetFrameCount() / 4) % 2);
-
-			DrawPostProcessQuad(); 
-
-			PreSpatialTemporal.UnBind(Window); 
-
-			PreSpatialTemporalFilter.UnBind(); 
 			
 
 
@@ -370,7 +334,7 @@ namespace iTrace {
 			RawPathTrace[Window.GetFrameCount() % 4].BindImage(3, 3);
 			MotionVectors[Window.GetFrameCount() % 4].BindImage(0,4);
 			RawPathTrace[Window.GetFrameCount() % 4].BindImage(4, 5);
-			PreSpatialTemporal.BindImage(6);
+			PreUpscaled.BindImage(2, 6); 
 			RawPathTrace[Window.GetFrameCount() % 4].BindImage(6, 7); 
 			Deferred.RawDeferred.BindDepthImage(8);
 			Deferred.RawWaterDeferred.BindDepthImage(9);
@@ -438,7 +402,7 @@ namespace iTrace {
 
 				Checkerboarder[x].BindImage(3, x + 22);
 
-				Clouds[x].BindImage(0, x + 26);
+				Clouds.BindImage(0, x + 26);
 				Checkerboarder[x].BindImage(0, x + 26); 
 				SpatialyFiltered[x].BindImage(2, x + 30); 
 				Checkerboarder[x].BindImage(4, x + 30);
@@ -565,7 +529,7 @@ namespace iTrace {
 			}
 
 			ProjectedClouds.BindImage(12);
-			Clouds[Window.GetFrameCount()%4].BindImage(1,13);
+			Clouds.BindImage(1,13);
 			Deferred.PrimaryDeferredRefractive.BindDepthImage(22); 
 
 			Volumetrics.SetUniform("LightDirection", Sky.Orientation);
@@ -602,7 +566,7 @@ namespace iTrace {
 			Deferred.Deferred.BindImagePrevious(1, 3);
 			Deferred.Deferred.BindImage(7, 4);
 			Deferred.Deferred.BindImagePrevious(7, 5);
-			Clouds[Window.GetFrameCount() % 4].BindImage(1, 6); 
+			Clouds.BindImage(1, 6); 
 			Checkerboarder[Window.GetFrameCount() % 4].BindImage(5, 6); 
 
 			Deferred.RawWaterDeferred.BindImage(1, 7); 
@@ -652,13 +616,13 @@ namespace iTrace {
 			CheckerboardUpscaler.SetUniform("znear", Camera.znear);
 			CheckerboardUpscaler.SetUniform("zfar", Camera.zfar);
 
-			Clouds[Window.GetFrameCount() % 4].BindImage(0, 0);
+			Clouds.BindImage(0, 0);
 			VolumetricFBO[Window.GetFrameCount() % 4].BindImage(1); 
 			SpatialyFiltered[Window.GetFrameCount() % 4].BindImage(0,2); 
 			SpatialyFiltered[Window.GetFrameCount() % 4].BindImage(1,3);
 			SpatialyFiltered[Window.GetFrameCount() % 4].BindImage(2,4);
 			//RawPathTrace[Window.GetFrameCount() % 4].BindImage(4, 4); 
-			Clouds[Window.GetFrameCount() % 4].BindImage(1, 5);
+			Clouds.BindImage(1, 5);
 			PackedSpatialData.BindImage(0,6);
 			RawPathTrace[Window.GetFrameCount() % 4].BindImage(7, 6); 
 			Deferred.RawDeferred.BindDepthImage(7); 
@@ -714,6 +678,30 @@ namespace iTrace {
 
 			RefractedWater.UnBind(); 
 
+
+			RefractedWater.BindImage(3, 0); 
+
+			WaterErrorBlur.Bind(); 
+
+			WaterErrorBlur.SetUniform("Resolution", Window.GetResolution() / 4); 
+
+			for (int i = 0; i < 2; i++) {
+			
+				ErrorMaskBlur[i].Bind(); 
+
+				WaterErrorBlur.SetUniform("Vertical", i == 0); 
+
+				DrawPostProcessQuad(); 
+
+				ErrorMaskBlur[i].UnBind();
+
+				ErrorMaskBlur[i].BindImage(0); 
+			
+			}
+
+			WaterErrorBlur.UnBind();
+
+
 		}
 
 		void LightManager::RenderClouds(Window& Window, Camera& Camera, DeferredRenderer& Deferred, SkyRendering& Sky)
@@ -764,7 +752,7 @@ namespace iTrace {
 
 			ProjectedClouds.UnBind(Window); 
 
-			Clouds[Window.GetFrameCount() % 4].Bind(); 
+			Clouds.Bind(); 
 			
 			CloudRenderer.Bind(); 
 
@@ -808,8 +796,99 @@ namespace iTrace {
 
 			CloudRenderer.UnBind();
 
-			Clouds[Window.GetFrameCount() % 4].UnBind();
+			Clouds.UnBind();
 
+		}
+
+		void LightManager::DoPreUpscaling(Window& Window, Camera& Camera, DeferredRenderer& Deferred)
+		{
+			PackedSpatialData.Bind();
+
+			SpatialPacker.Bind();
+
+			Deferred.Deferred.BindImage(0, 0);
+			Deferred.RawDeferred.BindDepthImage(1);
+			Deferred.Deferred.BindImage(3, 2);
+			Deferred.RawWaterDeferred.BindDepthImage(3);
+			Deferred.RawWaterDeferred.BindImage(2, 4);
+
+			SpatialPacker.SetUniform("znear", Camera.znear);
+			SpatialPacker.SetUniform("zfar", Camera.zfar);
+
+			DrawPostProcessQuad();
+
+			SpatialPacker.UnBind();
+
+			PackedSpatialData.UnBind();
+
+			CheckerUpscaler.Bind();
+
+			CheckerUpscaledDetail.Bind();
+
+			CheckerUpscaler.SetUniform("CheckerStep", (Window.GetFrameCount() / 4) % 2);
+			CheckerUpscaler.SetUniform("State", Window.GetFrameCount() % 4);
+			CheckerUpscaler.SetUniform("znear", Camera.znear);
+			CheckerUpscaler.SetUniform("zfar", Camera.zfar);
+
+			RawPathTrace[Window.GetFrameCount() % 4].BindImage(5, 0);
+			RawPathTrace[Window.GetFrameCount() % 4].BindImage(7, 1);
+			Deferred.RawDeferred.BindDepthImage(2);
+			Deferred.Deferred.BindImage(0, 3);
+
+			DrawPostProcessQuad();
+
+			CheckerUpscaledDetail.UnBind();
+
+			CheckerUpscaler.UnBind();
+
+
+			int Addon = (Window.GetFrameCount() % 4) * 2;
+
+			PreSpatialTemporalFilter.Bind();
+
+			PreSpatialTemporal.Bind();
+
+			CheckerUpscaledDetail.BindImage(0); 
+
+			PreSpatialTemporal.BindImagePrevious(1);
+
+			PackedSpatialData.BindImage(0, 2);
+
+			RawPathTrace[Window.GetFrameCount() % 4].BindImage(7, 2);
+
+			MotionVectors[Window.GetFrameCount() % 4].BindImage(0, 3);
+			TemporalFrameCount.BindImage(4);
+
+			PreSpatialTemporalFilter.SetUniform("SubFrame", Window.GetFrameCount() % 4);
+			PreSpatialTemporalFilter.SetUniform("CheckerStep", (Window.GetFrameCount() / 4) % 2);
+
+			DrawPostProcessQuad();
+
+			PreSpatialTemporal.UnBind(Window);
+
+			PreSpatialTemporalFilter.UnBind();
+
+
+			PreUpscaled.Bind(); 
+			
+			PreUpscaler.Bind(); 
+
+			Clouds.BindImage(0, 0); 
+			PreUpscaled.BindImagePrevious(0, 1); 
+			MotionVectors[Window.GetFrameCount() % 4].BindImage(2, 2); 
+			MotionVectors[Window.GetFrameCount() % 4].BindImage(0, 3);
+			PreSpatialTemporal.BindImage(4);
+			PreUpscaled.BindImagePrevious(1, 5);
+			PreUpscaled.BindImagePrevious(2, 6);
+			PreUpscaled.BindImagePrevious(3, 7);
+
+			PreUpscaler.SetUniform("Frame", Window.GetFrameCount() % 64); 
+
+			DrawPostProcessQuad(); 
+
+			PreUpscaler.UnBind();
+
+			PreUpscaled.UnBind(); 
 		}
 
 		void LightManager::ReloadIndirect(Window& Window)
@@ -831,6 +910,9 @@ namespace iTrace {
 			CheckerboardUpscaler.Reload("Shaders/CheckerBoardHandler"); 
 			WaterRefraction.Reload("Shaders/WaterRefraction"); 
 			WaterDepthPacker.Reload("Shaders/WaterDepthPacker"); 
+			WaterErrorBlur.Reload("Shaders/ErrorMaskBlur"); 
+			PreUpscaler.Reload("Shaders/PreUpscaler"); 
+			CheckerUpscaler.Reload("Shaders/CheckerUpscaler");
 
 			SetShaderUniforms(Window); 
 
@@ -1206,7 +1288,43 @@ namespace iTrace {
 
 				WaterRefraction.UnBind();
 
+				WaterErrorBlur.Bind(); 
+
+				WaterErrorBlur.SetUniform("InError", 0); 
+
+
+				WaterErrorBlur.UnBind(); 
+
 			}
+
+			//Pre upscaler -> 
+
+			{
+
+				CheckerUpscaler.Bind();
+
+				CheckerUpscaler.SetUniform("Detail", 0); 
+				CheckerUpscaler.SetUniform("UpscaleData", 1);
+				CheckerUpscaler.SetUniform("Depth", 2);
+				CheckerUpscaler.SetUniform("Normal", 3);
+
+				CheckerboardUpscaler.UnBind();
+
+				PreUpscaler.Bind(); 
+
+				PreUpscaler.SetUniform("Clouds", 0); 
+				PreUpscaler.SetUniform("PreviousClouds", 1);
+				PreUpscaler.SetUniform("MotionVectorsClouds", 2);
+				PreUpscaler.SetUniform("MotionVectors", 3);
+				PreUpscaler.SetUniform("Detail", 4);
+				PreUpscaler.SetUniform("PreviousDetail", 5);
+				PreUpscaler.SetUniform("PreviousTemporalDetail", 6);
+				PreUpscaler.SetUniform("PreviousFrameCount", 7);
+
+				PreUpscaler.UnBind();
+
+			}
+
 		}
 
 		void LightManager::SpatialyUpscale(Window& Window, Camera& Camera, DeferredRenderer& Deferred)

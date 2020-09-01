@@ -51,18 +51,14 @@ void main() {
 	//if required, spatially filter the detail using a 3x3 bilateral filter 
 	
 	ivec2 Pixel = ivec2(gl_FragCoord.xy); 
-	ivec2 PixelShifted = Pixel; 
-	PixelShifted.x *= 2; 
-	PixelShifted.x += int(PixelShifted.y % 2 == CheckerStep); 
 
 
 	Detail = texelFetch(CurrentDetail, Pixel, 0); 
-
 	vec4 BaseDetail = Detail; 
 
 	if(true) {
 		
-		ivec2 HighResPixel = PixelShifted * 2 + States[SubFrame];
+		ivec2 HighResPixel = Pixel * 2 + States[SubFrame];
 
 		vec4 BasePacked = texelFetch(SpatialDenoiseData, Pixel, 0); 
 
@@ -71,7 +67,7 @@ void main() {
 		float TotalWeight = 1.0; 
 
 		for(int x = -1; x <= 1; x++) {
-			for(int y = -2; y <= 2; y++) {
+			for(int y = -1; y <= 1; y++) {
 				
 				ivec2 PixelOffet = Pixel + ivec2(x,y); 
 				ivec2 PixelOffsetHighRes = HighResPixel + ivec2(x,y)*2; 
@@ -86,10 +82,10 @@ void main() {
 				float NormalWeight = pow(max(dot(CurrentPacked.xyz, BasePacked.xyz), 0.0), 16.0); 
 
 				float Weight = NormalWeight;  
-
-				Weight /= pow(1.0 + 3.0 * abs(CurrentPacked.w - BasePacked.w), 4.0); 
-				float BaseKernelWeight = Kernel[3-abs(x)] * Kernel[3-abs(y)]; 
-				Weight *= BaseKernelWeight; 
+				Weight = 1.0; 
+				//Weight /= pow(1.0 + 3.0 * abs(CurrentPacked.w - BasePacked.w), 4.0); 
+				//float BaseKernelWeight = Kernel[3-abs(x)] * Kernel[3-abs(y)]; 
+				//Weight *= BaseKernelWeight; 
 
 				Detail += CurrentDetail * Weight; 
 				TotalWeight += Weight; 
@@ -101,16 +97,6 @@ void main() {
 		Detail /= TotalWeight; 
 
 	}
-
-	//temporally filter the signals -> 
-
-	float MixFactor = min(FrameCount / (FrameCount+1.0),0.9); //<- should be enough to guide the spatial filter without impossible ghosting 
-
-	vec4 PreviousDetail = texture(PreviousDetail, TexCoord+MotionVectors); 
-	BaseDetail = Detail; 
-	Detail = mix(Detail, PreviousDetail, MixFactor); 
-	Detail.y = mix(BaseDetail.y, PreviousDetail.y, min(MixFactor,0.9)); 
-	//-> convert detail + raw diffuse into L-SVGF friendly signal 
 
 
 }

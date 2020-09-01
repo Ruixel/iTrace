@@ -20,20 +20,23 @@ namespace iTrace {
 
 			std::ofstream File("PackedShaders.h"); 
 
-			File << R"(
-/*
+			File << R"(/*
 AUTO-GENERATED HEADER FILE. 
 NO CHANGES HERE WILL BE SAVED. 
+PLEASE NOTE: 
+ALL OF THE FOLLOWING SHADERS ARE ALL RIGHTS RESERVED 
+MODIFICATION, REDISTRIBUTION, COPYING and/or EXTRACTION of ANY part of ANY of these shaders 
+without EXPLICIT and CLEAR PERMISSION is STRICTLY prohibited. 
+Thread carefully!
 */
 #include <map>
 #include <string>
 std::map<std::string, std::string> ShaderOutPut;
 void LoadShaderBinaries() {
-
-			)"; 
+)"; 
 
 			for (auto& OutPut : InternalOutPut) {
-				File << "ShaderOutPut[" << '"' << OutPut.first << '"' << "] = R" << '"' << "(\n" << OutPut.second << "\n)" << '"' << ";\n"; 
+			//	File << "ShaderOutPut[" << '"' << OutPut.first << '"' << "] = R" << '"' << "(\n" << OutPut.second << "\n)" << '"' << ";\n"; 
 			}
 
 			File << "\n}"; 

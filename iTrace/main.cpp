@@ -144,19 +144,9 @@ float getwaves(vec2 position, int iterations, float Time) {
 
 int main(int *argc, char*argv[]) {
 	
-	//std::cout << ODTtoRRT(0.75f) / AverageLum << '\n';
-	//std::cin.get(); 
-
-
-
-	//ComputeDofKernels(1.0/float(8.0), 8.0);
-
-
-	std::cin.get(); 
-
 	alutInit(argc, argv); 
 
-	Window Screen = Window(Vector2i(1920, 1080), true); 
+	Window Screen = Window(Vector2i(1920, 1080), false); 
 	Camera Camera = iTrace::Camera(90.0, 0.01, 250., Vector3f(128.0 + 64.0,128.0,128.0 + 64.0), Vector3f(0.), Screen); 
 
 	iTrace::Pipeline Pipeline; 

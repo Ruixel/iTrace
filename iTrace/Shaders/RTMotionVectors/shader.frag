@@ -3,6 +3,7 @@
 in vec2 TexCoord; 
 layout(location = 0) out vec3 MotionVectors; //z component stores light-based culling 
 layout(location = 1) out vec3 MotionVectorsSpecular; //<- same stucture as previous one 
+layout(location = 2) out vec2 MotionVectorsClouds; //<- same stucture as previous one 
 
 uniform sampler2D WorldPosPrevious; 
 uniform sampler2D Normal; 
@@ -66,9 +67,12 @@ void main() {
 
 	bool Clouds = false; 
 
+	vec3 CloudsPosition = CameraPosition + 200.0 * normalize(vec3(IncidentMatrix * vec4(TexCoord * 2.0 - 1.0, 1.0, 1.0)));
+
 	if(L < 0.5 || L > 1.5) {
 		Clouds = true; 
-		WorldSpace = CameraPosition + texture(CloudDepth, TexCoord).x * normalize(vec3(IncidentMatrix * vec4(TexCoord * 2.0 - 1.0, 1.0, 1.0)));
+
+		WorldSpace = CloudsPosition;
 	}
 
 
@@ -77,6 +81,7 @@ void main() {
 	ClipSpace.xyz /= ClipSpace.w; 
 
 	MotionVectors = vec3(-1.0); 
+	MotionVectorsClouds = vec2(-1.0); 
 
 	if(abs(ClipSpace.x) <= 1.0 && abs(ClipSpace.y) <= 1.0) {
 		ClipSpace.xy = ClipSpace.xy * 0.5 + 0.5; 
@@ -120,6 +125,16 @@ void main() {
 		}
 
 
+	}
+
+	vec4 ClipSpaceClouds = MotionMatrix * vec4(CloudsPosition, 1.0); 
+	ClipSpaceClouds.xyz /= ClipSpaceClouds.w; 
+
+	if(abs(ClipSpaceClouds.x) < 1.0 && abs(ClipSpaceClouds.y) < 1.0) {
+		
+		ClipSpaceClouds.xy = ClipSpaceClouds.xy * 0.5 + 0.5; 
+		
+		MotionVectorsClouds = ClipSpaceClouds.xy - TexCoord; 
 	}
 
 

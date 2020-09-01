@@ -113,7 +113,7 @@ void main() {
 	//LFNormal.xyz = vec3(NormalSample.z); 
 	Albedo.xyz = pow(vec3(0.3,0.7,1.0),vec3(NormalSample.z+1.0)) * pow(NormalSample.z,2.0); 
 	//simple foam trick -> 
-
+	LFNormal = vec3(0.,1.0,0.0); 
 	//HFNormal = vec3(0.0,1.0,0.0); 
 
 	vec4 SamplePrevious = GetNormalData(TC3D.xy, Time-0.1, Incident); 

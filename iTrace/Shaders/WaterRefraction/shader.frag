@@ -5,6 +5,7 @@ in vec2 TexCoord;
 layout(location = 0) out vec2 RefractedTC; 
 layout(location = 1) out vec4 PackedUpscaleData; 
 layout(location = 2) out vec2 ReflectedTC; 
+layout(location = 3) out float ErrorMask; 
 
 uniform sampler2D LFNormal; //<- low frequency normal 
 uniform sampler2D WorldPosition; //<- world position 
@@ -129,7 +130,7 @@ vec2 ScreenSpaceTrace(vec3 Direction, vec3 Origin, int Steps, int BinarySearchSt
 		float CurrentZ = LinearDepth(ProjectedPoint.z * 0.5 + 0.5); 
 
 
-		if(FetchedZ < CurrentZ  && abs(FetchedZ-CurrentZ) < Thickness * abs(PreviousZ-CurrentZ)) {
+		if(FetchedZ < CurrentZ  && abs(FetchedZ-CurrentZ) < (Thickness * float(Step+1)) * abs(PreviousZ-CurrentZ)) {
 		
 			//do a bit of a binary search! 
 
@@ -176,11 +177,14 @@ void main() {
 	vec3 Normal = texture(LFNormal, TexCoord).xyz; 
 	vec3 WorldPos = texture(WorldPosition, TexCoord).xyz; 
 	vec3 Incident = normalize(WorldPos - CameraPosition); 
-	vec3 Direction = refract(Incident, Normal, 1.0/1.2); 
+	vec3 Direction = refract(Incident, Normal, 1.0/1.1); 
 	
 	vec3 SpecularDirection = reflect(Incident, Normal); 
 	
-	RefractedTC = ScreenSpaceTrace(Direction, WorldPos, TraceSteps , BinarySearchSteps, false,1.0); 
+	RefractedTC = ScreenSpaceTrace(Direction, WorldPos, TraceSteps * 2, BinarySearchSteps * 2, true,1.0);
+	
+	ErrorMask =	RefractedTC.x < 0.0 ? 1 : 0.0; 
+
 	//ReflectedTC = ScreenSpaceTrace(SpecularDirection, WorldPos, TraceSteps * 4, BinarySearchSteps * 4, true); 
 	ReflectedTC = vec2(-1.0); 
 }
