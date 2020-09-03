@@ -3,12 +3,15 @@
 in vec2 TexCoord; 
 layout(location = 0) out vec4 Packed; 
 layout(location = 1) out vec4 PackedSpecular; 
+layout(location = 2) out vec3 SpecularWorldPos; 
 
 uniform sampler2D InputNormal;
 uniform sampler2D InputDepth; 
 uniform sampler2D InputNormalHF;
 uniform sampler2D InputWaterDepth; 
 uniform sampler2D InputWaterNormal; 
+uniform sampler2D InputWaterPosition;
+uniform sampler2D InputDeferredPosition; 
 
 uniform float znear; 
 uniform float zfar; 
@@ -35,9 +38,12 @@ void main() {
 
 	if(WaterDepth < RawDepth) {
 		PackedSpecular = vec4(texture(InputWaterNormal, TexCoord).xyz, LinearDepth(WaterDepth)); 
+		SpecularWorldPos = texelFetch(InputWaterPosition, ivec2(gl_FragCoord)*2,0).xyz; 
 	}
 	else {
 		PackedSpecular = vec4(texture(InputNormalHF, TexCoord).xyz, LinearDepth(RawDepth)); 
+		SpecularWorldPos = texelFetch(InputDeferredPosition, ivec2(gl_FragCoord)*2,0).xyz; 
 	}
-	
+
+
 }

@@ -29,6 +29,7 @@ uniform sampler2D Depth;
 uniform sampler2D WaterDepth; 
 
 uniform sampler2D MotionVectorsSpecular; 
+uniform sampler2D FrameCountSpecular; 
 
 uniform bool DoTemporal; 
 uniform bool NewFiltering; 
@@ -110,12 +111,19 @@ void main() {
 	IndirectDiffuse.xyz = vec3(1.0); 
 	
 	vec2 MotionVectors = texture(MotionVectors, TexCoord).xy; 
-	vec2 MotionVectorsSpecular = texture(MotionVectorsSpecular, TexCoord).xy; 
+	vec3 MotionVectorsSpecular = texture(MotionVectorsSpecular, TexCoord).xyz; 
 	float FrameCount = max(texture(FrameCount, TexCoord + MotionVectors).x - 1.0,0.0); 
-	
+	float FrameCountSpecular = max(texture(FrameCountSpecular, TexCoord + MotionVectorsSpecular.xy).x - 1.0,0.0); 
+
 	if(MotionVectors.x < -.5 || MotionVectors.y < -.5) {
 		FrameCount = 0; 
 	}
+
+	if(MotionVectorsSpecular.x < -.5 || MotionVectorsSpecular.y < -.5 || MotionVectorsSpecular.z < -.5) {
+		FrameCountSpecular = 0; 
+	}
+
+
 
 
 	float NewMaxTemporal = FrameCount < 4.0 ? 0.0 : FrameCount < 12.0 ? 0.9 : (NewFiltering ? 0.975 : 0.95); 
@@ -132,7 +140,7 @@ void main() {
 		MixFactorClouds = 0.0; 
 	}
 
-	float SpecularTrustFactor = 0.95; 
+	float SpecularTrustFactor =FrameCountSpecular < 4.0 ? 0.0 :  0.95; 
 	
 	//We know that the more we've moved, the less we can trust the specular motion vectors! 
 
@@ -147,13 +155,13 @@ void main() {
 	vec4 PreviousDiffuse = GetClamped(UpscaledDiffuse,PreviousDiffuse, TexCoord + MotionVectors,0.05); 
 	vec4 PreviousVolumetric = GetClamped(UpscaledVolumetrics,PreviousVolumetrics, TexCoord + MotionVectors,0.05);
 	float PreviousSpecularW = GetClamped(UpscaledSpecular, PreviousSpecular, TexCoord + MotionVectors, 0.05).w; 
-	vec3 PreviousSpecular = GetClamped(UpscaledSpecular, PreviousSpecular, TexCoord + MotionVectorsSpecular, 0.05).xyz; 
+	vec3 PreviousSpecular = GetClamped(UpscaledSpecular, PreviousSpecular, TexCoord + MotionVectorsSpecular.xy, 0.05).xyz; 
 
 
 	vec4 PreviousClouds = texture(PreviousClouds, TexCoord + MotionVectors); 
 	vec4 PreviousDirect = texture(PreviousDirect, TexCoord + MotionVectors); 
 
-	float MixFactorSpecular = min(MixFactor, SpecularTrustFactor); 
+	float MixFactorSpecular = min(float(FrameCountSpecular)/float(FrameCountSpecular+1.0), SpecularTrustFactor); 
 
 	MixFactorSpecular = (texelFetch(WaterDepth, ivec2(gl_FragCoord)*2,0).x < texelFetch(Depth, ivec2(gl_FragCoord)*2,0).x) ? min(MixFactorSpecular,0.9) : MixFactorSpecular; 
 
@@ -177,5 +185,7 @@ void main() {
 
 	IndirectSpecular.xyz = max(IndirectSpecular.xyz, vec3(0.0));
 	Clouds.xyz = clamp(Clouds.xyz, vec3(0.0),vec3(100.0)); 
-	
+
+		//IndirectSpecular.xy = MotionVectorsSpecular.xy; 
+	//IndirectSpecular.z = 0.0; 
 }

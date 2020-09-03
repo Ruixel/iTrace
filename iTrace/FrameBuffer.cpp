@@ -167,6 +167,7 @@ iTrace::Rendering::MultiPassFrameBufferObject::MultiPassFrameBufferObject(glm::i
 	for (int i = 0; i < stages; i++)
 		DrawBuffers[i] = GL_COLOR_ATTACHMENT0 + i;
 
+
 	glDrawBuffers(stages, DrawBuffers);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

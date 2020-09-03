@@ -1,4 +1,4 @@
-#version 330
+#version 430
 #extension GL_ARB_bindless_texture : enable
 in vec2 TexCoord;
 
@@ -86,7 +86,8 @@ uniform int CheckerStep;
 
 uniform mat4 CameraMatrix; 
 
-
+layout(rgba16f) uniform writeonly image2D SpecularDetail; 
+layout(rgba16f) uniform writeonly image2D SpecularDirectionData; 
 
 
 int FetchFromTexture(sampler2D Texture, int Index) {
@@ -247,7 +248,7 @@ vec3 DirectBasic(vec3 Position) {
 
 
 
-	return texture(DirectionalCascades[Cascade], vec3(NDC.xy * 0.5 + 0.5, (NDC.z * 0.5 + 0.5)-0.00009))* texture(DirectionalRefractive[Cascade], NDC.xy * 0.5 + 0.5).xyz; 
+	return texture(DirectionalCascades[Cascade], vec3(NDC.xy * 0.5 + 0.5, (NDC.z * 0.5 + 0.5)-0.000018))* texture(DirectionalRefractive[Cascade], NDC.xy * 0.5 + 0.5).xyz; 
 
 }
 
@@ -880,7 +881,7 @@ vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 
 
 
-vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4 ParallaxData, vec3 TC, vec3 LowFrequencyNormal, out vec4 Detail, ivec2 Pixel, bool Water) {
+vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4 ParallaxData, vec3 TC, vec3 LowFrequencyNormal, out vec4 Detail, ivec2 Pixel, bool Water, out float Traversal) {
 
 
 	Detail = vec4(1.0); 
@@ -949,11 +950,11 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 	if(true) {
 		
 		float Hash = hash(Pixel / 2, Water ? 0 : FrameCount / 4,35); 
-		if(Water) 
+		if(Specular) 
 			Hash = 0.0; 
 		
 
-		vec4 Trace = ScreenSpaceTrace(Origin, Direction, Specular ? (Water ? 4.0 : 2.0) : 1.0, Water ? 48 : 5, Hash, NormalSS, PositionSS, Specular ? 1.2 : 4.0, Specular); 
+		vec4 Trace = ScreenSpaceTrace(Origin, Direction, Specular ? (Water ? 4.0 : 2.0) : 1.0, Water ? 48 : Specular ? 32 : 5, Hash, NormalSS, PositionSS, Specular ? 1.2 : 4.0, Specular); 
 	
 		if(Trace.x > -0.9) {
 			Hit = true; 
@@ -1099,7 +1100,8 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 
 
 		//AO: 
-		Diffuse.w = pow(min(distance(Origin, Position), 4.0), 1.0);
+		Traversal = distance(Origin, Position); 
+		Diffuse.w = pow(min(Traversal, 4.0), 1.0);
 		Detail.w = Diffuse.w; 
 		Detail.xyz = BlockColor * Color; 
 		Diffuse.xyz *= Color; 
@@ -1123,7 +1125,10 @@ vec4 GetRayShading(vec3 Origin, vec3 Direction, vec3 Normal, bool Specular, vec4
 		Diffuse.w = 4.0; 
 		Detail = Diffuse * vec4(0.1,0.1,0.1,1.0); 
 		Diffuse.xyz *= Color; 
-	}		
+		Traversal = 60.0; 
+	}	
+	
+	Traversal = min(Traversal, 20.0); 
 
 
 	return Diffuse; 
@@ -1303,9 +1308,9 @@ void main() {
 
 
 	
+	float Traversal; 
 
-
-	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.025, Direction,Normal.xyz, false, ParallaxData,TC,LowFrequencyNormal.xyz,Detail, Pixel, false); 
+	vec4 Diffuse = GetRayShading(WorldPos + Normal.xyz * 0.025, Direction,Normal.xyz, false, ParallaxData,TC,LowFrequencyNormal.xyz,Detail, Pixel, false,Traversal); 
 	
 
 	vec3 SpecularWorldPos = WorldPos; 
@@ -1314,7 +1319,9 @@ void main() {
 
 	bool Water = false; 
 
-	if(texelFetch(WaterDepth, Pixel, 0).x < RawDepthSample) {
+	float SpecularDepth = texelFetch(WaterDepth, Pixel, 0).x; 
+
+	if(SpecularDepth < RawDepthSample) {
 		
 		SpecularNormal = texelFetch(WaterNormal, Pixel, 0).xyz; 
 		SpecularWorldPos = texelFetch(WaterWorldPos, Pixel, 0).xyz; 
@@ -1322,9 +1329,12 @@ void main() {
 		SpecularDirection = reflect(normalize(WorldPos - CameraPosition), SpecularNormal); 
 		Water = true; 
 	}
+	else {
+		SpecularDepth = RawDepthSample; 
+	}
 
 
-	vec4 Specular = GetRayShading(SpecularWorldPos + SpecularNormal.xyz * 0.025, SpecularDirection, SpecularNormal.xyz, true, ParallaxData,TC,LowFrequencyNormal.xyz, Detail, Pixel, Water); 
+	vec4 Specular = GetRayShading(SpecularWorldPos + SpecularNormal.xyz * 0.025, SpecularDirection, SpecularNormal.xyz, true, ParallaxData,TC,LowFrequencyNormal.xyz, Detail, Pixel, Water,Traversal); 
 
 	
 	//Specular.xyz = abs(reflect(Incident, Normal.xyz)); 
@@ -1353,5 +1363,12 @@ void main() {
 	vec2 RawTC = vec2(Pixel) / vec2(textureSize(TCData, 0).xy); 
 
 	//Direct.xyz = pow(texelFetch(DirectionalCascadesRaw[0], ivec2(RawTC * textureSize(DirectionalCascadesRaw[0],0)),0).xxx,vec3(1000.0)); 
-	PackedSpatialData = PackData(Normal.xyz, LowFrequencyNormal.w, LinearDepth(texelFetch(Depth, Pixel, 0).x)); 
+	PackedSpatialData = PackData(LowFrequencyNormal.xyz, LowFrequencyNormal.w, LinearDepth(texelFetch(Depth, Pixel, 0).x)); 
+	//PackedSpatialDataSpecular = vec4(SpecularNormal * 0.5 + 0.5,LinearDepth(SpecularDepth)); 
+	//SpecularDirectionData = vec4(SpecularDirection, Specular.w); 
+
+	imageStore(SpecularDirectionData, ivec2(gl_FragCoord),vec4(SpecularDirection, Traversal)); 
+	imageStore(SpecularDetail, ivec2(gl_FragCoord),vec4(SpecularNormal * 0.5 + 0.5,LinearDepth(SpecularDepth))); 
+
+
 }

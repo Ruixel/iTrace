@@ -57,8 +57,8 @@ int State = 0;
 ivec2 Pixel; 
 
 const vec3 PlayerOrigin = vec3(0,6200,0); 
-const float PlanetRadius = 6573; 
-const float AtmosphereRadius = 7773; 
+const float PlanetRadius = 7773; 
+const float AtmosphereRadius = 19773; 
 const float Size = AtmosphereRadius - PlanetRadius; 
 const int Steps = 64; 
 const int LightSteps = 16; 
@@ -92,21 +92,21 @@ float Density(vec3 Position) {
 
 	Position.x += Time * 0.0; 
 
-	vec3 WeatherSample = texture(WeatherMap, (Position.xz) / 8192).xyz; 
+	vec3 WeatherSample = texture(WeatherMap, (Position.xz) / 65536.0).xyz; 
 
 	float WeatherNoise =  (1.0-pow(1.0-WeatherSample.x,3.0)); ; 
 
-	if(WeatherNoise < 1.0/256.0)
-		return 0.0; 
+	//if(WeatherNoise < 1.0/256.0)
+	//	return 0.0; 
 
-	vec4 NoiseFetch1 = texture(CloudNoise, ((Position + vec3(0.0,-Time*0,0.0)) * vec3(1.0,1,1.0)) / 4096.0); 
+	vec4 NoiseFetch1 = texture(CloudNoise, ((Position + vec3(0.0,-Time*0,0.0)) * vec3(1.0,0.5,1.0)) / 8192.0); 
 	
 	float HighFrequencyNoise = dot(NoiseFetch1.yzw, vec3(0.25,0.125,0.625)); 
 
 	float ShapeNoise2 = remap(NoiseFetch1.x, HighFrequencyNoise, 1.0, 0.0, 1.0); 
 
-	if(ShapeNoise2 < 1.0/256.0)
-		return 0.0; 
+	//if(ShapeNoise2 < 1.0/256.0)
+	//	return 0.0; 
 	
 	
 
@@ -122,19 +122,21 @@ float Density(vec3 Position) {
 		AnvilSignal = AnvilSignal / 0.3; 
 	}
 
-	float HeightShape = 1.0-pow(1.0-HeightSignal,5.0); 
+	float HeightShape = 1.0-pow(HeightSignal,4.0); 
+	float AnvilShape = 1.0-pow(AnvilSignal,10.0); 
 
-	float BaseShape = (ShapeNoise)  * WeatherNoise * HeightShape; 
-	//BaseShape = pow(BaseShape,1.5); 
+	float BaseShape = WeatherNoise * HeightShape * AnvilShape; 
+	BaseShape = pow(BaseShape,12.0); 
+
+	BaseShape *= pow(ShapeNoise,1.5); 
 
 
-
-	BaseShape = pow(BaseShape,0.0625 *8.0 *GlobalPower * (.4+16.0*pow(HeightSignal,5.0))); 
+	//BaseShape = pow(BaseShape,0.0625 *8.0 *GlobalPower * (.4+16.0*pow(HeightSignal,5.0))); 
 
 	if(BaseShape < 1.0/25.0)
 		return 0.; 
 
-	vec4 NoiseFetch2 = texture(CloudShape, (Position + vec3(0.0,Time*0.0,0.0)) / 384); 
+	vec4 NoiseFetch2 = texture(CloudShape, (Position + vec3(0.0,Time*0.0,0.0)) / 768); 
 
 	float ErosionNoise = dot(NoiseFetch2.xyz, vec3(0.25,0.125,0.625)); 
 
@@ -142,8 +144,8 @@ float Density(vec3 Position) {
 	float ErosionNoise2 = remap(NoiseFetch2.x, ErosionNoiseHighFrequency, 1.0, 0.0, 1.0); 
 
 
-	//BaseShape -= min(1.0,1.0) * pow((1.0-min(BaseShape*1.9,1.0)),3.0);
-	BaseShape -= 30.0*pow(ErosionNoise,5.0) * pow((1.0-min(BaseShape*1.3,1.0)),7.0); 
+	BaseShape -= pow((1.0-min(BaseShape*2.4,1.0)),3.0);
+	BaseShape -= 10.0*pow(ErosionNoise,3.0) * pow((1.0-min(BaseShape*1.2,1.0)),9.0); 
 	BaseShape = clamp(BaseShape, 0.0, 1.0); 
 	return 0.0006*BaseShape*1.0; 
 
@@ -173,7 +175,7 @@ float InnerScatter(float InnerScatteringDepth, float Height) {
 
 float densityToLight(vec3 Point, vec3 Direction, float Dither) {
     float End = (AtmosphereRadius - Point.y) / Direction.y;  
-	End = min(End, 2000.0); 
+	End = min(End, 5000.0); 
 	vec3 StartPosition = Point; 
 	vec3 EndPosition = Point + Direction * End; 
 
@@ -232,7 +234,7 @@ vec3 Radiance(vec3 Position, float Height, float SilverIntensity, float SilverSp
 	float d = densityToLight(Position, LightDir, Hash) ;
     float bl = beerLambert(d*1.4);
 
-	float InnerScatteringDensity = GetLodDensity(Position, 10.0+Hash*40.0); 
+	float InnerScatteringDensity = GetLodDensity(Position, 250.0); 
 	float InnerScatter = InnerScatter(InnerScatteringDensity, Height); 
 
 	float innerpowder = 1-beerLambertPowder(d*0.1);
@@ -256,8 +258,17 @@ vec3 Radiance(vec3 Position, float Height, float SilverIntensity, float SilverSp
 
 	ambientLight = mix(InversePowder*SkyColor,ambientLight,clamp(100.0*bl * hg,0.7,1.0)); 
 
+	//-> the blue streak -> 
+	//Seems to be some kind of blue line where the powder and sun meet 
 
-	return ambientLight * Mixed * 1.5 + sunLight; 
+	float BlueLine = pow(1.0-abs(outerpowder-bl*hg),2.0); 
+
+	vec3 AmbientColor = mix(SkyColor*1.3,SkyColor.zzz*0.8,(1.0-BlueLine)*0.75+0.25); 
+
+
+	return vec3(AmbientColor * (innerpowder+InnerScatter*0.6)) * 1.0 + sunLight; 
+
+
 
 	return mix(sunLight, ambientLight, 1-Height);
 
@@ -284,7 +295,7 @@ vec4 SampleCloud(vec3 Origin, vec3 Direction) {
 }
 
 float SampleCirrus(vec3 Position) { //gets cirrus density -> 
-	return 1.0-pow(texture(Cirrus, Position.xz * 0.00041).x, 0.3 * GlobalPower); 
+	return 1.0-pow(texture(Cirrus, Position.xz * 0.0001).x, 0.3 * GlobalPower); 
 }
 
 vec4 SampleCirrus(vec4 CurrentCloud, vec3 Position, float Hash, float SilverIntensity, float SilverSpread, float VdL) {
@@ -376,7 +387,7 @@ void main() {
 		return; 
 	
 	float T = End-Start; 
-	T = min(T, 12000.0); 
+	T = min(T, 52000.0); 
 	End = Start + T; 
 
 	vec3 StartPosition = Origin + Direction * Start; 
@@ -410,14 +421,12 @@ void main() {
 		float Density = Density(Position); 
 		//is there a cloud? 
 
-		if(Density / 0.0006 > 0.1) {
+		if(Density / 0.0006 > 0.01) {
 			
 			float Mix = Height / Size; 
 
 			float SampleSigmaS = SigmaS * Density * ScatteringMultiplier; 
 			float SampleSigmaE = SigmaE * Density; 
-
-			float CloudShadowing = densityToLight(Position, LightDirection, hash.y); 
 
 			vec3 LightingData = Radiance(Position, (Height) / Size, 3.0, 0.8, hash.y, LightDirection, ndl); 
 
@@ -443,7 +452,7 @@ void main() {
 
 	Clouds.a = clamp(Clouds.a-0.01,0.0,0.99) / 0.99; 
 
-	float fade = exp(-T*1e-4); 
+	float fade = exp(-T*3e-5); 
 	
 
 	vec3 Position = Origin + Direction * End; 
@@ -456,7 +465,7 @@ void main() {
 
 	Clouds.a = mix(1.0,Clouds.a,fade); 
 	Clouds.a *= Clouds.a; 
-
+	
 	//Clouds = SampleCloud(CameraPosition,Direction); 
 
 }

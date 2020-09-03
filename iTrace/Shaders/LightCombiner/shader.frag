@@ -35,6 +35,7 @@ uniform sampler2D SkyReigh;
 uniform sampler2D WaterDepth; 
 uniform sampler2DArray WaterCaustics; 
 uniform sampler2D Detail; 
+uniform sampler2D Direction; 
 
 
 uniform bool NoAlbedo; 
@@ -405,8 +406,8 @@ void main() {
 
 		//Lighting.xyz = SHy.xyz; 
 
-		//Lighting.xyz = texelFetch(Detail, ivec2(gl_FragCoord)/2, 0).xxx; 
-
+		//Lighting.xyz = texelFetch(Direction, ivec2(gl_FragCoord)/4,0).www; 
+		//Lighting.xyz = IndirectSpecular.xyz; 
 	}
 	else {
 		vec4 CloudSample = textureBicubic(Clouds, TexCoord); 

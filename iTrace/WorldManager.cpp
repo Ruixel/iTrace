@@ -884,7 +884,7 @@ namespace iTrace {
 
 							if (Energy[DataLocationNew.x * BoundingBox * BoundingBox + DataLocationNew.y * BoundingBox + DataLocationNew.z] < EnergyNext) {
 
-								AddLightBlock(WaveLength, NewPosition, OriginLocation, Data, Energy, EnergyMultiplierNext, Distance + 1, Min, Max);
+									AddLightBlock(WaveLength, NewPosition, OriginLocation, Data, Energy, EnergyMultiplierNext, Distance + 1, Min, Max);
 
 								if (Min != nullptr && Max != nullptr) {
 									*Min = glm::min(*Min, Location);

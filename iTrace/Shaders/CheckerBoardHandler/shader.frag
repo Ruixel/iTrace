@@ -64,9 +64,9 @@ float GetWeightSpecularRT(vec3 Normal, vec3 CenterNormal, float Depth, float Cen
 	
 	
 	float Dot = dot(Normal,CenterNormal); 
-	Dot = 1-clamp((1-Dot)*100, 0.0, 1.0); 
+	Dot = 1-clamp((1-Dot)*10, 0.0, 1.0); 
 	
-	float NormalComponent = pow(max(Dot,0.0),128.0); 
+	float NormalComponent = pow(max(Dot,0.0),16.0); 
 	float DepthComponent = 1.0/pow(1.0+10.0*abs(Depth-CenterDepth),3.0); 
 	
 
@@ -74,7 +74,7 @@ float GetWeightSpecularRT(vec3 Normal, vec3 CenterNormal, float Depth, float Cen
 
 
 
-	return NormalComponent ; 
+	return NormalComponent * DepthComponent; 
 }
 
 

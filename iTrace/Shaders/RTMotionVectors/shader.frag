@@ -5,6 +5,8 @@ layout(location = 0) out vec3 MotionVectors; //z component stores light-based cu
 layout(location = 1) out vec3 MotionVectorsSpecular; //<- same stucture as previous one 
 layout(location = 2) out vec2 MotionVectorsClouds; //<- same stucture as previous one 
 
+
+
 uniform sampler2D WorldPosPrevious; 
 uniform sampler2D Normal; 
 uniform sampler2D NormalPrevious; 
@@ -21,12 +23,21 @@ uniform sampler2D PreviousNormalWater;
 uniform sampler2D Depth; 
 uniform sampler2D WaterDepth; 
 
+uniform sampler2D CurrentDirection; //w component stores  
+uniform sampler2D CurrentOrigin; 
+
+uniform sampler2D PreviousDirection; //same structure as previous one 
+uniform sampler2D PreviousOrigin; 
 
 uniform vec3 CameraPosition; 
+uniform vec3 PreviousCameraPosition; 
+
 uniform bool NewFiltering; 
 
 uniform mat4 MotionMatrix; 
 uniform mat4 IncidentMatrix; 
+uniform mat4 ProjectionMatrix; 
+uniform mat4 ViewMatrix; 
 
 uniform vec2 Resolution; 
 
@@ -51,6 +62,46 @@ vec3 FindBestPixel(vec2 Coord, vec3 CurrentWorldPos, vec3 PreviousWorldPos, vec3
 
 }
 
+
+mat4 GetReflectedViewMatrix(vec3 Origin, vec3 Direction) {
+	
+	vec3 Position = Origin; 	
+	
+	vec3 Forward = -Direction; //Simple 
+	vec3 RawUp = vec3(0.0,1.0,0.0); 
+
+	vec3 Left = normalize(cross(Forward,RawUp)); 
+	vec3 Up = normalize(cross(Left,Forward)); 
+
+	mat4 Matrix = mat4(1.0); 
+
+	Matrix[0][0] = Left.x;
+	Matrix[1][0] = Left.y;
+	Matrix[2][0] = Left.z;
+
+	Matrix[0][1] = Up.x;
+	Matrix[1][1] = Up.y;
+	Matrix[2][1] = Up.z;
+
+	Matrix[0][2] =-Forward.x;
+	Matrix[1][2] =-Forward.y;
+	Matrix[2][2] =-Forward.z;
+
+	Matrix[3][0] =-dot(Left, Position);
+	Matrix[3][1] =-dot(Up, Position);
+	Matrix[3][2] = dot(Forward, Position);
+
+	return (Matrix); 
+
+}
+
+float RayPlane(vec3 RayOrigin, vec3 RayDirection, vec3 PlanePosition, vec3 PlaneNormal) {
+	
+	float Traverse = dot(PlaneNormal, (PlanePosition - RayOrigin)) / dot(RayDirection, PlaneNormal); 
+
+	return Traverse; 
+
+} 
 
 void main() {
 	
@@ -116,7 +167,15 @@ void main() {
 		if(abs(ClipSpaceWater.x) <= 1.0 && abs(ClipSpaceWater.y) <= 1.0) {
 			
 			MotionVectorsSpecular.xy = ClipSpaceWater.xy * 0.5 + 0.5; //<- for now, start with this 
+
+
+			
+
+
+
 			MotionVectorsSpecular.xy -= TexCoord; 
+
+
 
 		}
 		else {
@@ -127,6 +186,65 @@ void main() {
 
 	}
 
+	{
+	
+		//Figure out specular motion vectors 
+
+		vec2 Coord = MotionVectorsSpecular.xy + TexCoord; 
+	
+		vec3 OriginPrevious = texture(PreviousOrigin, Coord).xyz; 
+		vec4 DirectionDataPrevious = texture(PreviousDirection, Coord); 
+		DirectionDataPrevious.xyz = normalize(DirectionDataPrevious.xyz); 
+
+		vec3 Origin = texture(CurrentOrigin, TexCoord).xyz; 
+		vec4 DirectionData = texture(CurrentDirection, TexCoord); 
+		DirectionData.xyz = normalize(DirectionData.xyz); 
+
+		//assume normal is the same (for now) 
+
+		vec3 RawIncident = OriginPrevious.xyz - PreviousCameraPosition; 
+
+		float RawIncidentLength = length(RawIncident); 
+
+		vec3 Reflection =  reflect(RawIncident/RawIncidentLength, CurrentNormal.xyz); 
+		vec3 ReflectionNow = reflect(normalize(Origin - CameraPosition), CurrentNormal.xyz); 
+
+		vec3 ReflectedCameraPosition = OriginPrevious - Reflection * RawIncidentLength; 
+
+		mat4 Matrix = GetReflectedViewMatrix(ReflectedCameraPosition, Reflection); 
+
+		vec4 Clip = ProjectionMatrix * Matrix * vec4(Origin + ReflectionNow * DirectionData.w, 1.0); 
+		Clip.xyz /= Clip.w; 
+
+		vec3 Direction = -normalize(vec3(inverse(ProjectionMatrix * mat4(mat3(Matrix))) * vec4(Clip.xy, 1.0,1.0))); 
+
+		float Traversal = RayPlane(ReflectedCameraPosition, Direction, WorldSpace, CurrentNormal.xyz); 
+
+		vec3 Position = ReflectedCameraPosition + Direction * Traversal; 
+
+		Clip = MotionMatrix * vec4(Position, 1.0); 
+		Clip.xy /= Clip.w; 
+
+		MotionVectorsSpecular.xy = (Clip.xy * 0.5 + 0.5) - TexCoord; 
+
+		MotionVectorsSpecular.xy += vec2(0.0003,0.0005); 
+		//MotionVectorsSpecular.xy = MotionVectors.xy; 
+		
+		vec4 PreviousData = texture(PreviousDirection, TexCoord + MotionVectorsSpecular.xy); 
+
+		if(abs(PreviousData.w - DirectionData.w)/min(PreviousData.w, DirectionData.w) > 1.0) {
+			MotionVectorsSpecular.xy = vec2(-1.0); 
+			MotionVectorsSpecular.z = -1.0; 
+		}
+		//MotionVectorsSpecular.xy = MotionVectors.xy; 
+		//MotionVectors.z = 1.0; 
+
+	}
+
+
+
+
+
 	vec4 ClipSpaceClouds = MotionMatrix * vec4(CloudsPosition, 1.0); 
 	ClipSpaceClouds.xyz /= ClipSpaceClouds.w; 
 
@@ -136,6 +254,9 @@ void main() {
 		
 		MotionVectorsClouds = ClipSpaceClouds.xy - TexCoord; 
 	}
+
+	if(abs((MotionVectorsSpecular.x + TexCoord.x) * 2.0 - 1.0) >= 1.0 || abs((MotionVectorsSpecular.y + TexCoord.y) * 2.0 - 1.0) >= 1.0)
+		MotionVectorsSpecular.xy = MotionVectors.xy; 
 
 
 

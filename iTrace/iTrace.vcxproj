@@ -333,6 +333,8 @@
     <None Include="Shaders\SpatialPacker\shader.vert" />
     <None Include="Shaders\SpatialUpscaler\shader.frag" />
     <None Include="Shaders\SpatialUpscaler\shader.vert" />
+    <None Include="Shaders\SpecularMotionVectorResolver\shader.frag" />
+    <None Include="Shaders\SpecularMotionVectorResolver\shader.vert" />
     <None Include="Shaders\TemporalFilter\shader.frag" />
     <None Include="Shaders\TemporalFilter\shader.vert" />
     <None Include="Shaders\TemporalFrameCounter\shader.frag" />

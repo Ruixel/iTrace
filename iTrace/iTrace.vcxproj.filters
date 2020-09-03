@@ -256,6 +256,9 @@
     <Filter Include="Shaders\CheckerUpscaler">
       <UniqueIdentifier>{778b56d5-8863-4d1b-98d4-52642e31c2a8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\SpecularMotionVectorResolver">
+      <UniqueIdentifier>{059d70a3-ca61-4fc1-a137-e87e07574590}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pipeline.h">
@@ -894,6 +897,12 @@
     </None>
     <None Include="Shaders\CheckerUpscaler\shader.frag">
       <Filter>Shaders\CheckerUpscaler</Filter>
+    </None>
+    <None Include="Shaders\SpecularMotionVectorResolver\shader.frag">
+      <Filter>Shaders\SpecularMotionVectorResolver</Filter>
+    </None>
+    <None Include="Shaders\SpecularMotionVectorResolver\shader.vert">
+      <Filter>Shaders\SpecularMotionVectorResolver</Filter>
     </None>
   </ItemGroup>
 </Project>

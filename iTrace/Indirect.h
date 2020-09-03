@@ -16,23 +16,26 @@ namespace iTrace {
 				SpatialUpscaler, TemporalFilter, FrameCount, Volumetrics, 
 				DirectBlocker, CloudRenderer, CloudProjection, CheckerboardUpscaler,
 				PreSpatialTemporalFilter, SpatialFilterFinal, WaterRefraction, 
-				WaterDepthPacker, WaterErrorBlur, PreUpscaler, CheckerUpscaler; 
+				WaterDepthPacker, WaterErrorBlur, PreUpscaler, CheckerUpscaler, SpecularMotionVectorResolver; 
 			//																	- gives out 2 4d floats, 1 float-	 - gives out 3 4d floats -
-			MultiPassFrameBufferObject RawPathTrace[4], TemporalyUpscaled, SpatialyFilteredTemporary[2],			SpatialyFiltered[4], SpatialyUpscaled, Clouds, Checkerboarder[4],  RefractedWater, MotionVectors[4], PackedSpatialData;
+			MultiPassFrameBufferObject RawPathTrace[4], TemporalyUpscaled, SpatialyFilteredTemporary[2],			SpatialyFiltered[4], 
+				SpatialyUpscaled, Clouds, Checkerboarder[4],  RefractedWater, MotionVectors[4];
+			
 			FrameBufferObject PackedData, DirectBlockerBuffer;
-			MultiPassFrameBufferObjectPreviousData TemporallyFiltered, PreUpscaled;
-			FrameBufferObjectPreviousData TemporalFrameCount, ProjectedClouds, PreSpatialTemporal;
+			MultiPassFrameBufferObjectPreviousData TemporallyFiltered, PreUpscaled, PackedSpatialData, TemporalFrameCount;
+			FrameBufferObjectPreviousData ProjectedClouds, PreSpatialTemporal, SpecularMotionVectorData;
 			FrameBufferObject VolumetricFBO[4], PackedWaterData, ErrorMaskBlur[2], CheckerUpscaledDetail;
 
 			TextureGL WindNoise, SimplifiedBlueNoise, WeatherMap, Turbulence, Cirrus; 
 			TextureGL3D CloudNoise, CloudShape; 
 
 			unsigned int SobolTexture, RankingTexture, ScramblingTexture; 
-
+			unsigned int SpecularDetailTexture, SpecularDirectionTexture; 
 
 			void PrepareIndirectLightingHandler(Window & Window); 
 			void RenderIndirectLighting(Window& Window, Camera& Camera, DeferredRenderer & Deferred, WorldManager & World, SkyRendering& Sky);
 			
+			void PackSpatialData(Window& Window, Camera& Camera, DeferredRenderer& Deferred); 
 			void FindDirectBlocker(Window& Window, Camera& Camera, DeferredRenderer& Deferred, SkyRendering& Sky);
 			void DoRawPathTrace(Window& Window, Camera& Camera, DeferredRenderer& Deferred, WorldManager& World, SkyRendering & Sky);
 			void TemporalyUpscale(Window& Window, Camera& Camera, DeferredRenderer& Deferred);
