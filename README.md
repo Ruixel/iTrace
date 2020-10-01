@@ -18,4 +18,4 @@ Features:
 
 ![Path-traced diffuse ](https://pbs.twimg.com/media/EeM8r1BXkAEG_Ch?format=png)
 ![Volumetric clouds](https://pbs.twimg.com/media/EdZPS5kX0AY3pCK?format=png)
-[!Foliage](https://media.discordapp.net/attachments/609238720637566995/744658119333904394/unknown.png)
+![Foliage](https://media.discordapp.net/attachments/609238720637566995/744658119333904394/unknown.png)
